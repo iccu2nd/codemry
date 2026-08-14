@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Codery — Feed</title>
+<link rel="preload" href="fonts/Poppins-Regular.woff" as="font" type="font/woff" crossorigin>
+<link rel="preload" href="fonts/Poppins-Bold.woff" as="font" type="font/woff" crossorigin>
+<link rel="stylesheet" href="style.css">
+<link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css"></noscript>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    Codery
+  </div>
+  <button class="hamburger" id="hamburgerBtn" aria-label="Buka menu">
+    <span></span><span></span><span></span>
+  </button>
+  <nav class="topnav" id="topnav">
+    <div id="authArea"></div>
+  </nav>
+</header>
+
+<div class="nav-backdrop" id="navBackdrop"></div>
+
+<main class="app">
+  <div class="card">
+    <div class="window-dots"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span></div>
+    <div class="hero-title">Codery</div>
+    <div class="hero-rule"></div>
+    <div class="hero-sub">Code Sharing Platform</div>
+    <div class="btn-row">
+      <a class="btn btn-primary" href="/upload">Upload Kode</a>
+      <button class="btn btn-white" id="refreshBtn">Refresh</button>
+    </div>
+  </div>
+  <div id="feedList"></div>
+  <div id="feedPagination" class="feed-pagination"></div>
+</main>
+
+<div id="toast" class="toast"></div>
+
+<script src="js/config.js"></script>
+<script src="js/common.js"></script>
+<script src="js/feed.js"></script>
+</body>
+</html>

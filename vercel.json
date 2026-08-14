@@ -1,0 +1,14 @@
+{
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/api" }
+  ],
+  "functions": {
+    "api/index.js": {
+      "includeFiles": "public/**",
+      "maxDuration": 30
+    }
+  },
+  "crons": [
+    { "path": "/api/cron/prune-scrape-requests", "schedule": "0 3 * * *" }
+  ]
+}

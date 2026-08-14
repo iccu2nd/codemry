@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Codery — Search</title>
+<link rel="preload" href="fonts/Poppins-Regular.woff" as="font" type="font/woff" crossorigin>
+<link rel="preload" href="fonts/Poppins-Bold.woff" as="font" type="font/woff" crossorigin>
+<link rel="stylesheet" href="style.css">
+<link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css"></noscript>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+</head>
+<body>
+
+<header class="search-header">
+  <div class="search-input-wrap">
+    <span class="search-input-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    </span>
+    <input id="feedSearch" class="search-field-input" placeholder="Cari judul, tag, atau @username..." autocomplete="off" enterkeyhint="search" aria-label="Kotak pencarian kode">
+    <button type="button" class="search-clear-btn" id="clearSearchBtn" aria-label="Hapus teks pencarian" style="display:none">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <button type="button" class="btn btn-primary search-submit-btn" id="searchSubmitBtn">Cari</button>
+</header>
+
+<main class="app" id="searchPage">
+
+  <div id="searchIdleView">
+    <div class="search-section" id="historySection" style="display:none">
+      <div class="search-section-head">
+        <div class="search-section-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></svg>
+          Riwayat Pencarian
+        </div>
+        <button type="button" class="search-clear-all-btn" id="clearHistoryBtn">Hapus Semua</button>
+      </div>
+      <div id="historyList" class="search-history-list"></div>
+    </div>
+
+    <div class="search-section">
+      <div class="search-section-head">
+        <div class="search-section-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+          Trending
+        </div>
+      </div>
+      <div id="trendingList" class="search-trending-list"></div>
+    </div>
+  </div>
+
+  <div id="searchResultsView" style="display:none">
+    <button type="button" class="search-back-idle-btn" id="backToIdleBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      Kembali ke Pencarian
+    </button>
+    <div class="lb-tabs" id="feedSortTabs">
+      <button type="button" class="lb-tab-btn active" data-sort="new">Terbaru</button>
+      <button type="button" class="lb-tab-btn" data-sort="trending"><svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg> Trending</button>
+    </div>
+    <div class="tag-row" id="feedTagPills"></div>
+    <div id="feedList"></div>
+    <div id="feedPagination" class="feed-pagination"></div>
+  </div>
+
+</main>
+
+<div id="toast" class="toast"></div>
+
+<script src="js/config.js"></script>
+<script src="js/common.js"></script>
+<script src="js/feed.js"></script>
+<script src="js/search.js"></script>
+</body>
+</html>

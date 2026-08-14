@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Codery — Panduan</title>
+<link rel="preload" href="fonts/Poppins-Regular.woff" as="font" type="font/woff" crossorigin>
+<link rel="preload" href="fonts/Poppins-Bold.woff" as="font" type="font/woff" crossorigin>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">Codery</div>
+</header>
+
+<main class="app" id="app">
+  <div class="card">
+    <div class="hero-title" style="font-size:22px">Panduan Codery</div>
+    <div class="hero-rule"></div>
+    <div class="hero-sub" style="margin-bottom:0">Cara pakai platform share code Codery, dari nol.</div>
+  </div>
+
+  <div class="card">
+    <div class="dev-section-title">1. Daftar &amp; Masuk</div>
+    <div class="snippet-desc">Buat akun lewat halaman <a class="user-link" href="/auth">Masuk</a> pakai username &amp; password. Gak perlu email — cukup ingat username &amp; password kamu buat login lagi nanti.</div>
+  </div>
+
+  <div class="card">
+    <div class="dev-section-title">2. Upload Kode</div>
+    <div class="snippet-desc">
+      Tekan tombol <b>+</b> di bottom nav atau <b>Upload Kode</b> di beranda. Kamu bisa:
+    </div>
+    <ul class="panduan-list">
+      <li>Tempel kode langsung ke kolom <b>Kode</b>, atau upload file (cuma file kode kayak <code>.js</code>, <code>.py</code>, <code>.html</code>, dst — bukan gambar/zip).</li>
+      <li>Isi judul, nama file, dan pilih bahasa pemrogramannya (otomatis kedeteksi dari file yang diupload).</li>
+      <li>Tambahin deskripsi &amp; tag (maks 5) biar gampang ditemuin di pencarian.</li>
+      <li>Atur kode jadi <b>Publik</b> (tampil di feed) atau privat, dan opsional dikunci pakai PIN 4-8 digit.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <div class="dev-section-title">3. Feed, Like &amp; Simpan</div>
+    <div class="snippet-desc">Feed nampilin kode publik dari semua user, ada tab <b>Trending</b> (berdasarkan like &amp; views) sama <b>Terbaru</b>. Tekan ikon hati buat nyuka kode, ikon bookmark buat nyimpen ke daftar <b>Kode Tersimpan</b> di profil kamu.</div>
+  </div>
+
+  <div class="card">
+    <div class="dev-section-title">4. Follow &amp; Profil</div>
+    <div class="snippet-desc">Kunjungi profil user lain lewat avatar/nama mereka, lalu tekan <b>Follow</b>. Di profil kamu sendiri bisa edit bio, ganti foto profil/banner, dan lihat daftar followers/following serta semua kode yang kamu upload.</div>
+  </div>
+
+  <div class="card">
+    <div class="dev-section-title">5. Request Scrape</div>
+    <div class="snippet-desc">Kalau butuh script scraping buat situs tertentu tapi belum ada yang bikin, kirim permintaan lewat <a class="user-link" href="/request-scrape">Request Scrape</a> (URL target + deskripsi). User lain bisa "claim" request itu dan bikinin scriptnya, lalu diupload sebagai kode biasa dengan tag terkait.</div>
+  </div>
+
+  <div class="card">
+    <div class="dev-section-title">6. Laporkan Kode</div>
+    <div class="snippet-desc">Nemu kode yang vulgar, spam, plagiat, atau berisi malware? Buka detail kodenya, tekan ikon bendera <b>Laporkan</b>, pilih alasan, lalu kirim. Laporan bakal ditinjau tim moderasi.</div>
+  </div>
+
+  <div class="card">
+    <div class="dev-section-title">Butuh bantuan lain?</div>
+    <div class="snippet-desc">Kalau ada kendala di luar panduan ini, hubungi developer lewat profil <a class="user-link" href="/profile?u=reyzdesu">@reyzdesu</a>.</div>
+  </div>
+</main>
+
+<div id="toast" class="toast"></div>
+
+<script src="js/config.js"></script>
+<script src="js/common.js"></script>
+</body>
+</html>
