@@ -712,6 +712,18 @@ img.clickable:hover { outline: 2px solid rgba(99,102,241,.4); outline-offset: 1p
   color: #dcdcdc; font-family: inherit; font-size: inherit; white-space: pre; line-height: 1.7;
 }
 
+.code-export-watermark {
+  padding: 8px 14px;
+  background: #232323;
+  border-top: 1px solid #303030;
+  color: #8b8b8b;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  text-align: center;
+  letter-spacing: .3px;
+}
+.code-export-watermark b { color: #a5b4fc; }
+
 .code-window.fullscreen {
   position: fixed; inset: 0; z-index: 70;
   margin: 0; border-radius: 0; border: none;
