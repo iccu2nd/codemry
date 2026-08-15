@@ -723,9 +723,19 @@ function openStickerPicker() {
       // berstiker sekaligus di layar = banyak GIF gede didekode barengan,
       // jadi berat pas discroll. Versi kecil ini juga udah pas buat kotak
       // pratinjau stiker yang cuma ~150px.
+      //
+      // `loading="lazy"` SENGAJA DIBUANG di sini -- picker ini ada di
+      // dalam overlay yang scroll-nya sendiri (bukan scroll dokumen utama),
+      // dan di banyak WebView/browser Android lama deteksi "deket viewport"
+      // buat native lazy-load itu gak diitung dari scroll container custom
+      // kayak gini, jadinya gambar gak pernah keanggep "deket" & gak pernah
+      // ke-load -> muncul kotak putih kosong padahal datanya udah nyampe.
+      // Kita udah punya penjatahan sendiri lewat infinite scroll (baru
+      // narik data pas beneran deket bawah), jadi tetep ringan tanpa perlu
+      // native lazy-load di atasnya lagi.
       const fresh = items.filter(it => it.previewUrl && !seenUrls.has(it.previewUrl))
       fresh.forEach(it => seenUrls.add(it.previewUrl))
-      return fresh.map(it => `<button type="button" class="sticker-picker-item" data-url="${escapeHtml(it.previewUrl)}"><img src="${escapeHtml(it.previewUrl)}" loading="lazy" decoding="async" alt="stiker"></button>`).join('')
+      return fresh.map(it => `<button type="button" class="sticker-picker-item" data-url="${escapeHtml(it.previewUrl)}"><img src="${escapeHtml(it.previewUrl)}" decoding="async" alt="stiker"></button>`).join('')
     }
     function wireItems() {
       grid.querySelectorAll('.sticker-picker-item').forEach(btn => {
@@ -736,8 +746,8 @@ function openStickerPicker() {
         // kelewat lonjong (16:9/9:16) -- biar konsisten sama yang udah
         // difilter di server, tanpa nunggu render duluan baru ilang.
         const img = btn.querySelector('img')
-        if (img && !img.dataset.aspectChecked) {
-          img.dataset.aspectChecked = '1'
+        if (img && !img.dataset.wired) {
+          img.dataset.wired = '1'
           const check = () => {
             const w = img.naturalWidth, h = img.naturalHeight
             if (w && h) {
@@ -747,6 +757,10 @@ function openStickerPicker() {
           }
           if (img.complete) check()
           else img.addEventListener('load', check, { once: true })
+          // Kalau url-nya mati (hasil scrape kadang basi/keblokir), buang
+          // aja kartunya daripada nyisain kotak putih kosong nganggur di
+          // grid.
+          img.addEventListener('error', () => btn.remove(), { once: true })
         }
       })
     }
