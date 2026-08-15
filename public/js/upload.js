@@ -108,7 +108,7 @@ async function init() {
     // kalau user milih "All files" di file picker dan nyoba upload gambar/zip/dll,
     // soalnya file binary kalau dibaca via file.text() bakal jadi teks acak/rusak.
     if (!ext || !EXT_LANG.hasOwnProperty(ext)) {
-      toast('Cuma file kode yang bisa diupload (.js, .py, .html, dll) — bukan gambar/zip/file binary lain.')
+      toast('Cuma file kode yang bisa diupload (.js, .py, .html, dll) - bukan gambar/zip/file binary lain.')
       fileInput.value = ''
       return
     }

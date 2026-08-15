@@ -171,7 +171,7 @@ export const Views = {
         const ipHash = this.hashIp(ip)
         // Dedupe per-IP per-hari (bukan permanen selamanya). Sebelumnya sekali
         // sebuah IP kehitung, view snippet itu gak akan nambah lagi buat IP itu
-        // selama-lamanya — makanya kerasa "views-nya gak jalan" pas dicek ulang.
+        // selama-lamanya - makanya kerasa "views-nya gak jalan" pas dicek ulang.
         // Sekarang tiap IP bisa nambah 1 view per snippet per hari, jadi tetep
         // kebendung dari spam-refresh tapi beneran nambah kalau ada yang balik lagi.
         const dayBucket = Math.floor(Date.now() / 86400000)

@@ -223,14 +223,14 @@ function drawBackground(ctx) {
     }
 }
 
-function drawBrandHeader(ctx) {
+function drawBrandHeader(ctx, domain = 'codery.my.id') {
     ctx.textBaseline = 'alphabetic'
     ctx.fillStyle = INK
     ctx.font = '700 32px "Poppins Bold"'
     ctx.fillText('Codery', 56, 60)
     ctx.fillStyle = INDIGO
     ctx.font = '500 19px "Poppins Medium"'
-    const label = 'codery.sasane.eu.cc'
+    const label = domain
     ctx.fillText(label, W - 56 - ctx.measureText(label).width, 56)
 }
 
@@ -322,12 +322,12 @@ const LANG_LABEL = {
 
 // ---------- generators ----------
 
-export async function renderCodeOgImage(snippet, owner) {
+export async function renderCodeOgImage(snippet, owner, domain) {
     ensureFonts()
     const canvas = createCanvas(W, H)
     const ctx = canvas.getContext('2d')
     drawBackground(ctx)
-    drawBrandHeader(ctx)
+    drawBrandHeader(ctx, domain)
 
     const cardX = 56, cardY = 96, cardW = W - 112, maxCardH = H - 96 - 40
     const pad = 32
@@ -349,12 +349,12 @@ export async function renderCodeOgImage(snippet, owner) {
 
     // height needed above the terminal: top padding + title row + optional description + gap
     // the +46 (not +40) leaves clearance under the language badge pill, which extends
-    // ~28px below the title baseline — too tight a gap made long descriptions visually
+    // ~28px below the title baseline - too tight a gap made long descriptions visually
     // collide with the badge on the right edge of the card
     const headerBlockH = pad + 46 + (snippet.description ? 22 : 0) + 10
 
     // how tall the terminal box needs to be to show the whole snippet (or, for locked
-    // snippets, just enough room for the lock message) — then clamp to what actually
+    // snippets, just enough room for the lock message) - then clamp to what actually
     // fits in the card so very long snippets still crop instead of blowing up the card
     const idealTermH = isLocked
         ? termHeaderH + 100
@@ -466,12 +466,12 @@ export async function renderCodeOgImage(snippet, owner) {
     return canvas.toBuffer('image/png')
 }
 
-export async function renderProfileOgImage(user, stats) {
+export async function renderProfileOgImage(user, stats, domain) {
     ensureFonts()
     const canvas = createCanvas(W, H)
     const ctx = canvas.getContext('2d')
     drawBackground(ctx)
-    drawBrandHeader(ctx)
+    drawBrandHeader(ctx, domain)
 
     const cardX = 56, cardY = 96, cardW = W - 112, cardH = H - 96 - 40, radius = 22
     drawCardBase(ctx, cardX, cardY, cardW, cardH, radius)
@@ -553,7 +553,7 @@ export async function renderProfileOgImage(user, stats) {
     return canvas.toBuffer('image/png')
 }
 
-export async function renderFeedOgImage(stats) {
+export async function renderFeedOgImage(stats, domain) {
     ensureFonts()
     const canvas = createCanvas(W, H)
     const ctx = canvas.getContext('2d')
@@ -617,7 +617,7 @@ export async function renderFeedOgImage(stats) {
 
     ctx.fillStyle = INDIGO
     ctx.font = '500 20px "Poppins Medium"'
-    const label = 'codery.sasane.eu.cc'
+    const label = domain || 'codery.my.id'
     ctx.textAlign = 'center'
     ctx.fillText(label, cx, cardY + cardH + 44)
     ctx.textAlign = 'left'

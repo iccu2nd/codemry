@@ -187,14 +187,24 @@ function sendPng(res, buf) {
     res.send(buf)
 }
 
+// Auto-detect the domain currently serving the request, instead of a
+// hardcoded value. Uses the standard proxy header first (set by Vercel),
+// falling back to the raw Host header for local/other environments.
+function getRequestDomain(req) {
+    const forwardedHost = req.headers['x-forwarded-host']
+    const host = (Array.isArray(forwardedHost) ? forwardedHost[0] : forwardedHost) || req.headers.host
+    return host || 'codery.my.id'
+}
+
 app.get('/og/code/:shortId.png', async (req, res) => {
     try {
         const snippet = await Snippets.findByShort(req.params.shortId)
         if (!snippet || !snippet.isPublic) return res.status(404).end()
-        const buf = await withOgCache(`code:${snippet.shortId}`, OG_CACHE_MS, async () => {
+        const domain = getRequestDomain(req)
+        const buf = await withOgCache(`code:${snippet.shortId}:${domain}`, OG_CACHE_MS, async () => {
             const owner = await Users.find(snippet.ownerUsername)
             const [views, likes] = await Promise.all([Views.count(snippet.shortId), Likes.count(snippet.shortId)])
-            return renderCodeOgImage({ ...snippet, views, likes }, owner)
+            return renderCodeOgImage({ ...snippet, views, likes }, owner, domain)
         })
         sendPng(res, buf)
     } catch (e) {
@@ -207,7 +217,8 @@ app.get('/og/profile/:username.png', async (req, res) => {
     try {
         const user = await Users.find(req.params.username)
         if (!user) return res.status(404).end()
-        const buf = await withOgCache(`profile:${user.username}`, OG_CACHE_MS, async () => {
+        const domain = getRequestDomain(req)
+        const buf = await withOgCache(`profile:${user.username}:${domain}`, OG_CACHE_MS, async () => {
             const [followers, snippets] = await Promise.all([
                 Follows.followers(user.username),
                 Snippets.byUserLive(user.username)
@@ -223,7 +234,7 @@ app.get('/og/profile/:username.png', async (req, res) => {
                 likes: totalLikes,
                 badges: display.badges,
                 isDeveloper: display.isDeveloper
-            })
+            }, domain)
         })
         sendPng(res, buf)
     } catch (e) {
@@ -234,9 +245,10 @@ app.get('/og/profile/:username.png', async (req, res) => {
 
 app.get('/og/feed.png', async (req, res) => {
     try {
-        const buf = await withOgCache('feed', 30 * 60 * 1000, async () => {
+        const domain = getRequestDomain(req)
+        const buf = await withOgCache(`feed:${domain}`, 30 * 60 * 1000, async () => {
             const [snippets, users] = await Promise.all([Snippets.allLive(), Users.all()])
-            return renderFeedOgImage({ snippets: snippets.filter(s => s.isPublic).length, users: users.length })
+            return renderFeedOgImage({ snippets: snippets.filter(s => s.isPublic).length, users: users.length }, domain)
         })
         sendPng(res, buf)
     } catch (e) {
@@ -274,8 +286,8 @@ app.get('/code', async (req, res) => {
                 const desc = snippet.isLocked
                     ? 'Kode ini dikunci PIN.'
                     : (snippet.description || (snippet.preview || '').replace(/\n/g, '  ').slice(0, 150) || 'Lihat kode di Codery')
-                html = injectMeta(html, '<title>Codery — Lihat Kode</title>', {
-                    title: `${snippet.title || snippet.filename} — Codery`,
+                html = injectMeta(html, '<title>Codery - Lihat Kode</title>', {
+                    title: `${snippet.title || snippet.filename} - Codery`,
                     desc,
                     imgUrl: `${host}/og/code/${encodeURIComponent(shortId)}.png`,
                     pageUrl: `${host}/code?id=${encodeURIComponent(shortId)}`
@@ -295,8 +307,8 @@ app.get('/profile', async (req, res) => {
             if (user) {
                 const host = `${req.protocol}://${req.get('host')}`
                 const nickname = await ensureNickname(user)
-                html = injectMeta(html, '<title>Codery — Profil</title>', {
-                    title: `${nickname} (@${user.username}) — Codery`,
+                html = injectMeta(html, '<title>Codery - Profil</title>', {
+                    title: `${nickname} (@${user.username}) - Codery`,
                     desc: user.bio || `Lihat profil dan kode yang dibagikan ${nickname} di Codery.`,
                     imgUrl: `${host}/og/profile/${encodeURIComponent(user.username)}.png`,
                     pageUrl: `${host}/profile?u=${encodeURIComponent(user.username)}`
@@ -309,8 +321,8 @@ app.get('/profile', async (req, res) => {
 
 app.get('/', (req, res) => {
     const host = `${req.protocol}://${req.get('host')}`
-    const html = injectMeta(indexHtmlTemplate, '<title>Codery — Feed</title>', {
-        title: 'Codery — Code Sharing Platform',
+    const html = injectMeta(indexHtmlTemplate, '<title>Codery - Feed</title>', {
+        title: 'Codery - Code Sharing Platform',
         desc: 'Upload, bagikan, dan temukan potongan kode dari developer lain di Codery.',
         imgUrl: `${host}/og/feed.png`,
         pageUrl: `${host}/`

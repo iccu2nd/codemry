@@ -107,7 +107,7 @@ function renderDevReportsList(reports) {
       <div class="report-meta">
         Dilapor oleh <b><a class="user-link" href="${profileUrl(r.fromUsername)}">@${escapeHtml(r.fromUsername)}</a></b> · ${timeAgo(r.createdAt)}<br>
         Kode: ${r.snippetExists ? `<b><a class="user-link" href="${codeUrl(r.shortId)}">${escapeHtml(r.snippetTitle)}</a></b>` : `<b>${escapeHtml(r.snippetTitle)}</b> <span style="color:#b91c1c">(sudah dihapus)</span>`}
-        — pemilik <b><a class="user-link" href="${profileUrl(r.ownerUsername)}">@${escapeHtml(r.ownerUsername)}</a></b>
+        - pemilik <b><a class="user-link" href="${profileUrl(r.ownerUsername)}">@${escapeHtml(r.ownerUsername)}</a></b>
       </div>
       ${r.detail ? `<div class="report-detail-box">"${escapeHtml(r.detail)}"</div>` : ''}
       ${r.status === 'pending' ? `
