@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { Users, Follows, Snippets, Views, Likes, Bookmarks, avatarUrl, bannerUrl, codeBgUrl, ensureNickname, renameUsername, ensureBadges, readBadges, badgeDisplay, stripSnippetSecrets, lockedSnippetStub, Notifications } from '../db.js'
+import { Users, Follows, Snippets, Views, Likes, Bookmarks, avatarUrl, bannerUrl, ensureNickname, renameUsername, ensureBadges, readBadges, badgeDisplay, stripSnippetSecrets, lockedSnippetStub, Notifications } from '../db.js'
 import { upsertAsset } from '../github.js'
 
 const router = Router()
@@ -83,33 +83,6 @@ router.post('/me/banner', async (req, res) => {
     }
 })
 
-router.post('/me/code-background', async (req, res) => {
-    if (!req.username) return res.status(401).json({ error: 'login dulu' })
-    const { imageBase64, ext } = req.body
-    if (!imageBase64) return res.status(400).json({ error: 'gambar wajib' })
-    const safeExt = ALLOWED_IMAGE_EXT.has(String(ext || '').toLowerCase()) ? String(ext).toLowerCase() : 'jpg'
-    try {
-        const path = `code-backgrounds/${req.username}.${safeExt}`
-        await upsertAsset(path, imageBase64, `update code background ${req.username}`)
-        await Users.update(req.username, { codeBgPath: path })
-        res.json({ codeBg: `/code-bg/${req.username}?t=${Date.now()}` })
-    } catch (e) {
-        res.status(500).json({ error: e.response?.data?.message || e.message })
-    }
-})
-
-// Hapus latar belakang kode -- balikin ke tampilan default (#1e1e1e polos)
-// tanpa perlu upload gambar baru buat "batalin".
-router.delete('/me/code-background', async (req, res) => {
-    if (!req.username) return res.status(401).json({ error: 'login dulu' })
-    try {
-        await Users.update(req.username, { codeBgPath: null })
-        res.json({ ok: true })
-    } catch (e) {
-        res.status(500).json({ error: e.response?.data?.message || e.message })
-    }
-})
-
 router.get('/leaderboard', async (req, res) => {
     try {
         const [users, snippets, follows, likes] = await Promise.all([
@@ -188,7 +161,6 @@ router.get('/:username', async (req, res) => {
         bio: user.bio || '',
         avatar: avatarUrl(user),
         banner: bannerUrl(user),
-        codeBg: codeBgUrl(user),
         createdAt: user.createdAt,
         followersCount: followers.length,
         followingCount: following.length,

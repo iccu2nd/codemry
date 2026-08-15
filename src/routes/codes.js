@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import crypto from 'crypto'
-import { Snippets, Users, Views, Likes, Comments, Bookmarks, Notifications, Reports, Follows, REPORT_REASONS, DEV_USERNAME, avatarUrl, codeBgUrl, readBadges, badgeDisplay, hashPin, verifyPin, stripSnippetSecrets, lockedSnippetStub, isDeveloperUsername } from '../db.js'
+import { Snippets, Users, Views, Likes, Comments, Bookmarks, Notifications, Reports, Follows, REPORT_REASONS, DEV_USERNAME, avatarUrl, readBadges, badgeDisplay, hashPin, verifyPin, stripSnippetSecrets, lockedSnippetStub, isDeveloperUsername } from '../db.js'
 import { createGist, getGist, editGist, deleteGist, listGists } from '../github.js'
 import { createRateLimiter } from '../rate-limit.js'
 
@@ -257,7 +257,6 @@ router.get('/:shortId', async (req, res) => {
     const ownerDisplay = badgeDisplay(owner, owner ? readBadges(owner) : [])
     const ownerAvatar = owner ? avatarUrl(owner) : null
     const ownerNickname = owner ? (owner.nickname || owner.username) : null
-    const ownerCodeBg = owner ? codeBgUrl(owner) : null
     let forkedFrom = null
     if (snippet.forkedFrom) {
         const origOwner = await Users.find(snippet.forkedFrom.ownerUsername)
@@ -278,7 +277,7 @@ router.get('/:shortId', async (req, res) => {
         return res.json({
             ...lockedSnippetStub(snippet), tags: snippet.tags || [], content: null,
             views, likes, likedByMe, savedByMe, forkedFrom,
-            ownerBadges: ownerDisplay.badges, ownerAvatar, ownerNickname, ownerCodeBg, ownerRole: ownerDisplay.role, ownerIsDeveloper: ownerDisplay.isDeveloper
+            ownerBadges: ownerDisplay.badges, ownerAvatar, ownerNickname, ownerRole: ownerDisplay.role, ownerIsDeveloper: ownerDisplay.isDeveloper
         })
     }
 
@@ -297,7 +296,7 @@ router.get('/:shortId', async (req, res) => {
         res.json({
             ...stripSnippetSecrets(snippet), tags: snippet.tags || [], content: file?.content || '', views, likes, likedByMe, savedByMe, forkedFrom,
             locked: !!snippet.isLocked,
-            ownerBadges: ownerDisplay.badges, ownerAvatar, ownerNickname, ownerCodeBg, ownerRole: ownerDisplay.role, ownerIsDeveloper: ownerDisplay.isDeveloper
+            ownerBadges: ownerDisplay.badges, ownerAvatar, ownerNickname, ownerRole: ownerDisplay.role, ownerIsDeveloper: ownerDisplay.isDeveloper
         })
     } catch (e) {
         if (e.response?.status === 404) return res.status(404).json({ error: 'kode ini sudah dihapus dari gist' })

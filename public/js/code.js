@@ -74,7 +74,6 @@ function renderUnlockedDetail(app, shortId, s) {
           <button class="action-item" id="shareBtn">${shareIconSvg()}<span>Share</span></button>
           ${!me || me.username !== s.ownerUsername ? `<button class="action-item" id="forkBtn">${forkIconSvg()}<span>Fork</span></button>` : ''}
           <button class="action-item" id="downloadBtn">${downloadIconSvg()}<span>Download</span></button>
-          <button class="action-item" id="downloadImgBtn">${imageIconSvg()}<span>Gambar</span></button>
           <button class="action-item" id="qrBtn">${qrIconSvg()}<span>QR Code</span></button>
           ${!me || me.username !== s.ownerUsername ? `<button class="action-item" id="reportBtn">${flagIconSvg()}<span>Laporkan</span></button>` : ''}
         </div>
@@ -136,7 +135,7 @@ function renderUnlockedDetail(app, shortId, s) {
             <button class="btn btn-primary" id="saveEditBtn">Simpan</button>
           </div>
         </div>` : ''}
-        <div class="code-window" id="codeWindow" ${s.ownerCodeBg ? `style="background-image:url('${escapeHtml(s.ownerCodeBg)}')"` : ''}>
+        <div class="code-window" id="codeWindow">
           <div class="code-window-bar">
             <span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>
             <span class="code-window-filename">${escapeHtml(s.filename)}</span>
@@ -176,12 +175,6 @@ function renderUnlockedDetail(app, shortId, s) {
       URL.revokeObjectURL(url)
     }
 
-    const downloadImgBtn = document.getElementById('downloadImgBtn')
-    if (downloadImgBtn) downloadImgBtn.onclick = () => {
-      if (downloadImgBtn.dataset.busy) return
-      downloadImgBtn.dataset.busy = '1'
-      exportCodeAsImage(s).finally(() => { delete downloadImgBtn.dataset.busy })
-    }
 
     const qrBtn = document.getElementById('qrBtn')
     if (qrBtn) qrBtn.onclick = () => {
@@ -680,79 +673,4 @@ async function setupComments(shortId, ownerUsername) {
 }
 
 renderCodeDetail(refreshAuth())
-
-function imageIconSvg() {
-  return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>`
-}
-
-// Library html2canvas cuma dimuat pas beneran dibutuhin (baru diklik tombol
-// "Gambar"), bukan langsung pas halaman dibuka -- biar gak nambah beban
-// loading awal halaman kode buat orang yang gak bakal pernah pake fitur ini.
-let html2canvasPromise = null
-function ensureHtml2Canvas() {
-  if (window.html2canvas) return Promise.resolve()
-  if (html2canvasPromise) return html2canvasPromise
-  html2canvasPromise = new Promise((resolve, reject) => {
-    const script = document.createElement('script')
-    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js'
-    script.onload = () => resolve()
-    script.onerror = () => { html2canvasPromise = null; reject(new Error('Gagal memuat library gambar, coba lagi')) }
-    document.head.appendChild(script)
-  })
-  return html2canvasPromise
-}
-
-// Export tampilan code-window jadi file PNG (ala carbon.now.sh) -- dibikin
-// dengan CLONE elemen aslinya (bukan nyaptur elemen live di halaman)
-// supaya: (1) kontrol interaktif yang gak relevan (tombol zoom, tombol
-// perbesar) bisa dibuang dulu dari hasil gambar, (2) kode yang barisnya
-// panjang bisa dipaksa render FULL WIDTH (gak kepotong sama scroll
-// horizontal kayak tampilan normal di halaman), dan (3) elemen aslinya di
-// halaman gak keganggu/berkedip sama sekali selama proses render gambar.
-// Clone-nya ditaruh off-screen (position:fixed, geser jauh ke kiri) --
-// tetep di-render browser (makanya bisa ditangkep html2canvas) tapi gak
-// keliatan sama user.
-async function exportCodeAsImage(s) {
-  const original = document.getElementById('codeWindow')
-  if (!original) return
-  let clone = null
-  try {
-    toast('Menyiapkan gambar...')
-    await ensureHtml2Canvas()
-    clone = original.cloneNode(true)
-    clone.removeAttribute('id')
-    clone.classList.remove('fullscreen')
-    clone.querySelectorAll('.zoom-controls, .code-expand-btn').forEach(el => el.remove())
-    const codeViewEl = clone.querySelector('.code-view')
-    if (codeViewEl) { codeViewEl.style.overflow = 'visible'; codeViewEl.style.width = 'max-content' }
-    Object.assign(clone.style, {
-      overflow: 'visible', width: 'max-content', minWidth: '480px', margin: '0',
-      position: 'fixed', top: '0', left: '-99999px'
-    })
-    const watermark = document.createElement('div')
-    watermark.className = 'code-export-watermark'
-    watermark.innerHTML = `Dibagikan lewat <b>Codery</b> &middot; @${escapeHtml(s.ownerUsername)}`
-    clone.appendChild(watermark)
-    document.body.appendChild(clone)
-
-    const canvas = await html2canvas(clone, { backgroundColor: null, scale: 2, useCORS: true })
-    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'))
-    if (!blob) throw new Error('Gagal membuat gambar')
-
-    const baseName = (s.filename || s.shortId).replace(/\.[^./]+$/, '')
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `${baseName}-codery.png`
-    document.body.appendChild(a)
-    a.click()
-    a.remove()
-    URL.revokeObjectURL(url)
-    toast('Gambar kode berhasil diunduh!')
-  } catch (e) {
-    toast(e.message || 'Gagal membuat gambar')
-  } finally {
-    if (clone) clone.remove()
-  }
-}
 
