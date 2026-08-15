@@ -717,6 +717,24 @@ function openStickerPicker() {
     function wireItems() {
       grid.querySelectorAll('.sticker-picker-item').forEach(btn => {
         btn.onclick = () => { const url = btn.dataset.url; cleanup(); resolve(url) }
+        // Cadangan buat sumber yang gak ngasih info dimensi dari server
+        // (hasil scrape polos regex, gak lewat JSON __NEXT_DATA__): begitu
+        // gambar aslinya kebaca ukurannya, buang dari grid kalau bentuknya
+        // kelewat lonjong (16:9/9:16) -- biar konsisten sama yang udah
+        // difilter di server, tanpa nunggu render duluan baru ilang.
+        const img = btn.querySelector('img')
+        if (img && !img.dataset.aspectChecked) {
+          img.dataset.aspectChecked = '1'
+          const check = () => {
+            const w = img.naturalWidth, h = img.naturalHeight
+            if (w && h) {
+              const ratio = w / h
+              if (ratio < 0.72 || ratio > 1.4) btn.remove()
+            }
+          }
+          if (img.complete) check()
+          else img.addEventListener('load', check, { once: true })
+        }
       })
     }
 
