@@ -693,7 +693,7 @@ function openStickerPicker() {
         </div>
         <div class="sticker-picker-label" id="stickerPickerLabel">Rekomendasi</div>
         <div class="sticker-picker-grid" id="stickerPickerGrid"><div class="empty-state-sm">Memuat...</div></div>
-        <button type="button" class="sticker-picker-more" id="stickerPickerMore" style="display:none">Muat lagi</button>
+        <div class="sticker-picker-more" id="stickerPickerMore" style="display:none">Memuat lagi...</div>
       </div>
     `
     document.body.appendChild(overlay)
@@ -705,6 +705,14 @@ function openStickerPicker() {
     let query = ''
     let nextPos = ''
     let loading = false
+    // Nyimpen url yang UDAH pernah ditampilin (across semua halaman yang
+    // udah dimuat buat query yang sama) -- backend (scrape Tenor/GIPHY
+    // tanpa API key resmi) kadang gak punya pagination beneran & balikin
+    // hasil yang tumpang-tindih/sama persis lagi pas "muat lagi" ditarik.
+    // Dedupe di sisi client ini jaring pengaman terakhir biar stiker yang
+    // sama gak muncul dobel di grid, apa pun yang dikirim server. Direset
+    // tiap kali query ganti/reset load.
+    let seenUrls = new Set()
 
     function cleanup() { overlay.remove() }
 
@@ -715,7 +723,9 @@ function openStickerPicker() {
       // berstiker sekaligus di layar = banyak GIF gede didekode barengan,
       // jadi berat pas discroll. Versi kecil ini juga udah pas buat kotak
       // pratinjau stiker yang cuma ~150px.
-      return items.map(it => `<button type="button" class="sticker-picker-item" data-url="${escapeHtml(it.previewUrl)}"><img src="${escapeHtml(it.previewUrl)}" loading="lazy" decoding="async" alt="stiker"></button>`).join('')
+      const fresh = items.filter(it => it.previewUrl && !seenUrls.has(it.previewUrl))
+      fresh.forEach(it => seenUrls.add(it.previewUrl))
+      return fresh.map(it => `<button type="button" class="sticker-picker-item" data-url="${escapeHtml(it.previewUrl)}"><img src="${escapeHtml(it.previewUrl)}" loading="lazy" decoding="async" alt="stiker"></button>`).join('')
     }
     function wireItems() {
       grid.querySelectorAll('.sticker-picker-item').forEach(btn => {
@@ -742,24 +752,48 @@ function openStickerPicker() {
     }
 
     async function load(reset) {
-      if (loading) return
+      if (loading || (!reset && !nextPos)) return
       loading = true
-      if (reset) { grid.innerHTML = `<div class="empty-state-sm">Memuat...</div>`; nextPos = ''; label.textContent = query ? `Hasil untuk "${query}"` : 'Rekomendasi' }
+      if (reset) {
+        grid.innerHTML = `<div class="empty-state-sm">Memuat...</div>`
+        nextPos = ''
+        seenUrls = new Set()
+        label.textContent = query ? `Hasil untuk "${query}"` : 'Rekomendasi'
+      } else {
+        moreBtn.style.display = 'block'
+      }
       try {
-        const path = query
-          ? `/tenor/search?q=${encodeURIComponent(query)}${nextPos ? `&pos=${encodeURIComponent(nextPos)}` : ''}`
-          : `/tenor/featured${nextPos ? `?pos=${encodeURIComponent(nextPos)}` : ''}`
-        const r = await api(path)
-        nextPos = r.next || ''
-        grid.innerHTML = reset ? itemsHtml(r.results) : grid.innerHTML + itemsHtml(r.results)
-        if (!r.results.length && reset) grid.innerHTML = `<div class="empty-state-sm">Gak ada hasil.</div>`
+        let html = ''
+        do {
+          const path = query
+            ? `/tenor/search?q=${encodeURIComponent(query)}${nextPos ? `&pos=${encodeURIComponent(nextPos)}` : ''}`
+            : `/tenor/featured${nextPos ? `?pos=${encodeURIComponent(nextPos)}` : ''}`
+          const r = await api(path)
+          html = itemsHtml(r.results)
+          nextPos = r.next || ''
+          // Kalau server masih ngaku ada halaman berikutnya tapi ISI
+          // halaman ini ternyata abis kedeteksi dobel semua (html kosong
+          // setelah difilter di seenUrls), langsung tarik halaman
+          // berikutnya di loop yang sama -- biar infinite scroll gak
+          // kerasa "macet" nunggu user scroll ulang buat nyoba lagi.
+        } while (!html && nextPos && !reset)
+        grid.innerHTML = reset ? (html || `<div class="empty-state-sm">Gak ada hasil.</div>`) : grid.innerHTML + html
         wireItems()
-        moreBtn.style.display = nextPos ? 'block' : 'none'
       } catch (e) {
         if (reset) grid.innerHTML = `<div class="empty-state-sm">${escapeHtml(e.message)}</div>`
-        moreBtn.style.display = 'none'
-      } finally { loading = false }
+        nextPos = ''
+      } finally { loading = false; moreBtn.style.display = 'none' }
     }
+
+    // Infinite scroll: begitu user nyaris nyampe bawah grid, otomatis
+    // narik halaman berikutnya sendiri -- gak ada lagi tombol "Muat lagi"
+    // yang perlu dipencet manual. `stickerPickerMore` sekarang cuma
+    // indikator pasif "Memuat lagi..." yang nongol pas lagi ngambil data
+    // di background.
+    grid.addEventListener('scroll', () => {
+      if (loading || !nextPos) return
+      if (grid.scrollTop + grid.clientHeight >= grid.scrollHeight - 400) load(false)
+    })
 
     let searchTimer = null
     searchInput.addEventListener('input', () => {
@@ -769,7 +803,6 @@ function openStickerPicker() {
         load(true)
       }, 400)
     })
-    moreBtn.onclick = () => load(false)
     overlay.querySelector('.sticker-picker-close').onclick = () => { cleanup(); resolve(null) }
     overlay.addEventListener('click', (e) => { if (e.target === overlay) { cleanup(); resolve(null) } })
 
