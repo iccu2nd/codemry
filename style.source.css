@@ -684,18 +684,26 @@ img.clickable:hover { outline: 2px solid rgba(99,102,241,.4); outline-offset: 1p
   overflow: hidden;
   border: 1px solid #3a3a3a;
   background: #1e1e1e;
+  background-size: cover;
+  background-position: center;
   margin: 18px 0;
   transition: all .25s cubic-bezier(.2,.9,.3,1.1);
   box-shadow: 0 4px 12px rgba(0,0,0,.15);
 }
+/* Latar belakang kode (opsional, di-set lewat Edit Profil) dipasang lewat
+   inline style background-image di elemen .code-window ini (lihat code.js).
+   .code-view di bawah dibikin agak transparan (bukan solid #1e1e1e lagi)
+   biar gambarnya keliatan nembus di belakang teks kode -- tapi tetep
+   segelap #1e1e1e kalau gak ada gambar (background .code-window sendiri
+   udah solid #1e1e1e), jadi tampilan default gak berubah sama sekali. */
 .code-window::after {
   content: '';
   position: absolute; top: 41px; right: 0; bottom: 0; width: 28px;
-  background: linear-gradient(90deg, rgba(30,30,30,0), #1e1e1e 75%);
+  background: linear-gradient(90deg, rgba(30,30,30,0), rgba(30,30,30,.9) 75%);
   pointer-events: none;
 }
 .code-view {
-  background: #1e1e1e;
+  background: rgba(30,30,30,.9);
   font-family: 'JetBrains Mono', monospace; font-size: 13px; overflow-x: auto;
   white-space: pre;
 }

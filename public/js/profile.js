@@ -55,6 +55,15 @@ async function renderProfile() {
                  <input type="checkbox" id="hideBadgesInput" ${p.hideBadges ? 'checked' : ''}>
                  Sembunyikan lencana (termasuk tag Developer & role)
                </label>
+               <div class="field">
+                 <label>Latar Belakang Kode</label>
+                 <div class="field-hint">Gambar ini dipajang di belakang tampilan kode kamu pas orang buka halaman detail kode.</div>
+                 <div class="btn-row" style="margin-top:8px">
+                   <button type="button" class="btn btn-white" id="codeBgBtn">${p.codeBg ? 'Ganti Gambar' : 'Pilih Gambar'}</button>
+                   ${p.codeBg ? `<button type="button" class="btn btn-white" id="codeBgRemoveBtn">Hapus</button>` : ''}
+                 </div>
+                 <input type="file" id="codeBgInput" accept="image/*" style="display:none">
+               </div>
                <button class="btn btn-primary btn-block" id="saveBioBtn">Simpan</button>
              </div>`
           : `<button class="btn ${p.isFollowing ? 'btn-white' : 'btn-primary'} btn-block" id="followBtn" style="margin-top:14px">${p.isFollowing ? 'Following' : 'Follow'}</button>`}
@@ -137,6 +146,32 @@ async function renderProfile() {
         } catch (e) { if (e.message !== 'cancelled') toast(e.message) }
         finally { bannerInput.value = '' }
       }
+    }
+
+    const codeBgBtn = document.getElementById('codeBgBtn')
+    const codeBgRemoveBtn = document.getElementById('codeBgRemoveBtn')
+    const codeBgInput = document.getElementById('codeBgInput')
+    if (codeBgBtn) codeBgBtn.onclick = () => codeBgInput.click()
+    if (codeBgInput) {
+      codeBgInput.onchange = async () => {
+        const file = codeBgInput.files[0]
+        if (!file) return
+        try {
+          const base64 = await openImageCropper(file, { outW: 960, outH: 540, shape: 'rect' })
+          toast('Mengupload latar belakang...')
+          await api('/users/me/code-background', { method: 'POST', body: JSON.stringify({ imageBase64: base64, ext: 'jpg' }) })
+          toast('Latar belakang kode diperbarui!')
+          renderProfile()
+        } catch (e) { if (e.message !== 'cancelled') toast(e.message) }
+        finally { codeBgInput.value = '' }
+      }
+    }
+    if (codeBgRemoveBtn) codeBgRemoveBtn.onclick = async () => {
+      try {
+        await api('/users/me/code-background', { method: 'DELETE' })
+        toast('Latar belakang kode dihapus.')
+        renderProfile()
+      } catch (e) { toast(e.message) }
     }
 
     const signOutBtn = document.getElementById('signOutBtn')

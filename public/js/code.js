@@ -135,7 +135,7 @@ function renderUnlockedDetail(app, shortId, s) {
             <button class="btn btn-primary" id="saveEditBtn">Simpan</button>
           </div>
         </div>` : ''}
-        <div class="code-window" id="codeWindow">
+        <div class="code-window" id="codeWindow" ${s.ownerCodeBg ? `style="background-image:url('${escapeHtml(s.ownerCodeBg)}')"` : ''}>
           <div class="code-window-bar">
             <span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>
             <span class="code-window-filename">${escapeHtml(s.filename)}</span>

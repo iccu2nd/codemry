@@ -12,6 +12,16 @@ export function bannerUrl(user) {
     return `/banner/${encodeURIComponent(user.username)}`
 }
 
+// Latar belakang kode: gambar yang di-set user sendiri lewat Edit Profil,
+// dipajang di belakang tampilan kode dia (code-window) pas orang buka
+// halaman detail kodenya. Sama polanya kayak avatar/banner (disimpen di
+// GitHub assets repo lewat upsertAsset, path-nya doang yang disimpen di
+// user object).
+export function codeBgUrl(user) {
+    if (!user || !user.codeBgPath) return null
+    return `/code-bg/${encodeURIComponent(user.username)}`
+}
+
 async function update(path, mutator, message) {
     for (let i = 0; i < 3; i++) {
         const { data, sha } = await readDbFile(path)

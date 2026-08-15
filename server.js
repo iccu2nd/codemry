@@ -154,6 +154,24 @@ app.get('/banner/:username', async (req, res) => {
     }
 })
 
+app.get('/code-bg/:username', async (req, res) => {
+    try {
+        const user = await Users.find(req.params.username)
+        if (!user || !user.codeBgPath) return res.status(404).send('Latar belakang tidak ditemukan')
+        const buf = await getAssetContent(user.codeBgPath)
+        const ext = user.codeBgPath.split('.').pop().toLowerCase()
+        const contentType = ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg'
+        const etag = `"${crypto.createHash('sha1').update(buf).digest('hex')}"`
+        res.set('Cache-Control', 'no-cache')
+        res.set('ETag', etag)
+        if (req.headers['if-none-match'] === etag) return res.status(304).end()
+        res.set('Content-Type', contentType)
+        res.send(buf)
+    } catch (e) {
+        res.status(404).send('Latar belakang tidak ditemukan')
+    }
+})
+
 app.get('/raw/:shortId', async (req, res) => {
     const snippet = await Snippets.findByShort(req.params.shortId)
     if (!snippet) return res.status(404).send('Kode tidak ditemukan')
