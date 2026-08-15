@@ -14,14 +14,22 @@ function requireAuth(req, res, next) {
     next()
 }
 
-// Cuma URL dari domain CDN Tenor yang boleh disimpan sebagai stiker komentar --
-// mencegah orang nyelundupin URL sembarangan (tracking pixel, gambar
-// ngajak/phishing, dll) lewat field ini.
+// Cuma URL dari domain CDN Tenor ATAU Giphy yang boleh disimpan sebagai stiker
+// komentar -- mencegah orang nyelundupin URL sembarangan (tracking pixel,
+// gambar ngajak/phishing, dll) lewat field ini.
+//
+// BUG SEBELUMNYA: cuma tenor.com yang diloloskan, padahal picker stiker
+// (lihat tenor.js + giphy.js) sekarang narik dari DUA sumber yang
+// diselang-seling, dan GIPHY dijadiin sumber UTAMA-nya. Jadi tiap kali user
+// milih stiker yang kebetulan dari Giphy (media*.giphy.com), request
+// simpan komentarnya ditolak diam-diam sama validasi ini (400 "stiker
+// tidak valid") -- makanya kerasa kayak "komentar stiker ilang": user udah
+// pencet kirim, tapi komentarnya emang gak pernah kesimpen sama sekali.
 function isValidStickerUrl(url) {
     if (typeof url !== 'string' || !url) return false
     try {
         const u = new URL(url)
-        return u.protocol === 'https:' && /(^|\.)tenor\.com$/.test(u.hostname)
+        return u.protocol === 'https:' && /(^|\.)(tenor|giphy)\.com$/.test(u.hostname)
     } catch { return false }
 }
 
