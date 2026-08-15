@@ -685,7 +685,10 @@ function openStickerPicker() {
     overlay.innerHTML = `
       <div class="sticker-picker-panel">
         <div class="sticker-picker-topbar">
-          <input type="text" class="sticker-picker-search" placeholder="Cari stiker/GIF..." autocomplete="off">
+          <div class="sticker-picker-search-wrap">
+            <span class="sticker-picker-search-icon">${searchIconSvg()}</span>
+            <input type="text" class="sticker-picker-search" placeholder="Cari stiker/GIF..." autocomplete="off">
+          </div>
           <button type="button" class="sticker-picker-close" aria-label="Tutup">${closeIconSvg()}</button>
         </div>
         <div class="sticker-picker-label" id="stickerPickerLabel">Rekomendasi</div>

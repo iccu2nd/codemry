@@ -905,19 +905,24 @@ img.clickable:hover { outline: 2px solid rgba(99,102,241,.4); outline-offset: 1p
   color: #6b7280; font-size: 14px; text-align: center; margin-bottom: 16px;
 }
 .comment-form-locked a { color: #000; font-weight: 600; text-decoration: none; }
-/* Kotak komposer komentar: satu wadah pil (radius penuh, tanpa garis abu
-   di pinggir) yang membungkus tombol stiker (paling kiri) + textarea,
-   jadi ikon stiker nempel di DALAM kotak, bukan tombol bulat terpisah
-   di luar kotak kayak sebelumnya. */
+/* Kotak komposer komentar: satu wadah bulat-sudut (BUKAN radius penuh
+   999px) yang membungkus tombol stiker (paling kiri) + textarea, jadi
+   ikon stiker nempel di DALAM kotak, bukan tombol bulat terpisah di luar
+   kotak kayak sebelumnya. Radius penuh (999px) sengaja DIHINDARI di sini:
+   kotak ini bisa tumbuh tinggi (autoGrow saat komentar multi-baris), dan
+   radius 999px pada kotak yang makin tinggi bikin bentuknya melar jadi
+   oval/kapsul aneh, bukan gelembung chat yang rapi. Radius tetap 20px
+   ini konsisten di segala tinggi, sama kayak gelembung pesan di
+   WhatsApp/Messenger. */
 .comment-input-box {
   flex: 1; display: flex; align-items: flex-end; gap: 2px;
-  background: #f9fafc; border-radius: 999px; padding: 5px 6px 5px 5px;
+  background: #f9fafc; border-radius: 20px; padding: 5px 6px 5px 5px;
   transition: background .12s ease, box-shadow .12s ease;
 }
 .comment-input-box:focus-within { background: #fff; box-shadow: 0 0 0 2px #a5b4fc inset; }
 .comment-input {
   flex: 1; resize: none; max-height: 120px; min-height: 30px;
-  border: none; border-radius: 999px;
+  border: none; border-radius: 16px;
   padding: 6px 8px; font-family: inherit; font-size: 14.5px; line-height: 1.5;
   background: transparent; color: #1f2430;
 }
@@ -1152,47 +1157,73 @@ img.clickable:hover { outline: 2px solid rgba(99,102,241,.4); outline-offset: 1p
   display: flex; align-items: center; gap: 10px;
   padding: 12px 14px 10px;
 }
-.sticker-picker-search {
+/* Kotak pencarian dibikin senada sama `.search-input-wrap` yang udah
+   dipakai di halaman Search: isian abu-abu solid + border 2px TRANSPARAN
+   (bukan garis abu-abu 1px kelihatan kayak sebelumnya), baru kelihatan
+   ungu pas fokus. Ikon kaca pembesar ditaruh di dalam kotak biar jelas
+   fungsinya, bukan cuma kotak putih kosong generik. */
+.sticker-picker-search-wrap {
   flex: 1; min-width: 0;
-  border: 1px solid #e5e7eb; border-radius: 12px;
-  padding: 10px 14px;
-  font-family: inherit; font-size: 14.5px;
-  background: #f7f7fb;
+  display: flex; align-items: center; gap: 8px;
+  background: #f3f4f9; border: 2px solid transparent; border-radius: 14px;
+  padding: 0 12px; height: 44px;
+  transition: border-color .12s ease, background .12s ease;
 }
+.sticker-picker-search-wrap:focus-within { border-color: #a5b4fc; background: #fff; }
+.sticker-picker-search-icon { flex-shrink: 0; width: 17px; height: 17px; color: #8b8fa3; display: flex; }
+.sticker-picker-search-icon svg { width: 17px; height: 17px; }
+.sticker-picker-search {
+  flex: 1; min-width: 0; height: 100%;
+  border: none; background: transparent;
+  font-family: inherit; font-size: 14.5px; font-weight: 500; color: #1e1b4b;
+  padding: 0;
+}
+.sticker-picker-search:focus { outline: none; }
+.sticker-picker-search::placeholder { color: #9aa0b4; font-weight: 500; }
 .sticker-picker-close {
   flex-shrink: 0;
-  width: 32px; height: 32px; border-radius: 50%;
+  width: 34px; height: 34px; border-radius: 50%;
   border: none; background: #f1f2f7; color: #4b5361;
   display: flex; align-items: center; justify-content: center;
   cursor: pointer;
 }
+/* Label section: nyamain sama gaya judul section di tempat lain (misal
+   `.search-section-title`) -- teks case normal, tebal, warna gelap.
+   BUKAN eyebrow abu-abu huruf besar semua + letter-spacing, karena pola
+   itu yang bikin kesan "template AI" instan. */
 .sticker-picker-label {
-  padding: 0 14px 8px;
-  font-size: 12.5px; font-weight: 700; color: #8b8fa3;
-  text-transform: uppercase; letter-spacing: .03em;
+  padding: 6px 14px 10px;
+  font-size: 14.5px; font-weight: 800; color: #1e1b4b;
 }
+/* Grid stiker: CSS grid biasa (bukan kolom masonry rapat), 3 kolom biar
+   tiap stiker cukup gede buat kelihatan jelas, dengan jarak (gap) yang
+   generus antar tile -- bukan numpuk nempel kayak sebelumnya. Tiap tile
+   dibungkus kartu bulat-sudut + bayangan tipis biar tiap stiker kebaca
+   sebagai item terpisah, bukan mozaik nyambung tanpa batas. */
 .sticker-picker-grid {
   flex: 1; overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  column-count: 3; column-gap: 6px;
-  padding: 0 14px 10px;
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+  padding: 4px 14px 14px;
+  align-content: start;
 }
 .sticker-picker-item {
-  display: block; width: 100%;
-  border: none; border-radius: 8px; overflow: hidden;
+  display: block; width: 100%; aspect-ratio: 1 / 1;
+  border: none; border-radius: 14px; overflow: hidden;
   background: #f1f2f7; padding: 0; cursor: pointer;
-  margin: 0 0 6px; break-inside: avoid;
-  transition: transform .1s ease;
+  margin: 0;
+  box-shadow: 0 2px 8px rgba(15,15,20,.08);
+  transition: transform .1s ease, box-shadow .12s ease;
 }
-.sticker-picker-item:active { transform: scale(.95); }
-.sticker-picker-item img { width: 100%; height: auto; display: block; }
+.sticker-picker-item:active { transform: scale(.95); box-shadow: 0 1px 4px rgba(15,15,20,.1); }
+.sticker-picker-item img { width: 100%; height: 100%; display: block; object-fit: cover; }
 .sticker-picker-more {
-  margin: 0 14px 14px;
-  border: 1px solid #e5e7eb; border-radius: 12px;
-  background: #fff; padding: 10px; font-family: inherit;
-  font-weight: 600; font-size: 13.5px; color: #4b5361; cursor: pointer;
+  margin: 4px 14px 14px;
+  border: none; border-radius: 999px;
+  background: #eef0fb; color: #4338ca; padding: 11px; font-family: inherit;
+  font-weight: 700; font-size: 13.5px; cursor: pointer;
 }
-.sticker-picker-more:hover { background: #f7f7fb; }
+.sticker-picker-more:hover { background: #e0e3fb; }
 
 
 .lb-tabs { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
