@@ -833,3 +833,58 @@ document.addEventListener('DOMContentLoaded', initHamburger)
 document.addEventListener('DOMContentLoaded', initBottomNav)
 document.addEventListener('DOMContentLoaded', initBackButton)
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal() })
+
+// --- Micro-interactions: click sound + ripple, dipasang global di semua elemen interaktif ---
+;(function initClickFx() {
+  let ctx = null
+  function getCtx() {
+    if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)()
+    if (ctx.state === 'suspended') ctx.resume()
+    return ctx
+  }
+  function playClickSound() {
+    try {
+      const c = getCtx()
+      const now = c.currentTime
+      const osc = c.createOscillator()
+      const gain = c.createGain()
+      osc.type = 'sine'
+      osc.frequency.setValueAtTime(1150, now)
+      osc.frequency.exponentialRampToValueAtTime(520, now + 0.05)
+      gain.gain.setValueAtTime(0.0001, now)
+      gain.gain.exponentialRampToValueAtTime(0.055, now + 0.004)
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.07)
+      osc.connect(gain).connect(c.destination)
+      osc.start(now)
+      osc.stop(now + 0.08)
+    } catch {}
+  }
+
+  const FX_SELECTOR = 'button:not([data-no-fx]), .btn, a.btn, .icon-btn, .action-item, .bnav-item, .link-btn, .tag-pill, .page-btn, .badge-chip, .lb-tab-btn, .report-filter-tab, .send-icon-btn, .sticker-pick-btn, .comment-action-btn, .bnav-fab-circle'
+  const reduceMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+  function spawnRipple(el, e) {
+    if (reduceMotion()) return
+    const rect = el.getBoundingClientRect()
+    const size = Math.max(rect.width, rect.height) * 1.6
+    const ripple = document.createElement('span')
+    ripple.className = 'ui-ripple'
+    const cx = (e.clientX ?? (rect.left + rect.width / 2)) - rect.left - size / 2
+    const cy = (e.clientY ?? (rect.top + rect.height / 2)) - rect.top - size / 2
+    ripple.style.width = ripple.style.height = size + 'px'
+    ripple.style.left = cx + 'px'
+    ripple.style.top = cy + 'px'
+    el.classList.add('ui-ripple-host')
+    el.appendChild(ripple)
+    ripple.addEventListener('animationend', () => ripple.remove())
+  }
+
+  document.addEventListener('click', (e) => {
+    const target = e.target.closest(FX_SELECTOR)
+    if (!target || target.disabled) return
+    playClickSound()
+    spawnRipple(target, e)
+  }, true)
+
+  window.playClickSound = playClickSound
+})()

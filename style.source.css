@@ -108,7 +108,7 @@ body::after {
   display: flex; align-items: center; justify-content: center;
   cursor: pointer;
   color: #000;
-  transition: transform .08s ease, box-shadow .08s ease;
+  transition: transform .16s cubic-bezier(.22,.9,.32,1.18), box-shadow .16s cubic-bezier(.22,.9,.32,1.18);
 }
 .back-btn:active { transform: translateY(3px); box-shadow: 0 0 0 #d1d5db; }
 .back-btn svg { width: 18px; height: 18px; }
@@ -129,7 +129,7 @@ body::after {
   display: flex; align-items: center; justify-content: center;
   cursor: pointer;
   color: #000;
-  transition: transform .08s ease, box-shadow .08s ease;
+  transition: transform .16s cubic-bezier(.22,.9,.32,1.18), box-shadow .16s cubic-bezier(.22,.9,.32,1.18);
 }
 .float-back-btn:active { transform: translateY(3px); box-shadow: 0 1px 6px rgba(15,15,20,.12), 0 0 0 #d1d5db; }
 .float-back-btn svg { width: 18px; height: 18px; }
@@ -143,7 +143,7 @@ body[data-floating-back] .app { padding-top: calc(74px + env(safe-area-inset-top
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
   cursor: pointer;
   transform: translateY(0);
-  transition: transform .08s ease, box-shadow .08s ease;
+  transition: transform .16s cubic-bezier(.22,.9,.32,1.18), box-shadow .16s cubic-bezier(.22,.9,.32,1.18);
 }
 .hamburger:active { transform: translateY(4px); box-shadow: 0 0 0 #d1d5db; }
 .hamburger span {
@@ -272,7 +272,7 @@ img.clickable:hover { outline: 2px solid rgba(47,143,214,.4); outline-offset: 1p
   justify-content: center;
   gap: 8px;
   transform: translateY(0);
-  transition: transform .08s ease, box-shadow .08s ease;
+  transition: transform .16s cubic-bezier(.22,.9,.32,1.18), box-shadow .16s cubic-bezier(.22,.9,.32,1.18);
   text-decoration: none;
   box-sizing: border-box;
 }
@@ -339,7 +339,7 @@ img.clickable:hover { outline: 2px solid rgba(47,143,214,.4); outline-offset: 1p
   text-decoration: none;
   box-sizing: border-box;
   transform: translateY(0);
-  transition: transform .08s;
+  transition: transform .16s cubic-bezier(.22,.9,.32,1.18);
 }
 .icon-btn:active { transform: translateY(4px); box-shadow: 0 0 0 #e5e7eb; }
 
@@ -860,7 +860,7 @@ img.clickable:hover { outline: 2px solid rgba(47,143,214,.4); outline-offset: 1p
   font-family: inherit; font-size: 14px; font-weight: 700;
   border-radius: 999px;
   padding: 9px 18px;
-  transition: transform .08s ease, box-shadow .08s ease;
+  transition: transform .16s cubic-bezier(.22,.9,.32,1.18), box-shadow .16s cubic-bezier(.22,.9,.32,1.18);
   transform: translateY(0);
 }
 .cropper-link:active { transform: translateY(2px); }
@@ -1507,7 +1507,7 @@ body:not([data-no-bottom-nav]) .app { padding-bottom: 116px; }
   padding: 6px 11px; border-radius: 999px;
   background: #e2eef8; border: 1px solid #e5e7eb; color: #6b7280;
   font-family: inherit; font-size: 12px; font-weight: 700;
-  cursor: pointer; transition: transform .08s ease, background .12s ease, color .12s ease, border-color .12s ease;
+  cursor: pointer; transition: transform .16s cubic-bezier(.22,.9,.32,1.18), background .14s ease, color .14s ease, border-color .14s ease;
 }
 .badge-chip svg { flex-shrink: 0; }
 .badge-chip:active { transform: scale(.95); }
@@ -1840,3 +1840,26 @@ body:not([data-no-bottom-nav]) .app { padding-bottom: 116px; }
 .scrape-req-meta { display: flex; justify-content: space-between; align-items: center; font-size: 12.5px; color: #9ca3af; flex-wrap: wrap; gap: 6px; }
 .scrape-req-status { font-weight: 700; color: #f59e0b; }
 .scrape-req-status.claimed { color: #16a34a; }
+
+/* === Micro-interactions: ripple + smoother press feedback (menyeluruh, non-polos) === */
+.ui-ripple-host { position: relative; overflow: hidden; }
+.ui-ripple {
+  position: absolute;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: .18;
+  transform: scale(0);
+  pointer-events: none;
+  animation: ui-ripple-anim .6s cubic-bezier(.22,.9,.32,1) forwards;
+  will-change: transform, opacity;
+}
+@keyframes ui-ripple-anim {
+  to { transform: scale(1); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ui-ripple { display: none; }
+}
+
+/* Tombol utama & kartu jadi sedikit lebih "hidup" saat ditekan */
+.btn:active, .icon-btn:active, .action-item:active { filter: brightness(.97); }
+.snippet-card, .card { transition: transform .18s cubic-bezier(.22,.9,.32,1.08), box-shadow .18s cubic-bezier(.22,.9,.32,1.08); }
