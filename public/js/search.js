@@ -89,7 +89,7 @@ function trendingSearchScore(s) {
 async function loadTrendingSearch() {
   const wrap = document.getElementById('trendingList')
   if (!wrap) return
-  wrap.innerHTML = `<div class="empty-state-sm">Memuat trending...</div>`
+  wrap.innerHTML = skelRowList(4)
   try {
     const codes = await api('/codes')
     const scoreByTag = new Map()

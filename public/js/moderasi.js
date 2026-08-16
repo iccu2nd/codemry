@@ -21,7 +21,7 @@ async function renderModerasiPanel() {
       <div class="dev-section-title">Laporan Kode <span id="devReportsPendingBadge"></span></div>
       <div class="snippet-meta" style="margin-bottom:14px">Laporan dari user (vulgar, spam, plagiat, dll) muncul di sini. Yang bertanda kuning masih perlu ditindaklanjuti.</div>
       <div class="report-filter-tabs" id="reportFilterTabs"></div>
-      <div id="devReportsList"><div class="empty-state">Memuat laporan...</div></div>
+      <div id="devReportsList">${skelRowList(3)}</div>
     </div>
 
     <div class="card">

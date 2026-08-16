@@ -692,8 +692,8 @@ function openStickerPicker() {
           <button type="button" class="sticker-picker-close" aria-label="Tutup">${closeIconSvg()}</button>
         </div>
         <div class="sticker-picker-label" id="stickerPickerLabel">Rekomendasi</div>
-        <div class="sticker-picker-grid" id="stickerPickerGrid"><div class="empty-state-sm">Memuat...</div></div>
-        <div class="sticker-picker-more" id="stickerPickerMore" style="display:none">Memuat lagi...</div>
+        <div class="sticker-picker-grid" id="stickerPickerGrid">${skelGrid(9)}</div>
+        <div class="sticker-picker-more" id="stickerPickerMore" style="display:none">${skelLine('40%', 10)}</div>
       </div>
     `
     document.body.appendChild(overlay)
@@ -769,7 +769,7 @@ function openStickerPicker() {
       if (loading || (!reset && !nextPos)) return
       loading = true
       if (reset) {
-        grid.innerHTML = `<div class="empty-state-sm">Memuat...</div>`
+        grid.innerHTML = skelGrid(9)
         nextPos = ''
         seenUrls = new Set()
         label.textContent = query ? `Hasil untuk "${query}"` : 'Rekomendasi'
@@ -846,17 +846,35 @@ document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal
     try {
       const c = getCtx()
       const now = c.currentTime
-      const osc = c.createOscillator()
-      const gain = c.createGain()
-      osc.type = 'sine'
-      osc.frequency.setValueAtTime(1150, now)
-      osc.frequency.exponentialRampToValueAtTime(520, now + 0.05)
-      gain.gain.setValueAtTime(0.0001, now)
-      gain.gain.exponentialRampToValueAtTime(0.055, now + 0.004)
-      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.07)
-      osc.connect(gain).connect(c.destination)
-      osc.start(now)
-      osc.stop(now + 0.08)
+
+      // lapisan "tock" bernada rendah -> badan klik yang berisi/padat
+      const body = c.createOscillator()
+      const bodyGain = c.createGain()
+      body.type = 'square'
+      body.frequency.setValueAtTime(220, now)
+      body.frequency.exponentialRampToValueAtTime(90, now + 0.035)
+      bodyGain.gain.setValueAtTime(0.0001, now)
+      bodyGain.gain.exponentialRampToValueAtTime(0.09, now + 0.002)
+      bodyGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.045)
+      body.connect(bodyGain).connect(c.destination)
+
+      // lapisan noise pendek -> "tik" mekanikal di transient awal
+      const bufferSize = Math.floor(c.sampleRate * 0.02)
+      const buffer = c.createBuffer(1, bufferSize, c.sampleRate)
+      const data = buffer.getChannelData(0)
+      for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize)
+      const noise = c.createBufferSource()
+      noise.buffer = buffer
+      const noiseFilter = c.createBiquadFilter()
+      noiseFilter.type = 'highpass'
+      noiseFilter.frequency.value = 2200
+      const noiseGain = c.createGain()
+      noiseGain.gain.setValueAtTime(0.08, now)
+      noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.02)
+      noise.connect(noiseFilter).connect(noiseGain).connect(c.destination)
+
+      body.start(now); body.stop(now + 0.05)
+      noise.start(now); noise.stop(now + 0.025)
     } catch {}
   }
 
@@ -888,3 +906,63 @@ document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal
 
   window.playClickSound = playClickSound
 })()
+
+// --- Skeleton loading: dipakai buat gantiin teks "Memuat..." di semua halaman ---
+function skelLine(w = '100%', h = 12) { return `<div class="skeleton skel-line" style="width:${w};height:${h}px"></div>` }
+function skelAvatar(size = 38) { return `<div class="skeleton skel-avatar" style="width:${size}px;height:${size}px"></div>` }
+function skelBlock(h = 120, radius = 14) { return `<div class="skeleton skel-block" style="height:${h}px;border-radius:${radius}px"></div>` }
+
+function skelSnippetCard() {
+  return `<div class="skel-card">
+    <div class="skel-row">
+      ${skelAvatar(38)}
+      <div class="skel-col">${skelLine('42%', 13)}${skelLine('26%', 10)}</div>
+    </div>
+    ${skelLine('72%', 18)}
+    <div class="skel-col" style="margin:10px 0 0">${skelLine('100%', 13)}${skelLine('85%', 13)}</div>
+    ${skelBlock(120, 14)}
+    <div class="skel-tags">${skelLine('54px', 22)}${skelLine('70px', 22)}</div>
+  </div>`
+}
+function skelFeedList(n = 4) { return Array.from({ length: n }, skelSnippetCard).join('') }
+
+function skelRow(avatarSize = 34) {
+  return `<div class="skel-card" style="display:flex;align-items:center;gap:12px;padding:14px 16px;margin-bottom:10px">
+    ${skelAvatar(avatarSize)}
+    <div class="skel-col">${skelLine('50%', 13)}${skelLine('30%', 10)}</div>
+  </div>`
+}
+function skelRowList(n = 5, avatarSize = 34) { return Array.from({ length: n }, () => skelRow(avatarSize)).join('') }
+
+function skelProfileHeader() {
+  return `<div class="skel-card skel-card-plain">
+    <div class="skel-row">
+      ${skelAvatar(64)}
+      <div class="skel-col">${skelLine('55%', 20)}${skelLine('35%', 12)}</div>
+    </div>
+    <div class="skel-tags" style="margin-top:18px">${skelLine('18%', 32)}${skelLine('18%', 32)}${skelLine('18%', 32)}${skelLine('18%', 32)}</div>
+    <div class="skel-col" style="margin-top:16px">${skelLine('100%', 12)}${skelLine('80%', 12)}</div>
+  </div>`
+}
+
+function skelCodeDetail() {
+  return `<div class="skel-card skel-card-plain">
+    <div class="skel-row">${skelAvatar(34)}<div class="skel-col">${skelLine('40%', 13)}${skelLine('25%', 10)}</div></div>
+    ${skelLine('60%', 20)}
+    ${skelBlock(220, 18)}
+    <div class="skel-tags">${skelLine('90px', 40)}${skelLine('90px', 40)}</div>
+  </div>`
+}
+
+function skelCommentItem() {
+  return `<div class="skel-row" style="align-items:flex-start">
+    ${skelAvatar(30)}
+    <div class="skel-col">${skelLine('35%', 11)}${skelLine('90%', 13)}${skelLine('60%', 13)}</div>
+  </div>`
+}
+function skelCommentList(n = 3) { return Array.from({ length: n }, skelCommentItem).join('') }
+
+function skelGrid(n = 9, ratio = '100%') {
+  return `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">${Array.from({ length: n }, () =>
+    `<div class="skeleton" style="width:100%;padding-top:${ratio};border-radius:14px"></div>`).join('')}</div>`
+}

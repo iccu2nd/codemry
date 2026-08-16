@@ -3,7 +3,7 @@ async function renderProfile() {
   const app = document.getElementById('app')
   const username = qs('u')
   if (!username) { app.innerHTML = `<div class="card"><div class="empty-state">Profil tidak ditemukan.</div></div>`; return }
-  app.innerHTML = `<div class="card"><div class="empty-state">Memuat profil...</div></div>`
+  app.innerHTML = skelProfileHeader()
   try {
     const p = await api(`/users/${username}`)
     const totalViews = p.snippets.reduce((sum, s) => sum + (s.views || 0), 0)

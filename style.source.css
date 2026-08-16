@@ -776,9 +776,11 @@ img.clickable:hover { outline: 2px solid rgba(47,143,214,.4); outline-offset: 1p
 
 .code-window.fullscreen {
   position: fixed; inset: 0; z-index: 70;
+  width: 100vw; height: 100vh; height: 100dvh;
   margin: 0; border-radius: 0; border: none;
   display: flex; flex-direction: column;
 }
+html:has(.code-window.fullscreen) { overflow: hidden; }
 .code-window.fullscreen .code-view { flex: 1; overflow: auto; }
 .code-window.fullscreen .code-view code { font-size: 16px; }
 .code-window.fullscreen::after { top: 49px; }
@@ -1863,3 +1865,28 @@ body:not([data-no-bottom-nav]) .app { padding-bottom: 116px; }
 /* Tombol utama & kartu jadi sedikit lebih "hidup" saat ditekan */
 .btn:active, .icon-btn:active, .action-item:active { filter: brightness(.97); }
 .snippet-card, .card { transition: transform .18s cubic-bezier(.22,.9,.32,1.08), box-shadow .18s cubic-bezier(.22,.9,.32,1.08); }
+
+/* === Skeleton loading (bentuk konten kebentuk duluan, isinya nyusul) === */
+.skeleton {
+  position: relative; overflow: hidden;
+  background: #e3edf6; border-radius: 8px;
+}
+.skeleton::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(90deg, rgba(227,237,246,0) 0%, rgba(255,255,255,.75) 50%, rgba(227,237,246,0) 100%);
+  transform: translateX(-100%);
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+}
+@keyframes skeleton-shimmer { 100% { transform: translateX(100%); } }
+@media (prefers-reduced-motion: reduce) { .skeleton::after { animation: none; } }
+
+.skel-card { background: #fff; border: 1.5px solid #e2eef8; border-radius: 20px; padding: 18px; margin-bottom: 18px; }
+.skel-card.skel-card-plain { border-radius: 28px; padding: 24px; }
+.skel-row { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+.skel-avatar { flex-shrink: 0; border-radius: 50%; }
+.skel-col { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.skel-line { height: 12px; border-radius: 6px; }
+.skel-block { border-radius: 14px; }
+.skel-tags { display: flex; gap: 8px; margin-top: 12px; }
+.skel-tags .skel-line { border-radius: 999px; }
