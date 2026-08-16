@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Codery - API Documentation</title>
+<title>Codery - Dokumentasi API</title>
 <link rel="preload" href="fonts/Poppins-Regular.woff" as="font" type="font/woff" crossorigin>
 <link rel="preload" href="fonts/Poppins-Bold.woff" as="font" type="font/woff" crossorigin>
 <meta name="robots" content="noindex, nofollow">
@@ -28,25 +28,25 @@
 
 <main class="app" id="app">
   <div class="card">
-    <div class="hero-title" style="font-size:22px">API Documentation</div>
+    <div class="hero-title" style="font-size:22px">Dokumentasi API</div>
     <div class="hero-rule"></div>
-    <div class="hero-sub" style="margin-bottom:0">Baru pertama kali pakai API? Semua endpoint di bawah dijelasin lengkap -- endpoint, method, butuh API key atau nggak, parameter, sampai contoh kode siap-pakai.</div>
+    <div class="hero-sub" style="margin-bottom:0">Baru pertama kali menggunakan API Codery? Setiap endpoint di bawah ini dijelaskan secara lengkap: endpoint, method, kebutuhan API key, parameter, hingga contoh kode yang siap digunakan.</div>
   </div>
 
   <div class="card">
-    <div class="dev-section-title">API Key Kamu</div>
-    <div class="snippet-desc" id="apiKeyIntroText">API key dipakai buat ngakses endpoint yang butuh login (data akun kamu sendiri). Belum ada key yang dibuat otomatis -- kamu yang generate sendiri kapan mau pakai.</div>
+    <div class="dev-section-title">API Key Anda</div>
+    <div class="snippet-desc" id="apiKeyIntroText">API key digunakan untuk mengakses endpoint yang membutuhkan autentikasi (data akun Anda sendiri). Key tidak dibuat secara otomatis — Anda perlu membuatnya sendiri saat akan mulai menggunakan API.</div>
     <div id="apiKeySection"></div>
   </div>
 
   <div class="card">
-    <div class="dev-section-title">Dasar-dasar Sebelum Mulai</div>
+    <div class="dev-section-title">Dasar-dasar Sebelum Memulai</div>
     <table class="doc-param-table">
-      <thead><tr><th>Istilah</th><th>Maksudnya</th></tr></thead>
+      <thead><tr><th>Istilah</th><th>Keterangan</th></tr></thead>
       <tbody>
-        <tr><td><span class="apikey-badge apikey-badge-free">Tanpa Key</span></td><td>Bisa langsung dipanggil siapa aja, gak perlu login atau API key.</td></tr>
-        <tr><td><span class="apikey-badge apikey-badge-required">Butuh Key</span></td><td>Wajib kirim API key kamu di header <code>X-API-Key</code> (atau query <code>?key=</code>).</td></tr>
-        <tr><td><code>Base URL</code></td><td><code id="apiBaseUrl">/api/public</code> -- semua endpoint di bawah ini nyambung dari sini.</td></tr>
+        <tr><td><span class="apikey-badge apikey-badge-free">Tanpa Key</span></td><td>Dapat diakses langsung oleh siapa saja, tanpa login atau API key.</td></tr>
+        <tr><td><span class="apikey-badge apikey-badge-required">Butuh Key</span></td><td>Wajib menyertakan API key Anda pada header <code>X-API-Key</code> (atau query <code>?key=</code>).</td></tr>
+        <tr><td><code>Base URL</code></td><td><code id="apiBaseUrl">/api/public</code> — semua endpoint di bawah ini mengacu pada URL dasar ini.</td></tr>
       </tbody>
     </table>
   </div>
@@ -62,8 +62,11 @@
 
   <div class="card">
     <div class="dev-section-title">Contoh Respons Error</div>
-    <div class="snippet-desc">Kalau ada yang salah (key gak valid, data gak ketemu, dll), API bakal balikin format error yang sama di semua endpoint:</div>
-    <div class="doc-code-block"><pre><code class="language-json">{ "error": "API key tidak valid" }</code></pre></div>
+    <div class="snippet-desc">Jika terjadi kesalahan (key tidak valid, data tidak ditemukan, dan lain-lain), API akan mengembalikan format error yang sama di semua endpoint:</div>
+    <div class="doc-code-window">
+      <div class="code-window-bar"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span><span class="code-window-filename">response.json</span></div>
+      <div class="doc-code-block"><pre><code class="language-json">{ "error": "API key tidak valid" }</code></pre></div>
+    </div>
   </div>
 </main>
 

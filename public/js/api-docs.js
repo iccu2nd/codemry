@@ -1,9 +1,11 @@
 /* ============================================================
-   Halaman API Documentation
-   - API key TIDAK PERNAH dibuat otomatis. Cuma dibuat kalau user
-     pencet tombol "Generate API Key" sendiri.
-   - Daftar API di bawah dikelompokkan jadi "Tanpa API Key" dan
-     "Butuh API Key" biar gampang dipahami pemula.
+   Halaman Dokumentasi API
+   - API key TIDAK PERNAH dibuat otomatis. Hanya dibuat saat
+     pengguna menekan tombol "Generate API Key" sendiri.
+   - Daftar API di bawah dikelompokkan menjadi "Tanpa API Key"
+     dan "Butuh API Key" agar mudah dipahami pemula.
+   - Contoh request/response ditampilkan dalam bentuk jendela
+     kode, konsisten dengan gaya pratinjau kode di Feed.
    ============================================================ */
 
 function eyeIconSvg() {
@@ -31,28 +33,28 @@ function maskKey(key) {
   return key.slice(0, 8) + '•'.repeat(10) + key.slice(-4)
 }
 
-// currentKey: null = belum pernah generate. string = key aktif.
+// currentKey: null = belum pernah dibuat. string = key aktif.
 let currentKey = null
 let keyVisible = false
 
 function apiBase() { return `${location.origin}/api/public` }
 
-// ---- Data semua endpoint (dipakai buat render index + kartu) ----------
+// ---- Data semua endpoint (dipakai untuk render index + kartu) ----------
 function buildApiList() {
   const base = apiBase()
-  const shown = () => currentKey || 'API_KEY_KAMU'
+  const shown = () => currentKey || 'API_KEY_ANDA'
 
   return [
     {
       id: 'public-snippet',
       name: 'Public Snippet',
-      tagline: 'Ambil detail 1 kode publik pakai shortId-nya',
+      tagline: 'Mengambil detail satu kode publik berdasarkan shortId',
       method: 'GET',
       endpoint: '/snippet/:shortId',
       keyRequired: false,
-      usage: 'Cocok buat nampilin preview kode publik di web/app lain tanpa perlu login sama sekali -- misal widget "kode terakhir gue" di portofolio.',
+      usage: 'Cocok untuk menampilkan pratinjau kode publik di situs atau aplikasi lain tanpa perlu login, misalnya widget "kode terbaru saya" di portofolio.',
       params: [
-        { name: 'shortId', type: 'string (path)', required: true, desc: 'ID pendek snippet, contoh: aB3xQ1 (kelihatan di URL codery.app/c/aB3xQ1)' }
+        { name: 'shortId', type: 'string (path)', required: true, desc: 'ID pendek snippet, contoh: aB3xQ1 (terlihat pada URL codery.app/c/aB3xQ1)' }
       ],
       curl: () => `curl "${base}/snippet/aB3xQ1"`,
       js: () => `const res = await fetch('${base}/snippet/aB3xQ1')\nconst data = await res.json()\nconsole.log(data)`,
@@ -70,11 +72,11 @@ function buildApiList() {
     {
       id: 'me',
       name: 'Me',
-      tagline: 'Info akun kamu sendiri yang lagi login lewat API key',
+      tagline: 'Informasi akun Anda sendiri yang sedang login melalui API key',
       method: 'GET',
       endpoint: '/me',
       keyRequired: true,
-      usage: 'Dipakai buat ngecek "API key ini punya siapa" -- biasanya langkah pertama pas nyoba-nyoba integrasi API.',
+      usage: 'Digunakan untuk memeriksa "API key ini milik siapa" — biasanya langkah pertama saat mencoba integrasi API.',
       params: [],
       curl: () => `curl "${base}/me" \\\n  -H "X-API-Key: ${shown()}"`,
       js: () => `const res = await fetch('${base}/me', {\n  headers: { 'X-API-Key': '${shown()}' }\n})\nconst data = await res.json()\nconsole.log(data)`,
@@ -89,11 +91,11 @@ function buildApiList() {
     {
       id: 'all-snippets',
       name: 'All Snippets',
-      tagline: 'Semua kode publik yang udah kamu upload',
+      tagline: 'Seluruh kode publik yang telah Anda unggah',
       method: 'GET',
       endpoint: '/snippets',
       keyRequired: true,
-      usage: 'Buat nampilin daftar lengkap kode kamu di tempat lain (portofolio, bot, dashboard pribadi, dll) tanpa harus scraping halaman profil.',
+      usage: 'Digunakan untuk menampilkan daftar lengkap kode Anda di tempat lain (portofolio, bot, dashboard pribadi, dan sejenisnya) tanpa perlu scraping halaman profil.',
       params: [],
       curl: () => `curl "${base}/snippets" \\\n  -H "X-API-Key: ${shown()}"`,
       js: () => `const res = await fetch('${base}/snippets', {\n  headers: { 'X-API-Key': '${shown()}' }\n})\nconst data = await res.json()\nconsole.log(data)`,
@@ -115,20 +117,20 @@ function buildApiList() {
     {
       id: 'upload',
       name: 'Upload',
-      tagline: 'Upload kode baru ke akun kamu',
+      tagline: 'Mengunggah kode baru ke akun Anda',
       method: 'POST',
       endpoint: '/snippets',
       keyRequired: true,
-      usage: 'Cocok buat auto-upload dari script/CI kamu -- misal tiap kali nyimpen snippet baru di editor lokal, langsung ke-post ke Codery.',
+      usage: 'Cocok untuk pengunggahan otomatis dari script atau CI Anda, misalnya setiap kali menyimpan snippet baru di editor lokal, langsung terkirim ke Codery.',
       params: [
-        { name: 'filename', type: 'string', required: true, desc: 'Nama file, mis. script.js' },
-        { name: 'content', type: 'string', required: true, desc: 'Isi kodenya' },
-        { name: 'title', type: 'string', required: false, desc: 'Judul kode, default = filename' },
-        { name: 'description', type: 'string', required: false, desc: 'Deskripsi singkat (maks 500 karakter)' },
-        { name: 'language', type: 'string', required: false, desc: 'mis. javascript, python, dst' },
-        { name: 'tags', type: 'array/string', required: false, desc: 'Maks 5 tag' },
-        { name: 'isPublic', type: 'boolean', required: false, desc: 'Tampil di feed publik atau tidak' },
-        { name: 'pin', type: 'string', required: false, desc: 'Opsional, kunci PIN 4-8 digit' }
+        { name: 'filename', type: 'string', required: true, desc: 'Nama file, contoh: script.js' },
+        { name: 'content', type: 'string', required: true, desc: 'Isi kode' },
+        { name: 'title', type: 'string', required: false, desc: 'Judul kode, default mengikuti nama file' },
+        { name: 'description', type: 'string', required: false, desc: 'Deskripsi singkat (maksimal 500 karakter)' },
+        { name: 'language', type: 'string', required: false, desc: 'Contoh: javascript, python, dan sebagainya' },
+        { name: 'tags', type: 'array/string', required: false, desc: 'Maksimal 5 tag' },
+        { name: 'isPublic', type: 'boolean', required: false, desc: 'Menentukan tampil atau tidaknya di feed publik' },
+        { name: 'pin', type: 'string', required: false, desc: 'Opsional, PIN kunci 4-8 digit' }
       ],
       curl: () => `curl -X POST "${base}/snippets" \\\n  -H "X-API-Key: ${shown()}" \\\n  -H "Content-Type: application/json" \\\n  -d '{"filename":"script.js","content":"console.log(1)","title":"Script Saya","isPublic":true}'`,
       js: () => `const res = await fetch('${base}/snippets', {\n  method: 'POST',\n  headers: {\n    'X-API-Key': '${shown()}',\n    'Content-Type': 'application/json'\n  },\n  body: JSON.stringify({\n    filename: 'script.js',\n    content: 'console.log(1)',\n    title: 'Script Saya',\n    isPublic: true\n  })\n})\nconst data = await res.json()\nconsole.log(data)`,
@@ -162,6 +164,15 @@ function apiIndexRowHtml(a) {
     </a>`
 }
 
+// Jendela kode bergaya pratinjau Feed: header titik merah/kuning/hijau + nama file.
+function codeWindowHtml(filename, langClass, dataAttr) {
+  return `
+    <div class="doc-code-window">
+      <div class="code-window-bar"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span><span class="code-window-filename">${escapeHtml(filename)}</span></div>
+      <div class="doc-code-block"><pre><code class="language-${langClass}" data-api-example="${dataAttr}"></code></pre></div>
+    </div>`
+}
+
 function apiCardHtml(a) {
   const paramsTable = a.params.length ? `
     <div class="api-card-subtitle">Parameter</div>
@@ -170,7 +181,7 @@ function apiCardHtml(a) {
       <tbody>
         ${a.params.map(p => `<tr><td><code>${escapeHtml(p.name)}</code>${p.required ? ' <span class="param-required">*</span>' : ''}</td><td>${escapeHtml(p.type)}</td><td>${escapeHtml(p.desc)}</td></tr>`).join('')}
       </tbody>
-    </table>` : `<div class="api-card-subtitle">Parameter</div><div class="empty-state-sm" style="padding:6px 0">Gak ada parameter, panggil langsung aja.</div>`
+    </table>` : `<div class="api-card-subtitle">Parameter</div><div class="empty-state-sm" style="padding:6px 0">Tidak ada parameter, panggil langsung endpoint ini.</div>`
 
   return `
   <div class="card api-doc-card" id="api-${a.id}">
@@ -191,11 +202,14 @@ function apiCardHtml(a) {
 
     <div class="doc-endpoint-row" style="margin-top:16px"><span class="doc-method-pill api-index-method method-${a.method.toLowerCase()}">${a.method}</span><span class="doc-endpoint-path">${escapeHtml(a.endpoint)}</span></div>
     <div class="api-card-subtitle" style="margin-top:10px">Contoh Request (cURL)</div>
-    <div class="doc-code-block"><pre><code class="language-bash" data-api-example="${a.id}-curl"></code></pre></div>
+    ${codeWindowHtml('terminal', 'bash', `${a.id}-curl`)}
     <div class="api-card-subtitle">Contoh Request (JavaScript fetch)</div>
-    <div class="doc-code-block"><pre><code class="language-javascript" data-api-example="${a.id}-js"></code></pre></div>
+    ${codeWindowHtml('fetch.js', 'javascript', `${a.id}-js`)}
     <div class="api-card-subtitle">Contoh Respons</div>
-    <div class="doc-code-block"><pre><code class="language-json">${escapeHtml(a.response)}</code></pre></div>
+    <div class="doc-code-window">
+      <div class="code-window-bar"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span><span class="code-window-filename">response.json</span></div>
+      <div class="doc-code-block"><pre><code class="language-json">${escapeHtml(a.response)}</code></pre></div>
+    </div>
   </div>`
 }
 
@@ -226,10 +240,10 @@ function renderApiKeySection() {
   const box = document.getElementById('apiKeySection')
 
   if (!currentKey) {
-    // Belum ada key -- JANGAN generate otomatis. Tunggu user pencet tombol.
+    // Belum ada key — JANGAN dibuat otomatis. Tunggu pengguna menekan tombol.
     box.innerHTML = `
       <div class="apikey-empty-box">
-        <div class="apikey-empty-text">Kamu belum punya API key. Generate dulu buat mulai pakai endpoint yang butuh login.</div>
+        <div class="apikey-empty-text">Anda belum memiliki API key. Buat terlebih dahulu untuk mulai menggunakan endpoint yang membutuhkan autentikasi.</div>
         <button class="btn btn-primary btn-block" id="apiKeyGenBtn">${keyIconSvg()} Generate API Key</button>
       </div>`
     const genBtn = document.getElementById('apiKeyGenBtn')
@@ -242,7 +256,7 @@ function renderApiKeySection() {
         keyVisible = true
         renderApiKeySection()
         renderApiDocs()
-        toast('API key berhasil dibuat!')
+        toast('API key berhasil dibuat.')
       } catch (e) {
         toast(e.message)
         genBtn.disabled = false
@@ -255,13 +269,13 @@ function renderApiKeySection() {
   box.innerHTML = `
     <div class="apikey-box">
       <span class="apikey-value" id="apiKeyValue">${escapeHtml(keyVisible ? currentKey : maskKey(currentKey))}</span>
-      <button type="button" class="apikey-eye-btn" id="apiKeyEyeBtn" aria-label="Tampilkan/sembunyikan">${keyVisible ? eyeOffIconSvg() : eyeIconSvg()}</button>
-      <button type="button" class="apikey-copy-btn" id="apiKeyCopyBtn" aria-label="Salin">${docCopyIconSvg()}</button>
+      <button type="button" class="apikey-eye-btn" id="apiKeyEyeBtn" aria-label="Tampilkan atau sembunyikan key">${keyVisible ? eyeOffIconSvg() : eyeIconSvg()}</button>
+      <button type="button" class="apikey-copy-btn" id="apiKeyCopyBtn" aria-label="Salin key">${docCopyIconSvg()}</button>
     </div>
     <div class="btn-row apikey-regen-row">
-      <button class="btn btn-white btn-sm" id="apiKeyRegenBtn">Regenerate Key</button>
+      <button class="btn btn-white btn-sm" id="apiKeyRegenBtn">Regenerate API Key</button>
     </div>
-    <div class="field-hint">Regenerate bakal langsung matiin key lama -- semua tempat yang masih pakai key lama bakal berhenti bisa akses API.</div>`
+    <div class="field-hint">Regenerate akan langsung menonaktifkan key lama — semua tempat yang masih menggunakan key lama tidak akan bisa lagi mengakses API.</div>`
 
   document.getElementById('apiKeyEyeBtn').onclick = () => {
     keyVisible = !keyVisible
@@ -270,10 +284,10 @@ function renderApiKeySection() {
   document.getElementById('apiKeyCopyBtn').onclick = () => {
     if (!currentKey) return
     navigator.clipboard.writeText(currentKey)
-    toast('API key disalin!')
+    toast('API key disalin.')
   }
   document.getElementById('apiKeyRegenBtn').onclick = async () => {
-    if (!confirm('Yakin mau generate ulang API key? Key lama bakal langsung gak berlaku lagi dan gak bisa dibalikin.')) return
+    if (!confirm('Yakin ingin membuat ulang API key? Key lama akan langsung tidak berlaku dan tidak dapat dikembalikan.')) return
     const btn = document.getElementById('apiKeyRegenBtn')
     btn.disabled = true
     btn.classList.add('btn-loading')
@@ -283,7 +297,7 @@ function renderApiKeySection() {
       keyVisible = true
       renderApiKeySection()
       renderApiDocs()
-      toast('API key baru dibuat!')
+      toast('API key baru berhasil dibuat.')
     } catch (e) {
       toast(e.message)
     } finally {
@@ -295,7 +309,7 @@ function renderApiKeySection() {
 
 async function loadApiKeyStatus() {
   try {
-    // Endpoint ini cuma NGECEK, gak bikin key baru.
+    // Endpoint ini hanya MEMERIKSA, tidak membuat key baru.
     const r = await api('/users/me/apikey')
     currentKey = r.apiKey || null
     keyVisible = false
