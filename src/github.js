@@ -173,8 +173,35 @@ export async function editGist(id, files, description) {
     return res.data
 }
 
+// PENTING: sebelumnya `assetShaCache`/`assetContentCache` ini gak punya
+// kadaluarsa SAMA SEKALI -- sekali satu instance server nyimpen isi file
+// gambar (avatar/banner) di cache-nya, dia gak akan pernah cek ulang ke
+// GitHub lagi. Ini sumber bug "ganti foto profil kok gak berubah, malah
+// balik lagi ke yang lama" -- instance server yang kebetulan nanganin
+// request GET /avatar (atau /banner) abis nyimpen versi LAMA di cache-nya
+// bakal terus-terusan balikin versi lama itu ke SEMUA orang yang minta
+// (termasuk di feed, komentar, dst), walau kamu udah upload foto baru
+// berkali-kali -- sampai instance itu di-recycle sendiri sama platform-nya
+// (bisa berjam-jam). Fixnya sama polanya kayak `dbCache` di atas: kasih TTL
+// pendek, jadi tiap instance otomatis nyegat ulang isi file yang terbaru
+// dalam hitungan detik.
+const ASSET_TTL_MS = 5_000
 const assetShaCache = new Map()
 const assetContentCache = new Map()
+
+function cacheGetAssetSha(path) {
+    const hit = assetShaCache.get(path)
+    if (hit && Date.now() - hit.at < ASSET_TTL_MS) return hit.sha
+    return undefined
+}
+function cacheSetAssetSha(path, sha) { assetShaCache.set(path, { sha, at: Date.now() }) }
+
+function cacheGetAssetContent(path) {
+    const hit = assetContentCache.get(path)
+    if (hit && Date.now() - hit.at < ASSET_TTL_MS) return hit.buf
+    return null
+}
+function cacheSetAssetContent(path, buf) { assetContentCache.set(path, { buf, at: Date.now() }) }
 
 async function fetchAssetSha(path) {
     try {
@@ -187,21 +214,22 @@ async function fetchAssetSha(path) {
 }
 
 export async function upsertAsset(path, base64Content, message) {
-    let sha = assetShaCache.has(path) ? assetShaCache.get(path) : await fetchAssetSha(path)
+    let sha = cacheGetAssetSha(path)
+    if (sha === undefined) sha = await fetchAssetSha(path)
     const body = { message, content: base64Content, branch: 'main' }
     if (sha) body.sha = sha
     try {
         const res = await axios.put(`${API}/repos/${ASSETS_REPO}/contents/${path}`, body, { headers: headers() })
-        assetShaCache.set(path, res.data.content.sha)
-        assetContentCache.set(path, Buffer.from(base64Content, 'base64'))
+        cacheSetAssetSha(path, res.data.content.sha)
+        cacheSetAssetContent(path, Buffer.from(base64Content, 'base64'))
         return res.data.content.download_url
     } catch (e) {
         if (e.response?.status === 409) {
             const freshSha = await fetchAssetSha(path)
             const retryRes = await axios.put(`${API}/repos/${ASSETS_REPO}/contents/${path}`,
                 { ...body, sha: freshSha }, { headers: headers() })
-            assetShaCache.set(path, retryRes.data.content.sha)
-            assetContentCache.set(path, Buffer.from(base64Content, 'base64'))
+            cacheSetAssetSha(path, retryRes.data.content.sha)
+            cacheSetAssetContent(path, Buffer.from(base64Content, 'base64'))
             return retryRes.data.content.download_url
         }
         throw e
@@ -209,10 +237,11 @@ export async function upsertAsset(path, base64Content, message) {
 }
 
 export async function getAssetContent(path) {
-    if (assetContentCache.has(path)) return assetContentCache.get(path)
+    const cached = cacheGetAssetContent(path)
+    if (cached) return cached
     const res = await axios.get(`${API}/repos/${ASSETS_REPO}/contents/${path}`, { headers: headers() })
     const buf = Buffer.from(res.data.content, 'base64')
-    assetContentCache.set(path, buf)
-    assetShaCache.set(path, res.data.sha)
+    cacheSetAssetContent(path, buf)
+    cacheSetAssetSha(path, res.data.sha)
     return buf
 }
