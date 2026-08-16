@@ -15,6 +15,40 @@ body {
   background: linear-gradient(180deg, #d7ecfb 0%, #eaf5fc 22%, #f7fbfd 55%, #ffffff 100%) fixed;
   color: #17293d;
   min-height: 100vh;
+  position: relative;
+}
+
+/* Awan dekoratif: dua layer terpisah biar tiap awan bisa punya arah &
+   kecepatan drift sendiri, ngambang pelan-pelan di belakang konten
+   (fixed + z-index -1), gak ganggu interaksi (pointer-events none). */
+body::before, body::after {
+  content: '';
+  position: fixed;
+  inset: -10% -20%;
+  pointer-events: none;
+  z-index: -1;
+  background-repeat: no-repeat;
+}
+body::before {
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='120' viewBox='0 0 220 120'%3E%3Cg fill='%23ffffff' fill-opacity='0.75'%3E%3Cellipse cx='70' cy='70' rx='50' ry='32'/%3E%3Cellipse cx='115' cy='50' rx='60' ry='40'/%3E%3Cellipse cx='160' cy='70' rx='42' ry='30'/%3E%3Cellipse cx='115' cy='82' rx='78' ry='26'/%3E%3C/g%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='90' viewBox='0 0 160 90'%3E%3Cg fill='%23ffffff' fill-opacity='0.6'%3E%3Cellipse cx='50' cy='52' rx='38' ry='24'/%3E%3Cellipse cx='85' cy='38' rx='44' ry='30'/%3E%3Cellipse cx='118' cy='52' rx='32' ry='22'/%3E%3Cellipse cx='85' cy='62' rx='58' ry='20'/%3E%3C/g%3E%3C/svg%3E");
+  background-position: 8% 12%, 78% 28%;
+  background-size: 220px 120px, 160px 90px;
+  animation: cloud-drift-a 90s linear infinite alternate;
+}
+body::after {
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='100' viewBox='0 0 180 100'%3E%3Cg fill='%23ffffff' fill-opacity='0.5'%3E%3Cellipse cx='56' cy='58' rx='42' ry='26'/%3E%3Cellipse cx='95' cy='42' rx='48' ry='32'/%3E%3Cellipse cx='132' cy='58' rx='36' ry='24'/%3E%3Cellipse cx='95' cy='68' rx='64' ry='22'/%3E%3C/g%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='80' viewBox='0 0 140 80'%3E%3Cg fill='%23ffffff' fill-opacity='0.55'%3E%3Cellipse cx='44' cy='46' rx='34' ry='21'/%3E%3Cellipse cx='74' cy='34' rx='38' ry='26'/%3E%3Cellipse cx='104' cy='46' rx='28' ry='19'/%3E%3Cellipse cx='74' cy='55' rx='50' ry='17'/%3E%3C/g%3E%3C/svg%3E");
+  background-position: 18% 68%, 88% 82%;
+  background-size: 180px 100px, 140px 80px;
+  animation: cloud-drift-b 120s linear infinite alternate;
+}
+@keyframes cloud-drift-a { from { transform: translateX(-3%); } to { transform: translateX(3%); } }
+@keyframes cloud-drift-b { from { transform: translateX(2.5%); } to { transform: translateX(-2.5%); } }
+@media (max-width: 640px) {
+  body::before, body::after { background-size: 60vw auto, 45vw auto; }
 }
 
 .topbar {
