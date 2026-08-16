@@ -53,21 +53,48 @@ export async function initGithub() {
     console.log(`GitHub siap. DB: ${DB_REPO} | Assets: ${ASSETS_REPO}`)
 }
 
+// PENTING: app ini jalan di serverless (Vercel, lihat vercel.json) -- tiap
+// request BISA ditangani proses/instance yang beda-beda, masing-masing
+// punya memori sendiri-sendiri. `dbCache` cuma hidup di SATU instance itu.
+//
+// Sebelumnya cache ini gak punya kadaluarsa sama sekali (disimpen selamanya
+// selama instance-nya "hangat"/reused). Itu sumber bug "upload kode gak
+// ketemu" & "komentar stiker ilang": instance A yang nerima POST upload/komentar
+// nulis ke GitHub DAN update cache lokalnya sendiri -- tapi kalau request
+// berikutnya (mis. buka halaman detail kode buat ngeliat hasil upload/komentar
+// tadi) nyasar ke instance B yang udah lebih dulu nyimpen snapshot lama
+// snippets.json/comments.json di cache-nya, instance B gak akan pernah tau
+// ada data baru & bakal terus jawab pake data basi (kode "tidak ditemukan",
+// komentar ilang) sampe instance itu di-cold-start ulang (bisa berjam-jam).
+//
+// Fixnya: kasih TTL pendek (sama polanya kayak GIST_TTL_MS di bawah) biar
+// tiap instance otomatis nyegat ulang data terbaru dalam hitungan detik --
+// tetep kerasa cepet buat request yang beruntun (gak nembak GitHub API tiap
+// kali), tapi gak nyimpen data basi lama-lama kalau nyasar ke instance lain.
+const DB_CACHE_TTL_MS = 5_000
 const dbCache = new Map()
 
+function cacheGetDb(path) {
+    const hit = dbCache.get(path)
+    if (hit && Date.now() - hit.at < DB_CACHE_TTL_MS) return hit
+    return null
+}
+function cacheSetDb(path, data, sha) {
+    const entry = { data, sha, at: Date.now() }
+    dbCache.set(path, entry)
+    return entry
+}
+
 export async function readDbFile(path) {
-    if (dbCache.has(path)) return dbCache.get(path)
+    const cached = cacheGetDb(path)
+    if (cached) return cached
     try {
         const res = await axios.get(`${API}/repos/${DB_REPO}/contents/${path}`, { headers: headers() })
         const content = Buffer.from(res.data.content, 'base64').toString('utf-8')
-        const result = { data: JSON.parse(content || '[]'), sha: res.data.sha }
-        dbCache.set(path, result)
-        return result
+        return cacheSetDb(path, JSON.parse(content || '[]'), res.data.sha)
     } catch (e) {
         if (e.response?.status === 404) {
-            const result = { data: [], sha: null }
-            dbCache.set(path, result)
-            return result
+            return cacheSetDb(path, [], null)
         }
         throw e
     }
@@ -80,7 +107,7 @@ export async function writeDbFile(path, data, sha, message) {
     try {
         const res = await axios.put(`${API}/repos/${DB_REPO}/contents/${path}`, body, { headers: headers() })
         const newSha = res.data.content.sha
-        dbCache.set(path, { data, sha: newSha })
+        cacheSetDb(path, data, newSha)
         return newSha
     } catch (e) {
         if (e.response?.status === 409) dbCache.delete(path)

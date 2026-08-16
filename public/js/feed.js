@@ -147,7 +147,7 @@ function renderFeed(opts = {}) {
 
 async function loadFeed() {
   const list = document.getElementById('feedList')
-  list.innerHTML = `<div class="empty-state">Memuat...</div>`
+  list.innerHTML = skelFeedList(3)
   try {
     feedAll = await api('/codes')
     const pageFromUrl = parseInt(qs('page'), 10)

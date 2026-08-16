@@ -2,14 +2,21 @@ import crypto from 'crypto'
 import bcrypt from 'bcryptjs'
 import { readDbFile, writeDbFile, listGists } from './github.js'
 
+// avatarUpdatedAt/bannerUpdatedAt dipake sebagai cache-buster di URL biar
+// begitu user ganti foto profil/sampul, gambar barunya langsung kepake di
+// semua tempat (feed, komentar, profil, dst) tanpa harus nunggu cache
+// browser/CDN expired atau nunggu hard-refresh manual.
 export function avatarUrl(user) {
     if (!user) return null
-    return user.avatarPath ? `/avatar/${encodeURIComponent(user.username)}` : user.avatar
+    if (!user.avatarPath) return user.avatar
+    const v = user.avatarUpdatedAt ? `?v=${user.avatarUpdatedAt}` : ''
+    return `/avatar/${encodeURIComponent(user.username)}${v}`
 }
 
 export function bannerUrl(user) {
     if (!user || !user.bannerPath) return null
-    return `/banner/${encodeURIComponent(user.username)}`
+    const v = user.bannerUpdatedAt ? `?v=${user.bannerUpdatedAt}` : ''
+    return `/banner/${encodeURIComponent(user.username)}${v}`
 }
 
 async function update(path, mutator, message) {

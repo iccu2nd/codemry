@@ -1,15 +1,94 @@
 
 let me = null
 
-async function api(path, opts = {}) {
-  const res = await fetch('/api' + path, {
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    ...opts
+// ============================================================
+// Tema warna aksen -- SEPENUHNYA client-side, disimpen di localStorage
+// tiap HP/browser sendiri-sendiri (gak pernah dikirim ke server), jadi
+// pilihan warna satu user gak kepengaruh/mempengaruhi user lain sama
+// sekali. Dipanggil paling awal (sebelum apapun dirender) biar gak
+// ada "kedip" warna default sebelum ganti ke warna pilihan user.
+// ============================================================
+const ACCENT_THEME_KEY = 'codery-accent-theme'
+const ACCENT_THEMES = {
+  blue:   { label: 'Biru',   accent: '#2f8fd6', accentRgb: '47,143,214',  dark: '#1f6ea8', darkRgb: '31,110,168',  light: '#6ec1ef', bg: '#e2eef8', bg2: '#eef6fc', border: '#d5e6f3', bgHover: '#dcedfa', glow: '#a9d4f0' },
+  purple: { label: 'Ungu',   accent: '#8b5cf6', accentRgb: '139,92,246', dark: '#6d3fd1', darkRgb: '109,63,209', light: '#c4b5fd', bg: '#efe9fe', bg2: '#f5f2fe', border: '#e0d4fb', bgHover: '#e6dcfd', glow: '#c4b5fd' },
+  green:  { label: 'Hijau',  accent: '#22a35a', accentRgb: '34,163,90',  dark: '#17803f', darkRgb: '23,128,63',  light: '#6fd39b', bg: '#e2f5ea', bg2: '#eefaf3', border: '#c9ecd9', bgHover: '#d7f2e2', glow: '#9ee3bd' },
+  rose:   { label: 'Merah Muda', accent: '#ec4899', accentRgb: '236,72,153', dark: '#c22a76', darkRgb: '194,42,118', light: '#f9a8d4', bg: '#fce7f3', bg2: '#fef1f8', border: '#fbcfe8', bgHover: '#fbd7ec', glow: '#f9a8d4' },
+  orange: { label: 'Oranye', accent: '#f97316', accentRgb: '249,115,22', dark: '#c2570a', darkRgb: '194,87,10',  light: '#fdba74', bg: '#feead9', bg2: '#fef3ea', border: '#fcd9b5', bgHover: '#fde0c0', glow: '#fdba74' },
+  slate:  { label: 'Abu Gelap', accent: '#475569', accentRgb: '71,85,105', dark: '#334155', darkRgb: '51,65,85',  light: '#94a3b8', bg: '#e6eaef', bg2: '#f0f2f5', border: '#d3d9e0', bgHover: '#dbe0e6', glow: '#94a3b8' }
+}
+function getAccentThemeId() {
+  try { return localStorage.getItem(ACCENT_THEME_KEY) || 'blue' } catch { return 'blue' }
+}
+function applyAccentTheme(id) {
+  const t = ACCENT_THEMES[id] || ACCENT_THEMES.blue
+  const root = document.documentElement.style
+  root.setProperty('--accent', t.accent)
+  root.setProperty('--accent-rgb', t.accentRgb)
+  root.setProperty('--accent-dark', t.dark)
+  root.setProperty('--accent-dark-rgb', t.darkRgb)
+  root.setProperty('--accent-light', t.light)
+  root.setProperty('--accent-bg', t.bg)
+  root.setProperty('--accent-bg-2', t.bg2)
+  root.setProperty('--accent-border', t.border)
+  root.setProperty('--accent-bg-hover', t.bgHover)
+  root.setProperty('--accent-glow', t.glow)
+}
+function setAccentTheme(id) {
+  if (!ACCENT_THEMES[id]) return
+  try { localStorage.setItem(ACCENT_THEME_KEY, id) } catch {}
+  applyAccentTheme(id)
+}
+applyAccentTheme(getAccentThemeId())
+
+function paletteIconSvg() {
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.9 0 1.7-.7 1.7-1.7 0-.4-.2-.8-.4-1.1-.2-.3-.4-.7-.4-1.1 0-.9.7-1.7 1.7-1.7H16c3.3 0 6-2.7 6-6C22 6 17.5 2 12 2z"/></svg>`
+}
+
+function openThemePicker() {
+  const current = getAccentThemeId()
+  const swatches = Object.entries(ACCENT_THEMES).map(([id, t]) => `
+    <button type="button" class="theme-swatch-btn${id === current ? ' active' : ''}" data-theme-id="${id}" style="--swatch-accent:${t.accent};--swatch-light:${t.light}">
+      <span class="theme-swatch-check">${checkIconSvg()}</span>
+      <span class="theme-swatch-dot"></span>
+      <span class="theme-swatch-label">${t.label}</span>
+    </button>`).join('')
+  openModal(`
+    <div class="modal-head">
+      <div class="modal-head-title">Warna Tampilan</div>
+      <button class="modal-close-btn" onclick="closeModal()">${closeIconSvg()}</button>
+    </div>
+    <div class="modal-body">
+      <div class="theme-swatch-grid" id="themeSwatchGrid">${swatches}</div>
+    </div>
+  `)
+  document.getElementById('themeSwatchGrid').querySelectorAll('.theme-swatch-btn').forEach(btn => {
+    btn.onclick = () => {
+      setAccentTheme(btn.dataset.themeId)
+      document.querySelectorAll('#themeSwatchGrid .theme-swatch-btn').forEach(b => b.classList.toggle('active', b === btn))
+    }
   })
-  const data = await res.json().catch(() => ({}))
-  if (!res.ok) throw new Error(data.error || 'Terjadi kesalahan')
-  return data
+}
+
+async function api(path, opts = {}) {
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 15000)
+  try {
+    const res = await fetch('/api' + path, {
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      signal: controller.signal,
+      ...opts
+    })
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok) throw new Error(data.error || 'Terjadi kesalahan')
+    return data
+  } catch (e) {
+    if (e.name === 'AbortError') throw new Error('Koneksi lambat, coba lagi')
+    throw e
+  } finally {
+    clearTimeout(timeout)
+  }
 }
 
 function toast(msg) {
@@ -240,10 +319,12 @@ function injectAccountLinks() {
   let likedLink = document.getElementById('likedMenuLink')
   let savedLink = document.getElementById('savedMenuLink')
   let scrapeLink = document.getElementById('scrapeMenuLink')
+  let apiDocsLink = document.getElementById('apiDocsMenuLink')
   if (!me || !onProfilePage) {
     if (likedLink) likedLink.remove()
     if (savedLink) savedLink.remove()
     if (scrapeLink) scrapeLink.remove()
+    if (apiDocsLink) apiDocsLink.remove()
     return
   }
   if (!likedLink) {
@@ -269,6 +350,14 @@ function injectAccountLinks() {
     scrapeLink.href = '/scrape-requests'
     scrapeLink.textContent = 'List Scraping'
     topnav.insertBefore(scrapeLink, authArea)
+  }
+  if (!apiDocsLink) {
+    apiDocsLink = document.createElement('a')
+    apiDocsLink.id = 'apiDocsMenuLink'
+    apiDocsLink.className = 'link-btn'
+    apiDocsLink.href = '/api-docs'
+    apiDocsLink.textContent = 'API Documentation'
+    topnav.insertBefore(apiDocsLink, authArea)
   }
 }
 
@@ -685,12 +774,15 @@ function openStickerPicker() {
     overlay.innerHTML = `
       <div class="sticker-picker-panel">
         <div class="sticker-picker-topbar">
-          <input type="text" class="sticker-picker-search" placeholder="Cari stiker/GIF..." autocomplete="off">
+          <div class="sticker-picker-search-wrap">
+            <span class="sticker-picker-search-icon">${searchIconSvg()}</span>
+            <input type="text" class="sticker-picker-search" placeholder="Cari stiker/GIF..." autocomplete="off">
+          </div>
           <button type="button" class="sticker-picker-close" aria-label="Tutup">${closeIconSvg()}</button>
         </div>
         <div class="sticker-picker-label" id="stickerPickerLabel">Rekomendasi</div>
-        <div class="sticker-picker-grid" id="stickerPickerGrid"><div class="empty-state-sm">Memuat...</div></div>
-        <button type="button" class="sticker-picker-more" id="stickerPickerMore" style="display:none">Muat lagi</button>
+        <div class="sticker-picker-grid" id="stickerPickerGrid">${skelGrid(6)}</div>
+        <div class="sticker-picker-more" id="stickerPickerMore" style="display:none">${skelLine('40%', 10)}</div>
       </div>
     `
     document.body.appendChild(overlay)
@@ -702,6 +794,14 @@ function openStickerPicker() {
     let query = ''
     let nextPos = ''
     let loading = false
+    // Nyimpen url yang UDAH pernah ditampilin (across semua halaman yang
+    // udah dimuat buat query yang sama) -- backend (scrape Tenor/GIPHY
+    // tanpa API key resmi) kadang gak punya pagination beneran & balikin
+    // hasil yang tumpang-tindih/sama persis lagi pas "muat lagi" ditarik.
+    // Dedupe di sisi client ini jaring pengaman terakhir biar stiker yang
+    // sama gak muncul dobel di grid, apa pun yang dikirim server. Direset
+    // tiap kali query ganti/reset load.
+    let seenUrls = new Set()
 
     function cleanup() { overlay.remove() }
 
@@ -712,7 +812,19 @@ function openStickerPicker() {
       // berstiker sekaligus di layar = banyak GIF gede didekode barengan,
       // jadi berat pas discroll. Versi kecil ini juga udah pas buat kotak
       // pratinjau stiker yang cuma ~150px.
-      return items.map(it => `<button type="button" class="sticker-picker-item" data-url="${escapeHtml(it.previewUrl)}"><img src="${escapeHtml(it.previewUrl)}" loading="lazy" decoding="async" alt="stiker"></button>`).join('')
+      //
+      // `loading="lazy"` SENGAJA DIBUANG di sini -- picker ini ada di
+      // dalam overlay yang scroll-nya sendiri (bukan scroll dokumen utama),
+      // dan di banyak WebView/browser Android lama deteksi "deket viewport"
+      // buat native lazy-load itu gak diitung dari scroll container custom
+      // kayak gini, jadinya gambar gak pernah keanggep "deket" & gak pernah
+      // ke-load -> muncul kotak putih kosong padahal datanya udah nyampe.
+      // Kita udah punya penjatahan sendiri lewat infinite scroll (baru
+      // narik data pas beneran deket bawah), jadi tetep ringan tanpa perlu
+      // native lazy-load di atasnya lagi.
+      const fresh = items.filter(it => it.previewUrl && !seenUrls.has(it.previewUrl))
+      fresh.forEach(it => seenUrls.add(it.previewUrl))
+      return fresh.map(it => `<button type="button" class="sticker-picker-item" data-url="${escapeHtml(it.previewUrl)}"><img src="${escapeHtml(it.previewUrl)}" decoding="async" alt="stiker"></button>`).join('')
     }
     function wireItems() {
       grid.querySelectorAll('.sticker-picker-item').forEach(btn => {
@@ -723,8 +835,8 @@ function openStickerPicker() {
         // kelewat lonjong (16:9/9:16) -- biar konsisten sama yang udah
         // difilter di server, tanpa nunggu render duluan baru ilang.
         const img = btn.querySelector('img')
-        if (img && !img.dataset.aspectChecked) {
-          img.dataset.aspectChecked = '1'
+        if (img && !img.dataset.wired) {
+          img.dataset.wired = '1'
           const check = () => {
             const w = img.naturalWidth, h = img.naturalHeight
             if (w && h) {
@@ -734,29 +846,57 @@ function openStickerPicker() {
           }
           if (img.complete) check()
           else img.addEventListener('load', check, { once: true })
+          // Kalau url-nya mati (hasil scrape kadang basi/keblokir), buang
+          // aja kartunya daripada nyisain kotak putih kosong nganggur di
+          // grid.
+          img.addEventListener('error', () => btn.remove(), { once: true })
         }
       })
     }
 
     async function load(reset) {
-      if (loading) return
+      if (loading || (!reset && !nextPos)) return
       loading = true
-      if (reset) { grid.innerHTML = `<div class="empty-state-sm">Memuat...</div>`; nextPos = ''; label.textContent = query ? `Hasil untuk "${query}"` : 'Rekomendasi' }
+      if (reset) {
+        grid.innerHTML = skelGrid(6)
+        nextPos = ''
+        seenUrls = new Set()
+        label.textContent = query ? `Hasil untuk "${query}"` : 'Rekomendasi'
+      } else {
+        moreBtn.style.display = 'block'
+      }
       try {
-        const path = query
-          ? `/tenor/search?q=${encodeURIComponent(query)}${nextPos ? `&pos=${encodeURIComponent(nextPos)}` : ''}`
-          : `/tenor/featured${nextPos ? `?pos=${encodeURIComponent(nextPos)}` : ''}`
-        const r = await api(path)
-        nextPos = r.next || ''
-        grid.innerHTML = reset ? itemsHtml(r.results) : grid.innerHTML + itemsHtml(r.results)
-        if (!r.results.length && reset) grid.innerHTML = `<div class="empty-state-sm">Gak ada hasil.</div>`
+        let html = ''
+        do {
+          const path = query
+            ? `/tenor/search?q=${encodeURIComponent(query)}${nextPos ? `&pos=${encodeURIComponent(nextPos)}` : ''}`
+            : `/tenor/featured${nextPos ? `?pos=${encodeURIComponent(nextPos)}` : ''}`
+          const r = await api(path)
+          html = itemsHtml(r.results)
+          nextPos = r.next || ''
+          // Kalau server masih ngaku ada halaman berikutnya tapi ISI
+          // halaman ini ternyata abis kedeteksi dobel semua (html kosong
+          // setelah difilter di seenUrls), langsung tarik halaman
+          // berikutnya di loop yang sama -- biar infinite scroll gak
+          // kerasa "macet" nunggu user scroll ulang buat nyoba lagi.
+        } while (!html && nextPos && !reset)
+        grid.innerHTML = reset ? (html || `<div class="empty-state-sm">Tidak ada hasil.</div>`) : grid.innerHTML + html
         wireItems()
-        moreBtn.style.display = nextPos ? 'block' : 'none'
       } catch (e) {
         if (reset) grid.innerHTML = `<div class="empty-state-sm">${escapeHtml(e.message)}</div>`
-        moreBtn.style.display = 'none'
-      } finally { loading = false }
+        nextPos = ''
+      } finally { loading = false; moreBtn.style.display = 'none' }
     }
+
+    // Infinite scroll: begitu user nyaris nyampe bawah grid, otomatis
+    // narik halaman berikutnya sendiri -- gak ada lagi tombol "Muat lagi"
+    // yang perlu dipencet manual. `stickerPickerMore` sekarang cuma
+    // indikator pasif "Memuat lagi..." yang nongol pas lagi ngambil data
+    // di background.
+    grid.addEventListener('scroll', () => {
+      if (loading || !nextPos) return
+      if (grid.scrollTop + grid.clientHeight >= grid.scrollHeight - 400) load(false)
+    })
 
     let searchTimer = null
     searchInput.addEventListener('input', () => {
@@ -766,7 +906,6 @@ function openStickerPicker() {
         load(true)
       }, 400)
     })
-    moreBtn.onclick = () => load(false)
     overlay.querySelector('.sticker-picker-close').onclick = () => { cleanup(); resolve(null) }
     overlay.addEventListener('click', (e) => { if (e.target === overlay) { cleanup(); resolve(null) } })
 
@@ -783,3 +922,136 @@ document.addEventListener('DOMContentLoaded', initHamburger)
 document.addEventListener('DOMContentLoaded', initBottomNav)
 document.addEventListener('DOMContentLoaded', initBackButton)
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal() })
+
+// --- Micro-interactions: click sound + ripple, dipasang global di semua elemen interaktif ---
+;(function initClickFx() {
+  let ctx = null
+  function getCtx() {
+    if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)()
+    if (ctx.state === 'suspended') ctx.resume()
+    return ctx
+  }
+  function playClickSound() {
+    try {
+      const c = getCtx()
+      const now = c.currentTime
+
+      // lapisan "tock" bernada rendah -> badan klik yang berisi/padat
+      const body = c.createOscillator()
+      const bodyGain = c.createGain()
+      body.type = 'square'
+      body.frequency.setValueAtTime(220, now)
+      body.frequency.exponentialRampToValueAtTime(90, now + 0.035)
+      bodyGain.gain.setValueAtTime(0.0001, now)
+      bodyGain.gain.exponentialRampToValueAtTime(0.09, now + 0.002)
+      bodyGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.045)
+      body.connect(bodyGain).connect(c.destination)
+
+      // lapisan noise pendek -> "tik" mekanikal di transient awal
+      const bufferSize = Math.floor(c.sampleRate * 0.02)
+      const buffer = c.createBuffer(1, bufferSize, c.sampleRate)
+      const data = buffer.getChannelData(0)
+      for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize)
+      const noise = c.createBufferSource()
+      noise.buffer = buffer
+      const noiseFilter = c.createBiquadFilter()
+      noiseFilter.type = 'highpass'
+      noiseFilter.frequency.value = 2200
+      const noiseGain = c.createGain()
+      noiseGain.gain.setValueAtTime(0.08, now)
+      noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.02)
+      noise.connect(noiseFilter).connect(noiseGain).connect(c.destination)
+
+      body.start(now); body.stop(now + 0.05)
+      noise.start(now); noise.stop(now + 0.025)
+    } catch {}
+  }
+
+  const FX_SELECTOR = 'button:not([data-no-fx]), .btn, a.btn, .icon-btn, .action-item, .bnav-item, .link-btn, .tag-pill, .page-btn, .badge-chip, .lb-tab-btn, .report-filter-tab, .send-icon-btn, .sticker-pick-btn, .comment-action-btn, .bnav-fab-circle'
+  const reduceMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+  function spawnRipple(el, e) {
+    if (reduceMotion()) return
+    const rect = el.getBoundingClientRect()
+    const size = Math.max(rect.width, rect.height) * 1.6
+    const ripple = document.createElement('span')
+    ripple.className = 'ui-ripple'
+    const cx = (e.clientX ?? (rect.left + rect.width / 2)) - rect.left - size / 2
+    const cy = (e.clientY ?? (rect.top + rect.height / 2)) - rect.top - size / 2
+    ripple.style.width = ripple.style.height = size + 'px'
+    ripple.style.left = cx + 'px'
+    ripple.style.top = cy + 'px'
+    el.classList.add('ui-ripple-host')
+    el.appendChild(ripple)
+    ripple.addEventListener('animationend', () => ripple.remove())
+  }
+
+  document.addEventListener('click', (e) => {
+    const target = e.target.closest(FX_SELECTOR)
+    if (!target || target.disabled) return
+    playClickSound()
+    spawnRipple(target, e)
+  }, true)
+
+  window.playClickSound = playClickSound
+})()
+
+// --- Skeleton loading: dipakai buat gantiin teks "Memuat..." di semua halaman ---
+function skelLine(w = '100%', h = 12) { return `<div class="skeleton skel-line" style="width:${w};height:${h}px"></div>` }
+function skelAvatar(size = 38) { return `<div class="skeleton skel-avatar" style="width:${size}px;height:${size}px"></div>` }
+function skelBlock(h = 120, radius = 14) { return `<div class="skeleton skel-block" style="height:${h}px;border-radius:${radius}px"></div>` }
+
+function skelSnippetCard() {
+  return `<div class="skel-card">
+    <div class="skel-row">
+      ${skelAvatar(38)}
+      <div class="skel-col">${skelLine('42%', 13)}${skelLine('26%', 10)}</div>
+    </div>
+    ${skelLine('72%', 18)}
+    <div class="skel-col" style="margin:10px 0 0">${skelLine('100%', 13)}${skelLine('85%', 13)}</div>
+    ${skelBlock(120, 14)}
+    <div class="skel-tags">${skelLine('54px', 22)}${skelLine('70px', 22)}</div>
+  </div>`
+}
+function skelFeedList(n = 3) { return Array.from({ length: n }, skelSnippetCard).join('') }
+
+function skelRow(avatarSize = 34) {
+  return `<div class="skel-card" style="display:flex;align-items:center;gap:12px;padding:14px 16px;margin-bottom:10px">
+    ${skelAvatar(avatarSize)}
+    <div class="skel-col">${skelLine('50%', 13)}${skelLine('30%', 10)}</div>
+  </div>`
+}
+function skelRowList(n = 4, avatarSize = 34) { return Array.from({ length: n }, () => skelRow(avatarSize)).join('') }
+
+function skelProfileHeader() {
+  return `<div class="skel-card skel-card-plain">
+    <div class="skel-row">
+      ${skelAvatar(64)}
+      <div class="skel-col">${skelLine('55%', 20)}${skelLine('35%', 12)}</div>
+    </div>
+    <div class="skel-tags" style="margin-top:18px">${skelLine('18%', 32)}${skelLine('18%', 32)}${skelLine('18%', 32)}${skelLine('18%', 32)}</div>
+    <div class="skel-col" style="margin-top:16px">${skelLine('100%', 12)}${skelLine('80%', 12)}</div>
+  </div>`
+}
+
+function skelCodeDetail() {
+  return `<div class="skel-card skel-card-plain">
+    <div class="skel-row">${skelAvatar(34)}<div class="skel-col">${skelLine('40%', 13)}${skelLine('25%', 10)}</div></div>
+    ${skelLine('60%', 20)}
+    ${skelBlock(220, 18)}
+    <div class="skel-tags">${skelLine('90px', 40)}${skelLine('90px', 40)}</div>
+  </div>`
+}
+
+function skelCommentItem() {
+  return `<div class="skel-row" style="align-items:flex-start">
+    ${skelAvatar(30)}
+    <div class="skel-col">${skelLine('35%', 11)}${skelLine('90%', 13)}${skelLine('60%', 13)}</div>
+  </div>`
+}
+function skelCommentList(n = 2) { return Array.from({ length: n }, skelCommentItem).join('') }
+
+function skelGrid(n = 6, ratio = '100%') {
+  return `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">${Array.from({ length: n }, () =>
+    `<div class="skeleton" style="width:100%;padding-top:${ratio};border-radius:14px"></div>`).join('')}</div>`
+}

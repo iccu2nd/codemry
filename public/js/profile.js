@@ -3,24 +3,22 @@ async function renderProfile() {
   const app = document.getElementById('app')
   const username = qs('u')
   if (!username) { app.innerHTML = `<div class="card"><div class="empty-state">Profil tidak ditemukan.</div></div>`; return }
-  app.innerHTML = `<div class="card"><div class="empty-state">Memuat profil...</div></div>`
+  app.innerHTML = skelProfileHeader()
   try {
     const p = await api(`/users/${username}`)
     const totalViews = p.snippets.reduce((sum, s) => sum + (s.views || 0), 0)
     app.innerHTML = `
       <div class="card profile-card">
-        ${p.banner
-          ? `<div class="profile-banner-wrap">
-               <div class="profile-banner-img" id="bannerImg" style="background-image:url('${p.banner}')"></div>
-               <div class="profile-banner-fade"></div>
-               ${p.isMe ? `<button class="banner-pencil-btn" id="bannerBtn" aria-label="Ganti foto sampul">${cameraIconSvg()}</button>` : ''}
-             </div>`
-          : (p.isMe ? `<button type="button" class="profile-banner-add-btn" id="bannerAddBtn">${cameraIconSvg()} Tambah foto sampul</button>` : '')}
+        <div class="profile-banner-wrap${p.banner ? '' : ' no-banner'}">
+          <div class="profile-banner-img" id="bannerImg" style="${p.banner ? `background-image:url('${p.banner}')` : ''}"></div>
+          <div class="profile-banner-fade"></div>
+          ${p.isMe ? `<button type="button" class="banner-pencil-btn" id="bannerBtn" aria-label="Ganti foto sampul">${cameraIconSvg()}</button>` : ''}
+        </div>
         ${p.isMe ? `<input type="file" id="bannerInput" accept="image/*" style="display:none">` : ''}
         <div class="profile-head">
           <div class="avatar-wrap">
             <img class="avatar avatar-circle" id="avatarImg" src="${p.avatar}">
-            ${p.isMe ? `<button class="avatar-pencil-btn" id="avatarBtn" aria-label="Ganti foto profil">${cameraIconSvg()}</button>` : ''}
+            ${p.isMe ? `<button type="button" class="avatar-pencil-btn" id="avatarBtn" aria-label="Ganti foto profil">${cameraIconSvg()}</button>` : ''}
             <input type="file" id="avatarInput" accept="image/*" style="display:none">
           </div>
           <div class="profile-names">
@@ -99,6 +97,10 @@ async function renderProfile() {
       } catch (e) { toast(e.message) }
     }
 
+    // Penting: tombol kamera (avatar & banner) TIDAK PERNAH dipindah posisinya.
+    // Selama upload berlangsung, tombolnya cuma dikasih class "is-uploading"
+    // (spinner + disabled) di tempat yang sama -- gak ada re-render struktur
+    // ulang yang bisa bikin ikonnya "lompat".
     const avatarBtn = document.getElementById('avatarBtn')
     const avatarInput = document.getElementById('avatarInput')
     if (avatarBtn) {
@@ -108,34 +110,48 @@ async function renderProfile() {
         if (!file) return
         try {
           const base64 = await openImageCropper(file, { outW: 256, outH: 256, shape: 'circle' })
+          avatarBtn.classList.add('is-uploading')
+          avatarBtn.disabled = true
           toast('Mengupload foto...')
           const r = await api('/users/me/avatar', { method: 'POST', body: JSON.stringify({ imageBase64: base64, ext: 'jpg' }) })
           document.getElementById('avatarImg').src = r.avatar
           if (me && me.username === username) { me.avatar = r.avatar; renderAuthArea() }
+          // Halaman ini menampilkan kode milik sendiri -- pastikan avatar di kartu-kartu
+          // tersebut ikut ganti seketika, jangan sampai avatar lama masih nyantol.
+          document.querySelectorAll('#profileSnippets .avatar-circle').forEach(img => { img.src = r.avatar })
           toast('Foto profil diperbarui!')
         } catch (e) { if (e.message !== 'cancelled') toast(e.message) }
-        finally { avatarInput.value = '' }
+        finally {
+          avatarInput.value = ''
+          avatarBtn.classList.remove('is-uploading')
+          avatarBtn.disabled = false
+        }
       }
     }
 
     const bannerBtn = document.getElementById('bannerBtn')
-    const bannerAddBtn = document.getElementById('bannerAddBtn')
     const bannerInput = document.getElementById('bannerInput')
-    const triggerBannerUpload = () => bannerInput && bannerInput.click()
-    if (bannerBtn) bannerBtn.onclick = triggerBannerUpload
-    if (bannerAddBtn) bannerAddBtn.onclick = triggerBannerUpload
+    if (bannerBtn) bannerBtn.onclick = () => bannerInput.click()
     if (bannerInput) {
       bannerInput.onchange = async () => {
         const file = bannerInput.files[0]
         if (!file) return
         try {
           const base64 = await openImageCropper(file, { outW: 960, outH: 400, shape: 'rect' })
+          bannerBtn.classList.add('is-uploading')
+          bannerBtn.disabled = true
           toast('Mengupload foto sampul...')
-          await api('/users/me/banner', { method: 'POST', body: JSON.stringify({ imageBase64: base64, ext: 'jpg' }) })
+          const r = await api('/users/me/banner', { method: 'POST', body: JSON.stringify({ imageBase64: base64, ext: 'jpg' }) })
+          const bannerImgEl = document.getElementById('bannerImg')
+          bannerImgEl.style.backgroundImage = `url('${r.banner}')`
+          bannerImgEl.closest('.profile-banner-wrap').classList.remove('no-banner')
           toast('Foto sampul diperbarui!')
-          renderProfile()
         } catch (e) { if (e.message !== 'cancelled') toast(e.message) }
-        finally { bannerInput.value = '' }
+        finally {
+          bannerInput.value = ''
+          bannerBtn.classList.remove('is-uploading')
+          bannerBtn.disabled = false
+        }
       }
     }
 
@@ -337,3 +353,9 @@ function openImageCropper(file, { outW, outH, shape = 'rect' }) {
 
 refreshAuth()
 renderProfile()
+
+const themeBtn = document.getElementById('themeBtn')
+if (themeBtn) {
+  themeBtn.innerHTML = paletteIconSvg()
+  themeBtn.onclick = openThemePicker
+}

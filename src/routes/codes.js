@@ -14,14 +14,22 @@ function requireAuth(req, res, next) {
     next()
 }
 
-// Cuma URL dari domain CDN Tenor yang boleh disimpan sebagai stiker komentar --
-// mencegah orang nyelundupin URL sembarangan (tracking pixel, gambar
-// ngajak/phishing, dll) lewat field ini.
+// Cuma URL dari domain CDN Tenor ATAU Giphy yang boleh disimpan sebagai stiker
+// komentar -- mencegah orang nyelundupin URL sembarangan (tracking pixel,
+// gambar ngajak/phishing, dll) lewat field ini.
+//
+// BUG SEBELUMNYA: cuma tenor.com yang diloloskan, padahal picker stiker
+// (lihat tenor.js + giphy.js) sekarang narik dari DUA sumber yang
+// diselang-seling, dan GIPHY dijadiin sumber UTAMA-nya. Jadi tiap kali user
+// milih stiker yang kebetulan dari Giphy (media*.giphy.com), request
+// simpan komentarnya ditolak diam-diam sama validasi ini (400 "stiker
+// tidak valid") -- makanya kerasa kayak "komentar stiker ilang": user udah
+// pencet kirim, tapi komentarnya emang gak pernah kesimpen sama sekali.
 function isValidStickerUrl(url) {
     if (typeof url !== 'string' || !url) return false
     try {
         const u = new URL(url)
-        return u.protocol === 'https:' && /(^|\.)tenor\.com$/.test(u.hostname)
+        return u.protocol === 'https:' && /(^|\.)(tenor|giphy)\.com$/.test(u.hostname)
     } catch { return false }
 }
 
@@ -94,44 +102,47 @@ router.post('/import', requireAuth, async (req, res) => {
     }
 })
 
-router.post('/', requireAuth, async (req, res) => {
-    const { title, filename, content, language, isPublic, description, tags, pin } = req.body
-    if (!content || !filename) return res.status(400).json({ error: 'filename & content wajib' })
+export async function createSnippetForUser(username, body) {
+    const { title, filename, content, language, isPublic, description, tags, pin } = body
+    if (!content || !filename) { const e = new Error('filename & content wajib'); e.status = 400; throw e }
     const trimmedPin = typeof pin === 'string' ? pin.trim() : ''
-    if (trimmedPin && !PIN_RE.test(trimmedPin)) return res.status(400).json({ error: 'PIN harus 4-8 digit angka' })
+    if (trimmedPin && !PIN_RE.test(trimmedPin)) { const e = new Error('PIN harus 4-8 digit angka'); e.status = 400; throw e }
+    const gist = await createGist({ [filename]: { content } }, title || filename, !!isPublic)
+    const file = gist.files[filename]
+    const snippet = {
+        id: gist.id,
+        shortId: await Snippets.uniqueShortId(),
+        title: title || filename,
+        description: sanitizeDescription(description),
+        filename,
+        language: sanitizeLanguage(language),
+        tags: sanitizeTags(tags),
+        ownerUsername: username,
+        isPublic: !!isPublic,
+        isLocked: !!trimmedPin,
+        pinHash: trimmedPin ? await hashPin(trimmedPin) : null,
+        rawUrl: file.raw_url,
+        htmlUrl: gist.html_url,
+        preview: buildPreview(content),
+        createdAt: Date.now()
+    }
+    await Snippets.create(snippet)
+    if (snippet.isPublic) {
+        Follows.followers(username).then(followers => {
+            followers.forEach(follower => {
+                Notifications.create({ username: follower, fromUsername: username, type: 'upload', shortId: snippet.shortId }).catch(() => {})
+            })
+        }).catch(() => {})
+    }
+    return snippet
+}
+
+router.post('/', requireAuth, async (req, res) => {
     try {
-        const gist = await createGist({ [filename]: { content } }, title || filename, !!isPublic)
-        const file = gist.files[filename]
-        const snippet = {
-            id: gist.id,
-            shortId: await Snippets.uniqueShortId(),
-            title: title || filename,
-            description: sanitizeDescription(description),
-            filename,
-            language: sanitizeLanguage(language),
-            tags: sanitizeTags(tags),
-            ownerUsername: req.username,
-            isPublic: !!isPublic,
-            isLocked: !!trimmedPin,
-            pinHash: trimmedPin ? await hashPin(trimmedPin) : null,
-            rawUrl: file.raw_url,
-            htmlUrl: gist.html_url,
-            preview: buildPreview(content),
-            createdAt: Date.now()
-        }
-        await Snippets.create(snippet)
-        // Kabarin semua follower kalau kode ini publik -- kode privat gak usah,
-        // toh follower gak bisa buka. Fire-and-forget, gak bikin upload nunggu.
-        if (snippet.isPublic) {
-            Follows.followers(req.username).then(followers => {
-                followers.forEach(follower => {
-                    Notifications.create({ username: follower, fromUsername: req.username, type: 'upload', shortId: snippet.shortId }).catch(() => {})
-                })
-            }).catch(() => {})
-        }
+        const snippet = await createSnippetForUser(req.username, req.body)
         res.json(stripSnippetSecrets(snippet))
     } catch (e) {
-        res.status(500).json({ error: e.response?.data?.message || e.message })
+        res.status(e.status || 500).json({ error: e.response?.data?.message || e.message })
     }
 })
 
