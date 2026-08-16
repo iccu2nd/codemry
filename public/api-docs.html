@@ -54,6 +54,7 @@
       <tbody>
         <tr><td><code>GET /api/public/me</code></td><td>Profil dasar akun kamu</td></tr>
         <tr><td><code>GET /api/public/snippets</code></td><td>Semua kode publik yang kamu upload</td></tr>
+        <tr><td><code>POST /api/public/snippets</code></td><td>Upload kode baru ke akun kamu</td></tr>
       </tbody>
     </table>
   </div>
@@ -84,6 +85,36 @@
       "likes": 4
     }
   ]
+}</code></pre></div>
+  </div>
+
+  <div class="card">
+    <div class="dev-section-title">Upload Kode Lewat API</div>
+    <div class="snippet-desc">Kirim <code>POST</code> ke endpoint di bawah dengan body JSON. Field wajib: <code>filename</code> &amp; <code>content</code>.</div>
+    <table class="doc-param-table">
+      <thead><tr><th>Field</th><th>Tipe</th><th>Keterangan</th></tr></thead>
+      <tbody>
+        <tr><td><code>filename</code></td><td>string</td><td>Wajib. Nama file, mis. <code>script.js</code></td></tr>
+        <tr><td><code>content</code></td><td>string</td><td>Wajib. Isi kodenya</td></tr>
+        <tr><td><code>title</code></td><td>string</td><td>Judul kode, default = filename</td></tr>
+        <tr><td><code>description</code></td><td>string</td><td>Deskripsi singkat (maks 500 karakter)</td></tr>
+        <tr><td><code>language</code></td><td>string</td><td>mis. <code>javascript</code>, <code>python</code>, dst</td></tr>
+        <tr><td><code>tags</code></td><td>array/string</td><td>Maks 5 tag</td></tr>
+        <tr><td><code>isPublic</code></td><td>boolean</td><td>Tampil di feed publik atau tidak</td></tr>
+        <tr><td><code>pin</code></td><td>string</td><td>Opsional, kunci PIN 4-8 digit</td></tr>
+      </tbody>
+    </table>
+    <div class="doc-endpoint-row"><span class="doc-method-pill">POST</span><span class="doc-endpoint-path">/api/public/snippets</span></div>
+    <div class="doc-code-block"><pre><code class="language-bash" id="uploadCurlExample"></code></pre></div>
+    <div class="doc-code-block" style="margin-top:8px"><pre><code class="language-javascript" id="uploadJsExample"></code></pre></div>
+    <div class="dev-section-title" style="margin-top:16px;font-size:13px">Contoh Respons</div>
+    <div class="doc-code-block"><pre><code class="language-json">{
+  "shortId": "kL9pT2",
+  "title": "script.js",
+  "filename": "script.js",
+  "language": "javascript",
+  "isPublic": true,
+  "createdAt": 1755311234000
 }</code></pre></div>
   </div>
 

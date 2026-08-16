@@ -1,14 +1,14 @@
 :root {
-  --accent: var(--accent);
+  --accent: #2f8fd6;
   --accent-rgb: 47,143,214;
-  --accent-dark: var(--accent-dark);
+  --accent-dark: #1f6ea8;
   --accent-dark-rgb: 31,110,168;
-  --accent-light: var(--accent-light);
-  --accent-bg: var(--accent-bg);
-  --accent-bg-2: var(--accent-bg-2);
-  --accent-border: var(--accent-border);
-  --accent-bg-hover: var(--accent-bg-hover);
-  --accent-glow: var(--accent-glow);
+  --accent-light: #6ec1ef;
+  --accent-bg: #e2eef8;
+  --accent-bg-2: #eef6fc;
+  --accent-border: #d5e6f3;
+  --accent-bg-hover: #dcedfa;
+  --accent-glow: #a9d4f0;
 }
 
 @font-face { font-family: 'Poppins'; src: url('fonts/Poppins-Regular.woff') format('woff'); font-weight: 400; font-style: normal; font-display: swap; }
@@ -95,8 +95,13 @@ body::after {
   justify-content: space-between;
   align-items: center;
   padding: 18px 28px;
-  background: rgba(255,255,255,.55);
-  backdrop-filter: blur(10px);
+  /* Sengaja background solid (bukan translucent + backdrop-filter:blur).
+     Header ini sticky & selalu kelihatan pas scroll -- blur di elemen
+     sticky/fixed dipaksa browser buat digambar ulang tiap frame scroll,
+     itu penyebab utama scroll kerasa patah-patah/nge-lag di HP kelas
+     menengah-bawah. Background solid nyaris gak ada biaya render sama
+     sekali (browser cukup composite layer-nya). */
+  background: #f6fbff;
   position: sticky;
   top: 0;
   z-index: 20;
@@ -136,8 +141,9 @@ body::after {
   z-index: 30;
   width: 40px; height: 40px;
   border: none; border-radius: 12px;
-  background: rgba(255,255,255,.85);
-  backdrop-filter: blur(8px);
+  /* Solid, bukan blur -- tombol ini fixed & kelihatan terus pas scroll,
+     backdrop-filter di elemen fixed mahal buat di-render ulang tiap frame. */
+  background: #fff;
   box-shadow: 0 3px 10px rgba(15,15,20,.12), 0 3px 0 #d1d5db;
   display: flex; align-items: center; justify-content: center;
   cursor: pointer;
@@ -460,6 +466,13 @@ img.clickable:hover { outline: 2px solid rgba(var(--accent-rgb),.4); outline-off
   margin-bottom: 18px;
   box-shadow: 0 6px 0 #000;
   transition: transform .15s ease, box-shadow .15s ease;
+  /* Kartu feed bisa numpuk puluhan/ratusan pas scroll panjang. content-visibility
+     bikin browser skip layout+paint buat kartu yang lagi di luar viewport,
+     jadi scroll list panjang tetep mulus gak patah-patah. contain-intrinsic-size
+     kasih perkiraan tinggi biar scrollbar/posisi gak "loncat" pas kartu yang
+     tadinya di-skip masuk lagi ke viewport. */
+  content-visibility: auto;
+  contain-intrinsic-size: auto 260px;
 }
 .snippet-card:hover {
   transform: translateY(-3px);
@@ -1517,14 +1530,17 @@ body:not([data-no-bottom-nav]) .app { padding-bottom: 116px; }
    pengaruh ke user lain.
    ============================================================ */
 .theme-icon-btn {
-  width: 38px; height: 38px; flex-shrink: 0;
-  border-radius: 12px; border: 1.5px solid var(--accent-border);
-  background: var(--accent-bg-2); color: var(--accent-dark);
+  width: 44px; height: 44px; flex-shrink: 0;
+  border-radius: 12px; border: none;
+  background: #fff; box-shadow: 0 4px 0 var(--accent-border);
+  color: var(--accent-dark);
   display: flex; align-items: center; justify-content: center;
   cursor: pointer;
+  transform: translateY(0);
+  transition: transform .16s cubic-bezier(.22,.9,.32,1.18), box-shadow .16s cubic-bezier(.22,.9,.32,1.18);
 }
-.theme-icon-btn:active { transform: scale(.92); }
-.theme-icon-btn svg { width: 19px; height: 19px; }
+.theme-icon-btn:active { transform: translateY(4px); box-shadow: 0 0 0 var(--accent-border); }
+.theme-icon-btn svg { width: 22px; height: 22px; }
 .topbar-right-icons { display: flex; align-items: center; gap: 10px; }
 .theme-swatch-grid {
   display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
@@ -1711,8 +1727,9 @@ body:not([data-no-bottom-nav]) .app { padding-bottom: 116px; }
   align-items: center;
   gap: 10px;
   padding: 14px 20px;
-  background: rgba(255,255,255,.88);
-  backdrop-filter: blur(8px);
+  /* Sama kayak .topbar: solid, bukan blur, biar sticky header ini gak
+     bikin scroll patah-patah (lihat catatan di .topbar). */
+  background: #f6fbff;
   position: sticky;
   top: 0;
   z-index: 20;

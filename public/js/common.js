@@ -60,7 +60,6 @@ function openThemePicker() {
     </div>
     <div class="modal-body">
       <div class="theme-swatch-grid" id="themeSwatchGrid">${swatches}</div>
-      <div class="theme-picker-hint">Warna ini cuma kesimpen di HP/browser kamu sendiri -- user lain gak lihat &amp; gak kepengaruh.</div>
     </div>
   `)
   document.getElementById('themeSwatchGrid').querySelectorAll('.theme-swatch-btn').forEach(btn => {

@@ -1,12 +1,14 @@
 import { Router } from 'express'
 import { Users, Snippets, Views, Likes, ensureNickname, avatarUrl, stripSnippetSecrets } from '../db.js'
 import { createRateLimiter } from '../rate-limit.js'
+import { createSnippetForUser } from './codes.js'
 
 // API publik buat akun sendiri -- didokumentasikan di halaman /api-docs.
 // Key dikirim lewat header X-API-Key atau query ?key=, divalidasi ke
 // Users.apiKey. Dibatasi rate-limit sederhana per key biar gak disalahgunain.
 const router = Router()
 const tooManyAttempts = createRateLimiter(60)
+const tooManyUploads = createRateLimiter(15)
 
 async function findByApiKey(key) {
     if (!key) return null
@@ -53,6 +55,16 @@ router.get('/snippets', async (req, res) => {
             likes: likeCounts[s.shortId] || 0
         }))
     })
+})
+
+router.post('/snippets', async (req, res) => {
+    if (tooManyUploads(req.apiUser.apiKey)) return res.status(429).json({ error: 'Terlalu banyak upload, coba lagi nanti' })
+    try {
+        const snippet = await createSnippetForUser(req.apiUser.username, req.body)
+        res.status(201).json(stripSnippetSecrets(snippet))
+    } catch (e) {
+        res.status(e.status || 500).json({ error: e.response?.data?.message || e.message })
+    }
 })
 
 export default router

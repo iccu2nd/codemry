@@ -29,6 +29,24 @@ function renderExamples(key) {
 })
 const data = await res.json()
 console.log(data)`
+  document.getElementById('uploadCurlExample').textContent =
+    `curl -X POST "${base}/snippets" \\\n  -H "X-API-Key: ${shown}" \\\n  -H "Content-Type: application/json" \\\n  -d '{"filename":"script.js","content":"console.log(1)","title":"Script Saya","isPublic":true}'`
+  document.getElementById('uploadJsExample').textContent =
+`const res = await fetch('${base}/snippets', {
+  method: 'POST',
+  headers: {
+    'X-API-Key': '${shown}',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    filename: 'script.js',
+    content: 'console.log(1)',
+    title: 'Script Saya',
+    isPublic: true
+  })
+})
+const data = await res.json()
+console.log(data)`
   if (window.hljs) {
     document.querySelectorAll('#app pre code').forEach(el => hljs.highlightElement(el))
   }
