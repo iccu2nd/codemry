@@ -89,7 +89,7 @@ function trendingSearchScore(s) {
 async function loadTrendingSearch() {
   const wrap = document.getElementById('trendingList')
   if (!wrap) return
-  wrap.innerHTML = skelRowList(4)
+  wrap.innerHTML = `<div class="empty-state-sm">Memuat trending...</div>`
   try {
     const codes = await api('/codes')
     const scoreByTag = new Map()
@@ -104,7 +104,7 @@ async function loadTrendingSearch() {
     const ranked = [...scoreByTag.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10)
 
     if (!ranked.length) {
-      wrap.innerHTML = `<div class="empty-state-sm">Belum ada tren. Unggah kode dan gunakan tag agar muncul di sini.</div>`
+      wrap.innerHTML = `<div class="empty-state-sm">Belum ada tren. Upload kode & pakai tag biar muncul di sini!</div>`
       return
     }
 

@@ -24,7 +24,7 @@ async function init() {
         <div class="field">
           <label>Nama File</label>
           <input name="filename" placeholder="prima.js" required>
-          <div class="field-hint">Jika lupa menambahkan akhiran, sistem akan menyesuaikannya secara otomatis berdasarkan bahasa yang dipilih.</div>
+          <div class="field-hint">Lupa taruh akhiran juga gapapa, otomatis nyesuain bahasa yang dipilih.</div>
         </div>
         <div class="field"><label>Bahasa</label>
           <select name="language">
@@ -36,7 +36,7 @@ async function init() {
         <div class="field">
           <label>Tag (opsional, maks 5)</label>
           <input name="tags" placeholder="#algoritma #tutorial atau algoritma, tutorial">
-          <div class="field-hint">Pisahkan dengan koma atau spasi, tanda # juga diperbolehkan.</div>
+          <div class="field-hint">Pisah pakai koma atau spasi, pake # juga boleh.</div>
         </div>
         <div class="field"><label>Kode</label><textarea name="content" placeholder="Tempel kode di sini, atau upload file di atas..." required></textarea></div>
         <div class="checkbox-row"><input type="checkbox" name="isPublic" id="isPublic" checked><label for="isPublic">Publik (tampil di feed)</label></div>
@@ -108,7 +108,7 @@ async function init() {
     // kalau user milih "All files" di file picker dan nyoba upload gambar/zip/dll,
     // soalnya file binary kalau dibaca via file.text() bakal jadi teks acak/rusak.
     if (!ext || !EXT_LANG.hasOwnProperty(ext)) {
-      toast('Hanya file kode yang dapat diunggah (.js, .py, .html, dll) — bukan gambar/zip/file biner lainnya.')
+      toast('Cuma file kode yang bisa diupload (.js, .py, .html, dll) - bukan gambar/zip/file binary lain.')
       fileInput.value = ''
       return
     }

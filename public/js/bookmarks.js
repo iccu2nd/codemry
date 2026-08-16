@@ -8,7 +8,7 @@ async function init() {
     const snippets = await api('/codes/bookmarked')
     container.innerHTML = `
       <div class="section-label">Kode Tersimpan</div>
-      <div id="bookmarksList">${snippets.length ? snippets.map(snippetCard).join('') : `<div class="card"><div class="empty-state">Belum ada kode yang disimpan. Ketuk ikon bookmark pada kode mana pun untuk menyimpannya ke sini.</div></div>`}</div>
+      <div id="bookmarksList">${snippets.length ? snippets.map(snippetCard).join('') : `<div class="card"><div class="empty-state">Belum ada kode yang disimpan. Tap ikon bookmark di kode manapun buat nyimpen ke sini.</div></div>`}</div>
     `
     highlightAllIn('#bookmarksList pre code')
     wireLikeButtons(document.getElementById('bookmarksList'))

@@ -1,4 +1,3 @@
-import crypto from 'crypto'
 import { Router } from 'express'
 import { Users, Follows, Snippets, Views, Likes, Bookmarks, avatarUrl, bannerUrl, ensureNickname, renameUsername, ensureBadges, readBadges, badgeDisplay, stripSnippetSecrets, lockedSnippetStub, Notifications } from '../db.js'
 import { upsertAsset } from '../github.js'
@@ -7,10 +6,6 @@ const router = Router()
 
 const USERNAME_COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000
 const ALLOWED_IMAGE_EXT = new Set(['jpg', 'jpeg', 'png', 'webp', 'gif'])
-
-function genApiKey() {
-    return `cdy_${crypto.randomBytes(24).toString('hex')}`
-}
 
 router.patch('/me', async (req, res) => {
     if (!req.username) return res.status(401).json({ error: 'login dulu' })
@@ -66,9 +61,8 @@ router.post('/me/avatar', async (req, res) => {
     try {
         const path = `avatars/${req.username}.${safeExt}`
         await upsertAsset(path, imageBase64, `update avatar ${req.username}`)
-        const stamp = Date.now()
-        await Users.update(req.username, { avatarPath: path, avatarUpdatedAt: stamp })
-        res.json({ avatar: `/avatar/${req.username}?v=${stamp}` })
+        await Users.update(req.username, { avatarPath: path })
+        res.json({ avatar: `/avatar/${req.username}?t=${Date.now()}` })
     } catch (e) {
         res.status(500).json({ error: e.response?.data?.message || e.message })
     }
@@ -82,56 +76,8 @@ router.post('/me/banner', async (req, res) => {
     try {
         const path = `banners/${req.username}.${safeExt}`
         await upsertAsset(path, imageBase64, `update banner ${req.username}`)
-        const stamp = Date.now()
-        await Users.update(req.username, { bannerPath: path, bannerUpdatedAt: stamp })
-        res.json({ banner: `/banner/${req.username}?v=${stamp}` })
-    } catch (e) {
-        res.status(500).json({ error: e.response?.data?.message || e.message })
-    }
-})
-
-// Cuma NGECEK status key -- TIDAK PERNAH bikin key baru di sini. Key baru
-// hanya boleh dibuat kalau user secara eksplisit pencet tombol "Generate
-// API Key" (lihat POST /me/apikey/generate di bawah). Ini penting biar key
-// gak otomatis kebuat cuma gara-gara user buka halaman API Docs.
-router.get('/me/apikey', async (req, res) => {
-    if (!req.username) return res.status(401).json({ error: 'login dulu' })
-    try {
-        const user = await Users.find(req.username)
-        if (!user) return res.status(401).json({ error: 'login dulu' })
-        res.json({ apiKey: user.apiKey || null, createdAt: user.apiKeyCreatedAt || null })
-    } catch (e) {
-        res.status(500).json({ error: e.response?.data?.message || e.message })
-    }
-})
-
-// Bikin key baru -- cuma dipanggil pas user pencet tombol "Generate API
-// Key" secara manual. Kalau user udah punya key, tolak dan arahkan buat
-// pakai endpoint regenerate (biar gak ke-generate ulang tanpa sadar/konfirmasi).
-router.post('/me/apikey/generate', async (req, res) => {
-    if (!req.username) return res.status(401).json({ error: 'login dulu' })
-    try {
-        const user = await Users.find(req.username)
-        if (!user) return res.status(401).json({ error: 'login dulu' })
-        if (user.apiKey) return res.status(409).json({ error: 'Kamu udah punya API key. Pakai tombol Regenerate kalau mau ganti.' })
-        const apiKey = genApiKey()
-        const stamp = Date.now()
-        await Users.update(req.username, { apiKey, apiKeyCreatedAt: stamp })
-        res.json({ apiKey, createdAt: stamp })
-    } catch (e) {
-        res.status(500).json({ error: e.response?.data?.message || e.message })
-    }
-})
-
-// Ganti key lama dengan yang baru -- dipakai kalau user udah punya key dan
-// mau regenerate. Key lama langsung invalid begitu ini dipanggil.
-router.post('/me/apikey/regenerate', async (req, res) => {
-    if (!req.username) return res.status(401).json({ error: 'login dulu' })
-    try {
-        const apiKey = genApiKey()
-        const stamp = Date.now()
-        await Users.update(req.username, { apiKey, apiKeyCreatedAt: stamp })
-        res.json({ apiKey, createdAt: stamp })
+        await Users.update(req.username, { bannerPath: path })
+        res.json({ banner: `/banner/${req.username}?t=${Date.now()}` })
     } catch (e) {
         res.status(500).json({ error: e.response?.data?.message || e.message })
     }

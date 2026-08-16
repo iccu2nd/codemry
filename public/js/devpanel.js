@@ -5,7 +5,7 @@ let devUsersExpanded = false
 async function renderDevPanel() {
   const app = document.getElementById('app')
   if (!me) { app.innerHTML = `<div class="card"><div class="empty-state">Login dulu ya.</div></div>`; return }
-  if (!me.isDeveloper) { app.innerHTML = `<div class="card"><div class="empty-state">Halaman ini hanya untuk developer.</div></div>`; return }
+  if (!me.isDeveloper) { app.innerHTML = `<div class="card"><div class="empty-state">Halaman ini cuma buat developer.</div></div>`; return }
 
   app.innerHTML = `
     <div class="card">
@@ -20,15 +20,15 @@ async function renderDevPanel() {
 
     <div class="card">
       <div class="dev-stats-grid" id="devStatsGrid">
-        ${skelBlock(70, 16)}${skelBlock(70, 16)}${skelBlock(70, 16)}${skelBlock(70, 16)}
+        <div class="empty-state">Memuat statistik...</div>
       </div>
     </div>
 
     <div class="card">
       <div class="dev-section-title">Kelola Badge & Role</div>
-      <div class="snippet-meta" style="margin-bottom:10px">Ketuk chip lencana untuk mengaktifkan/menonaktifkan (bisa lebih dari satu jenis per pengguna). Role dapat diisi teks bebas (contoh: Moderator, Beta Tester) — murni label, tidak mengubah hak akses.</div>
+      <div class="snippet-meta" style="margin-bottom:10px">Ketuk chip lencana buat aktifkan/matikan (bisa lebih dari satu jenis per user). Role bisa diisi teks bebas (cth: Moderator, Beta Tester) -- murni label, gak ngubah hak akses.</div>
       <div class="field"><input id="devUserSearch" placeholder="Cari username..." autocomplete="off"></div>
-      <div id="devUserList">${skelRowList(3)}</div>
+      <div id="devUserList"><div class="empty-state">Memuat user...</div></div>
     </div>
   `
 
@@ -95,7 +95,7 @@ function renderDevUserList(filter) {
         }).join('')}
       </div>
       <div class="dev-role-row">
-        <input class="dev-role-input" data-role-username="${escapeHtml(u.username)}" placeholder="Role khusus (kosongkan untuk menghapus)" value="${escapeHtml(u.role || '')}" maxlength="24">
+        <input class="dev-role-input" data-role-username="${escapeHtml(u.username)}" placeholder="Role custom (kosongkan buat hapus)" value="${escapeHtml(u.role || '')}" maxlength="24">
         <button class="btn btn-white btn-sm dev-role-save-btn" data-role-username="${escapeHtml(u.username)}">Set Role</button>
       </div>` : ''}
     </div>
@@ -113,7 +113,7 @@ function renderDevUserList(filter) {
       const def = BADGE_CATALOG.find(b => b.id === badgeId)
       try {
         await api(`/dev/users/${username}/badges/${badgeId}`, { method: 'POST', body: JSON.stringify({ enabled }) })
-        toast(enabled ? `Lencana ${def.label} aktif untuk @${username}` : `Lencana ${def.label} dinonaktifkan untuk @${username}`)
+        toast(enabled ? `Lencana ${def.label} aktif buat @${username}` : `Lencana ${def.label} dimatikan buat @${username}`)
         loadDevUsers()
       } catch (e) { toast(e.message) }
       finally { delete btn.dataset.busy }

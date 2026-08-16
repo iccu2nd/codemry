@@ -32,11 +32,11 @@ function ensureFonts() {
 
 const W = 1200
 const H = 630
-const INK = '#17293d'
-const INDIGO = '#2f8fd6'
+const INK = '#1e1b4b'
+const INDIGO = '#6366f1'
 const MUTED = '#6b7280'
-const PAGE_BG = '#eaf5fc'
-const SHADOW = '#000000'
+const PAGE_BG = '#eef0fb'
+const SHADOW = '#d1d5db'
 
 // ---------- generic drawing helpers ----------
 
@@ -116,9 +116,9 @@ function drawCircleImage(ctx, img, cx, cy, r) {
 function drawAvatarPlaceholder(ctx, cx, cy, r, label) {
     ctx.beginPath()
     ctx.arc(cx, cy, r, 0, Math.PI * 2)
-    ctx.fillStyle = '#dbeefc'
+    ctx.fillStyle = '#e0e7ff'
     ctx.fill()
-    ctx.fillStyle = '#1f6ea8'
+    ctx.fillStyle = '#4338ca'
     ctx.font = `700 ${Math.round(r)}px "Poppins Bold"`
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
@@ -192,7 +192,7 @@ function iconCode(ctx, x, y, s, color) {
     ctx.stroke()
 }
 
-function iconCheckBadge(ctx, cx, cy, r, bg = '#2f8fd6') {
+function iconCheckBadge(ctx, cx, cy, r, bg = '#6366f1') {
     ctx.beginPath()
     ctx.arc(cx, cy, r, 0, Math.PI * 2)
     ctx.fillStyle = bg
@@ -213,7 +213,7 @@ function iconCheckBadge(ctx, cx, cy, r, bg = '#2f8fd6') {
 function drawBackground(ctx) {
     ctx.fillStyle = PAGE_BG
     ctx.fillRect(0, 0, W, H)
-    ctx.fillStyle = 'rgba(47,143,214,0.14)'
+    ctx.fillStyle = 'rgba(99,102,241,0.10)'
     for (let gx = 24; gx < W; gx += 30) {
         for (let gy = 24; gy < H; gy += 30) {
             ctx.beginPath()
@@ -243,7 +243,7 @@ function drawCardBase(ctx, x, y, w, h, r = 22) {
     ctx.fill()
 }
 
-function pillBadge(ctx, text, x, yCenter, { bg = '#dbeefc', fg = '#1f6ea8', font = '600 18px "Poppins Medium"', icon = null } = {}) {
+function pillBadge(ctx, text, x, yCenter, { bg = '#e0e7ff', fg = '#4338ca', font = '600 18px "Poppins Medium"', icon = null } = {}) {
     ctx.font = font
     const padX = 14
     const iconW = icon ? 22 : 0
@@ -490,7 +490,7 @@ export async function renderProfileOgImage(user, stats, domain) {
         ctx.drawImage(banner, cardX + (cardW - dw) / 2, cardY + (bannerH - dh) / 2, dw, dh)
     } else {
         const grad = ctx.createLinearGradient(cardX, cardY, cardX + cardW, cardY + bannerH)
-        grad.addColorStop(0, '#6ec1ef'); grad.addColorStop(1, '#2f8fd6')
+        grad.addColorStop(0, '#818cf8'); grad.addColorStop(1, '#6366f1')
         ctx.fillStyle = grad
         ctx.fillRect(cardX, cardY, cardW, bannerH)
     }

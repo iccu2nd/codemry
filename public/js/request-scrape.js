@@ -8,12 +8,12 @@ async function init() {
       <div class="hero-rule"></div>
       <form id="scrapeForm">
         <div class="field"><label>URL Website</label><input name="url" type="url" placeholder="https://contoh.com/halaman" required></div>
-        <div class="field"><label>Deskripsi</label><textarea name="description" class="textarea-autogrow" placeholder="Data apa yang ingin diambil dari situs ini? Misalnya: daftar harga produk, judul dan isi artikel, dll." style="min-height:90px" rows="3" required></textarea></div>
+        <div class="field"><label>Deskripsi</label><textarea name="description" class="textarea-autogrow" placeholder="Mau ambil data apa dari website ini? Misal: daftar harga produk, judul & isi artikel, dll." style="min-height:90px" rows="3" required></textarea></div>
         <div class="field">
           <label>Gambar Referensi (opsional)</label>
           <button type="button" class="btn btn-white btn-block" id="pickImageBtn">${imageIconSvg()} Pilih Gambar</button>
           <input type="file" id="imageInput" style="display:none" accept="image/*">
-          <div class="field-hint" id="imageHint">Screenshot bagian situs yang ingin di-scrape, agar lebih jelas.</div>
+          <div class="field-hint" id="imageHint">Screenshot bagian website yang mau di-scrape, biar lebih jelas.</div>
         </div>
         <button class="btn btn-primary btn-block" type="submit">Kirim Request</button>
       </form>
@@ -53,7 +53,7 @@ async function init() {
       toast('Request scrape terkirim!')
       form.reset()
       imageBase64 = null
-      imageHint.textContent = 'Screenshot bagian situs yang ingin di-scrape, agar lebih jelas.'
+      imageHint.textContent = 'Screenshot bagian website yang mau di-scrape, biar lebih jelas.'
     } catch (err) { toast(err.message) }
   }
 }
