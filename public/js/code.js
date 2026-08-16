@@ -152,7 +152,7 @@ function renderUnlockedDetail(app, shortId, s) {
         <div class="comments-section" id="commentsSection">
           <div class="comments-title">Komentar <span id="commentCount"></span></div>
           <div id="commentForm"></div>
-          <div id="commentList">${skelCommentList(3)}</div>
+          <div id="commentList">${skelCommentList(2)}</div>
         </div>
       </div>
     `

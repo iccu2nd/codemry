@@ -28,7 +28,7 @@ async function renderDevPanel() {
       <div class="dev-section-title">Kelola Badge & Role</div>
       <div class="snippet-meta" style="margin-bottom:10px">Ketuk chip lencana buat aktifkan/matikan (bisa lebih dari satu jenis per user). Role bisa diisi teks bebas (cth: Moderator, Beta Tester) -- murni label, gak ngubah hak akses.</div>
       <div class="field"><input id="devUserSearch" placeholder="Cari username..." autocomplete="off"></div>
-      <div id="devUserList">${skelRowList(4)}</div>
+      <div id="devUserList">${skelRowList(3)}</div>
     </div>
   `
 

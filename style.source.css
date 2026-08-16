@@ -1866,20 +1866,20 @@ body:not([data-no-bottom-nav]) .app { padding-bottom: 116px; }
 .btn:active, .icon-btn:active, .action-item:active { filter: brightness(.97); }
 .snippet-card, .card { transition: transform .18s cubic-bezier(.22,.9,.32,1.08), box-shadow .18s cubic-bezier(.22,.9,.32,1.08); }
 
-/* === Skeleton loading (bentuk konten kebentuk duluan, isinya nyusul) === */
+/* === Skeleton loading (bentuk konten kebentuk duluan, isinya nyusul) ===
+   Sengaja gak pake ::after + transform per elemen (itu bikin browser promote
+   tiap kotak jadi layer GPU sendiri -- kalau ada puluhan sekaligus di satu
+   halaman jadi berat banget pas scroll di HP low-end). Cukup 1 elemen per
+   kotak, animasi background-position doang, gak ada layer tambahan. */
 .skeleton {
-  position: relative; overflow: hidden;
-  background: #e3edf6; border-radius: 8px;
+  background: linear-gradient(100deg, #e3edf6 30%, #eef4fa 45%, #e3edf6 60%);
+  background-size: 250% 100%;
+  border-radius: 8px;
+  contain: paint;
+  animation: skeleton-shimmer 1.6s ease-in-out infinite;
 }
-.skeleton::after {
-  content: '';
-  position: absolute; inset: 0;
-  background: linear-gradient(90deg, rgba(227,237,246,0) 0%, rgba(255,255,255,.75) 50%, rgba(227,237,246,0) 100%);
-  transform: translateX(-100%);
-  animation: skeleton-shimmer 1.5s ease-in-out infinite;
-}
-@keyframes skeleton-shimmer { 100% { transform: translateX(100%); } }
-@media (prefers-reduced-motion: reduce) { .skeleton::after { animation: none; } }
+@keyframes skeleton-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -50% 0; } }
+@media (prefers-reduced-motion: reduce) { .skeleton { animation: none; background: #e3edf6; } }
 
 .skel-card { background: #fff; border: 1.5px solid #e2eef8; border-radius: 20px; padding: 18px; margin-bottom: 18px; }
 .skel-card.skel-card-plain { border-radius: 28px; padding: 24px; }

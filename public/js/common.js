@@ -2,14 +2,24 @@
 let me = null
 
 async function api(path, opts = {}) {
-  const res = await fetch('/api' + path, {
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    ...opts
-  })
-  const data = await res.json().catch(() => ({}))
-  if (!res.ok) throw new Error(data.error || 'Terjadi kesalahan')
-  return data
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 15000)
+  try {
+    const res = await fetch('/api' + path, {
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      signal: controller.signal,
+      ...opts
+    })
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok) throw new Error(data.error || 'Terjadi kesalahan')
+    return data
+  } catch (e) {
+    if (e.name === 'AbortError') throw new Error('Koneksi lambat, coba lagi')
+    throw e
+  } finally {
+    clearTimeout(timeout)
+  }
 }
 
 function toast(msg) {
@@ -692,7 +702,7 @@ function openStickerPicker() {
           <button type="button" class="sticker-picker-close" aria-label="Tutup">${closeIconSvg()}</button>
         </div>
         <div class="sticker-picker-label" id="stickerPickerLabel">Rekomendasi</div>
-        <div class="sticker-picker-grid" id="stickerPickerGrid">${skelGrid(9)}</div>
+        <div class="sticker-picker-grid" id="stickerPickerGrid">${skelGrid(6)}</div>
         <div class="sticker-picker-more" id="stickerPickerMore" style="display:none">${skelLine('40%', 10)}</div>
       </div>
     `
@@ -769,7 +779,7 @@ function openStickerPicker() {
       if (loading || (!reset && !nextPos)) return
       loading = true
       if (reset) {
-        grid.innerHTML = skelGrid(9)
+        grid.innerHTML = skelGrid(6)
         nextPos = ''
         seenUrls = new Set()
         label.textContent = query ? `Hasil untuk "${query}"` : 'Rekomendasi'
@@ -924,7 +934,7 @@ function skelSnippetCard() {
     <div class="skel-tags">${skelLine('54px', 22)}${skelLine('70px', 22)}</div>
   </div>`
 }
-function skelFeedList(n = 4) { return Array.from({ length: n }, skelSnippetCard).join('') }
+function skelFeedList(n = 3) { return Array.from({ length: n }, skelSnippetCard).join('') }
 
 function skelRow(avatarSize = 34) {
   return `<div class="skel-card" style="display:flex;align-items:center;gap:12px;padding:14px 16px;margin-bottom:10px">
@@ -932,7 +942,7 @@ function skelRow(avatarSize = 34) {
     <div class="skel-col">${skelLine('50%', 13)}${skelLine('30%', 10)}</div>
   </div>`
 }
-function skelRowList(n = 5, avatarSize = 34) { return Array.from({ length: n }, () => skelRow(avatarSize)).join('') }
+function skelRowList(n = 4, avatarSize = 34) { return Array.from({ length: n }, () => skelRow(avatarSize)).join('') }
 
 function skelProfileHeader() {
   return `<div class="skel-card skel-card-plain">
@@ -960,9 +970,9 @@ function skelCommentItem() {
     <div class="skel-col">${skelLine('35%', 11)}${skelLine('90%', 13)}${skelLine('60%', 13)}</div>
   </div>`
 }
-function skelCommentList(n = 3) { return Array.from({ length: n }, skelCommentItem).join('') }
+function skelCommentList(n = 2) { return Array.from({ length: n }, skelCommentItem).join('') }
 
-function skelGrid(n = 9, ratio = '100%') {
+function skelGrid(n = 6, ratio = '100%') {
   return `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">${Array.from({ length: n }, () =>
     `<div class="skeleton" style="width:100%;padding-top:${ratio};border-radius:14px"></div>`).join('')}</div>`
 }
