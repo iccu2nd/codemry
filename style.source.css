@@ -12,7 +12,7 @@
 
 body {
   font-family: 'Poppins', -apple-system, 'Segoe UI', Roboto, sans-serif;
-  background: #eef6fc;
+  background: linear-gradient(180deg, #d7ecfb 0%, #eaf5fc 22%, #f7fbfd 55%, #ffffff 100%) fixed;
   color: #17293d;
   min-height: 100vh;
 }
@@ -22,12 +22,12 @@ body {
   justify-content: space-between;
   align-items: center;
   padding: 18px 28px;
-  background: rgba(255,255,255,.7);
-  backdrop-filter: blur(8px);
+  background: rgba(255,255,255,.55);
+  backdrop-filter: blur(10px);
   position: sticky;
   top: 0;
   z-index: 20;
-  border-bottom: 1px solid rgba(47,143,214,.1);
+  border-bottom: 1px solid rgba(47,143,214,.12);
 }
 
 .brand { font-size: 21px; font-weight: 800; letter-spacing: -.3px; display: flex; align-items: center; gap: 8px; }
@@ -182,7 +182,7 @@ img.clickable:hover { outline: 2px solid rgba(47,143,214,.4); outline-offset: 1p
 .dot.green { background: #4ade80; }
 
 .hero-thumb {
-  background: #eef6fc;
+  background: linear-gradient(160deg, #cfe9fa, #f2f9fd);
   border-radius: 20px;
   min-height: 160px;
   display: flex;
