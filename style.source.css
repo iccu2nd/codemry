@@ -10,6 +10,29 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+html { scroll-behavior: smooth; }
+
+/* Entrance animation dipakai di card/snippet-card/topbar biar halaman kerasa
+   hidup pas dimuat / pas konten baru masuk (feed di-render ulang lewat
+   innerHTML tiap ganti halaman/filter) -- bukan sekadar nongol diem kayak
+   halaman blog statis. */
+@keyframes fade-in-up { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: no-preference) {
+  .snippet-card, .card { animation: fade-in-up .45s cubic-bezier(.16,.9,.3,1) both; }
+  .snippet-card:nth-child(1) { animation-delay: .02s; }
+  .snippet-card:nth-child(2) { animation-delay: .06s; }
+  .snippet-card:nth-child(3) { animation-delay: .1s; }
+  .snippet-card:nth-child(4) { animation-delay: .14s; }
+  .snippet-card:nth-child(5) { animation-delay: .18s; }
+  .snippet-card:nth-child(6) { animation-delay: .22s; }
+  .snippet-card:nth-child(n+7) { animation-delay: .24s; }
+  .topbar { animation: fade-in .3s ease both; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+}
+
 body {
   font-family: 'Poppins', -apple-system, 'Segoe UI', Roboto, sans-serif;
   background: linear-gradient(180deg, #d7ecfb 0%, #eaf5fc 22%, #f7fbfd 55%, #ffffff 100%);
@@ -533,7 +556,8 @@ img.clickable:hover { outline: 2px solid rgba(47,143,214,.4); outline-offset: 1p
 .like-btn:hover { color: #dc2626; }
 .like-btn:active { transform: scale(.88); }
 .like-btn.liked { color: #dc2626; }
-.like-btn.liked svg { fill: #dc2626; }
+.like-btn.liked svg { fill: #dc2626; animation: like-pop .35s cubic-bezier(.17,.89,.32,1.49); }
+@keyframes like-pop { 0% { transform: scale(.6); } 60% { transform: scale(1.25); } 100% { transform: scale(1); } }
 .like-btn:disabled { opacity: .6; cursor: default; }
 
 .bookmark-btn {
