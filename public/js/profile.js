@@ -116,6 +116,9 @@ async function renderProfile() {
           const r = await api('/users/me/avatar', { method: 'POST', body: JSON.stringify({ imageBase64: base64, ext: 'jpg' }) })
           document.getElementById('avatarImg').src = r.avatar
           if (me && me.username === username) { me.avatar = r.avatar; renderAuthArea() }
+          // Halaman ini menampilkan kode milik sendiri -- pastikan avatar di kartu-kartu
+          // tersebut ikut ganti seketika, jangan sampai avatar lama masih nyantol.
+          document.querySelectorAll('#profileSnippets .avatar-circle').forEach(img => { img.src = r.avatar })
           toast('Foto profil diperbarui!')
         } catch (e) { if (e.message !== 'cancelled') toast(e.message) }
         finally {
