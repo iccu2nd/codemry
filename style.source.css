@@ -167,10 +167,12 @@ img.clickable:hover { outline: 2px solid rgba(99,102,241,.4); outline-offset: 1p
 
 .card {
   background: #fff;
+  border: 2px solid #000;
   border-radius: 28px;
-  box-shadow: 0 16px 40px rgba(15,15,20,.08);
+  box-shadow: 0 7px 0 #000;
   padding: 24px;
   margin-bottom: 20px;
+  transition: transform .15s ease, box-shadow .15s ease;
 }
 
 .window-dots { display: flex; gap: 8px; margin-bottom: 18px; }
@@ -379,11 +381,18 @@ img.clickable:hover { outline: 2px solid rgba(99,102,241,.4); outline-offset: 1p
 
 .snippet-card {
   background: #fff;
+  border: 2px solid #000;
   border-radius: 20px;
   padding: 18px;
-  margin-bottom: 14px;
-  box-shadow: 0 8px 20px rgba(15,15,20,.06);
+  margin-bottom: 18px;
+  box-shadow: 0 6px 0 #000;
+  transition: transform .15s ease, box-shadow .15s ease;
 }
+.snippet-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 9px 0 #000;
+}
+.snippet-card:active { transform: translateY(0); box-shadow: 0 6px 0 #000; }
 .snippet-head { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 14px; }
 .snippet-head-info { display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1 1 auto; }
 .snippet-head-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end; }
