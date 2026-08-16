@@ -13,6 +13,7 @@ import devRoutes from './src/routes/dev.js'
 import scrapeRoutes from './src/routes/scrape-requests.js'
 import notificationRoutes from './src/routes/notifications.js'
 import tenorRoutes from './src/routes/tenor.js'
+import publicApiRoutes from './src/routes/public-api.js'
 import { initGithub, getAssetContent } from './src/github.js'
 import { Snippets, Users, Views, Likes, Follows, ScrapeRequests, ensureSessionSecret, isDeveloperUsername, isModeratorUser, ensureNickname, readBadges, badgeDisplay } from './src/db.js'
 import { verifyToken, parseCookies, COOKIE_NAME, MAX_AGE, createToken, setSecret } from './src/token.js'
@@ -97,6 +98,7 @@ app.use('/api/dev', devRoutes)
 app.use('/api/scrape-requests', scrapeRoutes)
 app.use('/api/notifications', notificationRoutes)
 app.use('/api/tenor', tenorRoutes)
+app.use('/api/public', publicApiRoutes)
 
 // Endpoint cron buat bersihin scrape request yang udah expired (>7 hari).
 // Di server tradisional ini jalan lewat setInterval (lihat schedulePruneExpiredScrapeRequests
@@ -392,6 +394,7 @@ const likedHtmlTemplate = versionAssets(fs.readFileSync(path.join(__dirname, 'pu
 const bookmarksHtmlTemplate = versionAssets(fs.readFileSync(path.join(__dirname, 'public', 'bookmarks.html'), 'utf-8'))
 const notificationsHtmlTemplate = versionAssets(fs.readFileSync(path.join(__dirname, 'public', 'notifications.html'), 'utf-8'))
 const scrapeRequestsHtmlTemplate = versionAssets(fs.readFileSync(path.join(__dirname, 'public', 'scrape-requests.html'), 'utf-8'))
+const apiDocsHtmlTemplate = versionAssets(fs.readFileSync(path.join(__dirname, 'public', 'api-docs.html'), 'utf-8'))
 const pagesHtmlTemplates = {}
 for (const file of Object.values(PAGES)) {
     pagesHtmlTemplates[file] = versionAssets(fs.readFileSync(path.join(__dirname, 'public', file), 'utf-8'))
@@ -435,6 +438,10 @@ app.get('/notifications', (req, res) => {
 app.get('/scrape-requests', (req, res) => {
     if (!req.username) return res.redirect('/auth')
     sendHtml(res, scrapeRequestsHtmlTemplate)
+})
+app.get('/api-docs', (req, res) => {
+    if (!req.username) return res.redirect('/auth')
+    sendHtml(res, apiDocsHtmlTemplate)
 })
 app.get(/^\/(index|upload|code|profile|follow|auth|devpanel|moderasi|leaderboard|search|panduan)\.html$/, (req, res) => {
     if (req.path === '/upload.html' && !req.username) return res.redirect('/auth')

@@ -1,6 +1,76 @@
 
 let me = null
 
+// ============================================================
+// Tema warna aksen -- SEPENUHNYA client-side, disimpen di localStorage
+// tiap HP/browser sendiri-sendiri (gak pernah dikirim ke server), jadi
+// pilihan warna satu user gak kepengaruh/mempengaruhi user lain sama
+// sekali. Dipanggil paling awal (sebelum apapun dirender) biar gak
+// ada "kedip" warna default sebelum ganti ke warna pilihan user.
+// ============================================================
+const ACCENT_THEME_KEY = 'codery-accent-theme'
+const ACCENT_THEMES = {
+  blue:   { label: 'Biru',   accent: '#2f8fd6', accentRgb: '47,143,214',  dark: '#1f6ea8', darkRgb: '31,110,168',  light: '#6ec1ef', bg: '#e2eef8', bg2: '#eef6fc', border: '#d5e6f3', bgHover: '#dcedfa', glow: '#a9d4f0' },
+  purple: { label: 'Ungu',   accent: '#8b5cf6', accentRgb: '139,92,246', dark: '#6d3fd1', darkRgb: '109,63,209', light: '#c4b5fd', bg: '#efe9fe', bg2: '#f5f2fe', border: '#e0d4fb', bgHover: '#e6dcfd', glow: '#c4b5fd' },
+  green:  { label: 'Hijau',  accent: '#22a35a', accentRgb: '34,163,90',  dark: '#17803f', darkRgb: '23,128,63',  light: '#6fd39b', bg: '#e2f5ea', bg2: '#eefaf3', border: '#c9ecd9', bgHover: '#d7f2e2', glow: '#9ee3bd' },
+  rose:   { label: 'Merah Muda', accent: '#ec4899', accentRgb: '236,72,153', dark: '#c22a76', darkRgb: '194,42,118', light: '#f9a8d4', bg: '#fce7f3', bg2: '#fef1f8', border: '#fbcfe8', bgHover: '#fbd7ec', glow: '#f9a8d4' },
+  orange: { label: 'Oranye', accent: '#f97316', accentRgb: '249,115,22', dark: '#c2570a', darkRgb: '194,87,10',  light: '#fdba74', bg: '#feead9', bg2: '#fef3ea', border: '#fcd9b5', bgHover: '#fde0c0', glow: '#fdba74' },
+  slate:  { label: 'Abu Gelap', accent: '#475569', accentRgb: '71,85,105', dark: '#334155', darkRgb: '51,65,85',  light: '#94a3b8', bg: '#e6eaef', bg2: '#f0f2f5', border: '#d3d9e0', bgHover: '#dbe0e6', glow: '#94a3b8' }
+}
+function getAccentThemeId() {
+  try { return localStorage.getItem(ACCENT_THEME_KEY) || 'blue' } catch { return 'blue' }
+}
+function applyAccentTheme(id) {
+  const t = ACCENT_THEMES[id] || ACCENT_THEMES.blue
+  const root = document.documentElement.style
+  root.setProperty('--accent', t.accent)
+  root.setProperty('--accent-rgb', t.accentRgb)
+  root.setProperty('--accent-dark', t.dark)
+  root.setProperty('--accent-dark-rgb', t.darkRgb)
+  root.setProperty('--accent-light', t.light)
+  root.setProperty('--accent-bg', t.bg)
+  root.setProperty('--accent-bg-2', t.bg2)
+  root.setProperty('--accent-border', t.border)
+  root.setProperty('--accent-bg-hover', t.bgHover)
+  root.setProperty('--accent-glow', t.glow)
+}
+function setAccentTheme(id) {
+  if (!ACCENT_THEMES[id]) return
+  try { localStorage.setItem(ACCENT_THEME_KEY, id) } catch {}
+  applyAccentTheme(id)
+}
+applyAccentTheme(getAccentThemeId())
+
+function paletteIconSvg() {
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.9 0 1.7-.7 1.7-1.7 0-.4-.2-.8-.4-1.1-.2-.3-.4-.7-.4-1.1 0-.9.7-1.7 1.7-1.7H16c3.3 0 6-2.7 6-6C22 6 17.5 2 12 2z"/></svg>`
+}
+
+function openThemePicker() {
+  const current = getAccentThemeId()
+  const swatches = Object.entries(ACCENT_THEMES).map(([id, t]) => `
+    <button type="button" class="theme-swatch-btn${id === current ? ' active' : ''}" data-theme-id="${id}" style="--swatch-accent:${t.accent};--swatch-light:${t.light}">
+      <span class="theme-swatch-check">${checkIconSvg()}</span>
+      <span class="theme-swatch-dot"></span>
+      <span class="theme-swatch-label">${t.label}</span>
+    </button>`).join('')
+  openModal(`
+    <div class="modal-head">
+      <div class="modal-head-title">Warna Tampilan</div>
+      <button class="modal-close-btn" onclick="closeModal()">${closeIconSvg()}</button>
+    </div>
+    <div class="modal-body">
+      <div class="theme-swatch-grid" id="themeSwatchGrid">${swatches}</div>
+      <div class="theme-picker-hint">Warna ini cuma kesimpen di HP/browser kamu sendiri -- user lain gak lihat &amp; gak kepengaruh.</div>
+    </div>
+  `)
+  document.getElementById('themeSwatchGrid').querySelectorAll('.theme-swatch-btn').forEach(btn => {
+    btn.onclick = () => {
+      setAccentTheme(btn.dataset.themeId)
+      document.querySelectorAll('#themeSwatchGrid .theme-swatch-btn').forEach(b => b.classList.toggle('active', b === btn))
+    }
+  })
+}
+
 async function api(path, opts = {}) {
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), 15000)
@@ -250,10 +320,12 @@ function injectAccountLinks() {
   let likedLink = document.getElementById('likedMenuLink')
   let savedLink = document.getElementById('savedMenuLink')
   let scrapeLink = document.getElementById('scrapeMenuLink')
+  let apiDocsLink = document.getElementById('apiDocsMenuLink')
   if (!me || !onProfilePage) {
     if (likedLink) likedLink.remove()
     if (savedLink) savedLink.remove()
     if (scrapeLink) scrapeLink.remove()
+    if (apiDocsLink) apiDocsLink.remove()
     return
   }
   if (!likedLink) {
@@ -279,6 +351,14 @@ function injectAccountLinks() {
     scrapeLink.href = '/scrape-requests'
     scrapeLink.textContent = 'List Scraping'
     topnav.insertBefore(scrapeLink, authArea)
+  }
+  if (!apiDocsLink) {
+    apiDocsLink = document.createElement('a')
+    apiDocsLink.id = 'apiDocsMenuLink'
+    apiDocsLink.className = 'link-btn'
+    apiDocsLink.href = '/api-docs'
+    apiDocsLink.textContent = 'API Documentation'
+    topnav.insertBefore(apiDocsLink, authArea)
   }
 }
 

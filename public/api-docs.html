@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Codery - API Documentation</title>
+<link rel="preload" href="fonts/Poppins-Regular.woff" as="font" type="font/woff" crossorigin>
+<link rel="preload" href="fonts/Poppins-Bold.woff" as="font" type="font/woff" crossorigin>
+<meta name="robots" content="noindex, nofollow">
+<link rel="stylesheet" href="style.css">
+<link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css"></noscript>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">Codery</div>
+  <button class="hamburger" id="hamburgerBtn" aria-label="Buka menu">
+    <span></span><span></span><span></span>
+  </button>
+  <nav class="topnav" id="topnav">
+    <div id="authArea"></div>
+  </nav>
+</header>
+
+<div class="nav-backdrop" id="navBackdrop"></div>
+
+<main class="app" id="app">
+  <div class="card">
+    <div class="hero-title" style="font-size:22px">API Documentation</div>
+    <div class="hero-rule"></div>
+    <div class="hero-sub" style="margin-bottom:0">Akses data akun kamu sendiri (profil &amp; kode publik) lewat API key pribadi.</div>
+  </div>
+
+  <div class="card">
+    <div class="dev-section-title">API Key Kamu</div>
+    <div class="snippet-desc">Jangan sebarkan key ini ke orang lain -- siapapun yang pegang key bisa baca data publik akun kamu lewat API.</div>
+    <div class="apikey-box">
+      <span class="apikey-value" id="apiKeyValue">Memuat...</span>
+      <button type="button" class="apikey-eye-btn" id="apiKeyEyeBtn" aria-label="Tampilkan/sembunyikan"></button>
+      <button type="button" class="apikey-copy-btn" id="apiKeyCopyBtn" aria-label="Salin"></button>
+    </div>
+    <div class="btn-row" style="margin-top:12px">
+      <button class="btn btn-white" id="apiKeyRegenBtn">Generate Ulang Key</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="dev-section-title">Cara Pemanggilan</div>
+    <div class="snippet-desc">Kirim key kamu lewat header <code>X-API-Key</code>, atau lewat query <code>?key=</code> kalau lebih gampang. Base URL: <code id="apiBaseUrl">/api/public</code></div>
+    <table class="doc-param-table">
+      <thead><tr><th>Endpoint</th><th>Keterangan</th></tr></thead>
+      <tbody>
+        <tr><td><code>GET /api/public/me</code></td><td>Profil dasar akun kamu</td></tr>
+        <tr><td><code>GET /api/public/snippets</code></td><td>Semua kode publik yang kamu upload</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <div class="dev-section-title">Contoh Request (cURL)</div>
+    <div class="doc-endpoint-row"><span class="doc-method-pill">GET</span><span class="doc-endpoint-path">/api/public/snippets</span></div>
+    <div class="doc-code-block"><pre><code class="language-bash" id="curlExample"></code></pre></div>
+  </div>
+
+  <div class="card">
+    <div class="dev-section-title">Contoh Request (JavaScript fetch)</div>
+    <div class="doc-code-block"><pre><code class="language-javascript" id="jsExample"></code></pre></div>
+  </div>
+
+  <div class="card">
+    <div class="dev-section-title">Contoh Respons</div>
+    <div class="doc-code-block"><pre><code class="language-json">{
+  "username": "reyzdesu",
+  "count": 2,
+  "snippets": [
+    {
+      "shortId": "aB3xQ1",
+      "title": "Notrack Ai",
+      "language": "javascript",
+      "isPublic": true,
+      "views": 36,
+      "likes": 4
+    }
+  ]
+}</code></pre></div>
+  </div>
+
+  <div class="card">
+    <div class="dev-section-title">Contoh Respons Error</div>
+    <div class="doc-code-block"><pre><code class="language-json">{ "error": "API key tidak valid" }</code></pre></div>
+  </div>
+</main>
+
+<div id="toast" class="toast"></div>
+
+<script src="js/config.js"></script>
+<script src="js/common.js"></script>
+<script src="js/api-docs.js"></script>
+</body>
+</html>

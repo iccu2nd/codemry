@@ -337,3 +337,9 @@ function openImageCropper(file, { outW, outH, shape = 'rect' }) {
 
 refreshAuth()
 renderProfile()
+
+const themeBtn = document.getElementById('themeBtn')
+if (themeBtn) {
+  themeBtn.innerHTML = paletteIconSvg()
+  themeBtn.onclick = openThemePicker
+}
