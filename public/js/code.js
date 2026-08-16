@@ -303,12 +303,29 @@ function renderUnlockedDetail(app, shortId, s) {
       if (e.touches.length < 2) pinchStartDist = 0
     })
 
+    // Kalau browser sempat men-zoom halaman (misalnya dari gesture pinch
+    // yang lolos sebelum touch-action diterapkan), ini memaksa browser
+    // reset zoom halaman ke 1x dengan cara "menggoyang" meta viewport.
+    function resetPageZoom() {
+      const vp = document.querySelector('meta[name="viewport"]')
+      if (!vp) return
+      const original = vp.getAttribute('content')
+      vp.setAttribute('content', original + ', maximum-scale=1.0')
+      requestAnimationFrame(() => { vp.setAttribute('content', original) })
+    }
+
     fullscreenBtn.onclick = () => {
       const isOpen = codeWindow.classList.toggle('fullscreen')
       fullscreenBtn.innerHTML = isOpen ? collapseIconSvg() : expandIconSvg()
       fullscreenBtn.title = isOpen ? 'Kecilkan kode' : 'Perbesar kode'
       document.body.style.overflow = isOpen ? 'hidden' : ''
-      if (isOpen) { zoom = DEFAULT_ZOOM; applyZoom() } else resetZoom()
+      if (isOpen) {
+        zoom = DEFAULT_ZOOM; applyZoom()
+        window.scrollTo(0, 0)
+        resetPageZoom()
+      } else {
+        resetZoom()
+      }
     }
     document.addEventListener('keydown', function escClose(e) {
       if (e.key === 'Escape' && codeWindow.classList.contains('fullscreen')) fullscreenBtn.click()

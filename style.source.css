@@ -781,7 +781,7 @@ img.clickable:hover { outline: 2px solid rgba(var(--accent-rgb),.4); outline-off
   border: 1px solid #3a3a3a;
   background: #1e1e1e;
   margin: 18px 0;
-  transition: all .25s cubic-bezier(.2,.9,.3,1.1);
+  transition: box-shadow .25s cubic-bezier(.2,.9,.3,1.1);
   box-shadow: 0 4px 12px rgba(0,0,0,.15);
 }
 .code-window::after {
@@ -805,9 +805,19 @@ img.clickable:hover { outline: 2px solid rgba(var(--accent-rgb),.4); outline-off
   width: 100vw; height: 100vh; height: 100dvh;
   margin: 0; border-radius: 0; border: none;
   display: flex; flex-direction: column;
+  /* Only allow single-finger panning inside the fullscreen viewer so a
+     two-finger pinch never gets picked up by the browser as a native
+     page-zoom gesture. That native zoom is what made the "fullscreen"
+     box look like it wasn't covering the full screen: the box itself
+     was full-size, but the whole page had been zoomed/panned by the
+     browser, so fixed elements (back button, bottom nav) peeked in
+     around the edges. Our own pinch handler in code.js takes over
+     zooming the code text instead. */
+  touch-action: pan-x pan-y;
 }
-html:has(.code-window.fullscreen) { overflow: hidden; }
-.code-window.fullscreen .code-view { flex: 1; overflow: auto; }
+html:has(.code-window.fullscreen) { overflow: hidden; touch-action: pan-x pan-y; }
+body:has(.code-window.fullscreen) { touch-action: pan-x pan-y; }
+.code-window.fullscreen .code-view { flex: 1; overflow: auto; touch-action: pan-x pan-y; }
 .code-window.fullscreen .code-view code { font-size: 16px; }
 .code-window.fullscreen::after { top: 49px; }
 
