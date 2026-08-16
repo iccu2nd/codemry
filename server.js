@@ -121,7 +121,7 @@ app.get('/api/cron/prune-scrape-requests', async (req, res) => {
 
 app.get('/avatar/:username', async (req, res) => {
     try {
-        const user = await Users.find(req.params.username)
+        const user = await Users.findFresh(req.params.username)
         const fallback = `https://api.dicebear.com/7.x/identicon/svg?seed=${req.params.username}`
         if (!user || !user.avatarPath) return res.redirect(user?.avatar || fallback)
         const buf = await getAssetContent(user.avatarPath)
@@ -140,7 +140,7 @@ app.get('/avatar/:username', async (req, res) => {
 
 app.get('/banner/:username', async (req, res) => {
     try {
-        const user = await Users.find(req.params.username)
+        const user = await Users.findFresh(req.params.username)
         if (!user || !user.bannerPath) return res.status(404).send('Banner tidak ditemukan')
         const buf = await getAssetContent(user.bannerPath)
         const ext = user.bannerPath.split('.').pop().toLowerCase()

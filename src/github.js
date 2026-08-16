@@ -85,9 +85,11 @@ function cacheSetDb(path, data, sha) {
     return entry
 }
 
-export async function readDbFile(path) {
-    const cached = cacheGetDb(path)
-    if (cached) return cached
+export async function readDbFile(path, { fresh = false } = {}) {
+    if (!fresh) {
+        const cached = cacheGetDb(path)
+        if (cached) return cached
+    }
     try {
         const res = await axios.get(`${API}/repos/${DB_REPO}/contents/${path}`, { headers: headers() })
         const content = Buffer.from(res.data.content, 'base64').toString('utf-8')

@@ -110,15 +110,31 @@ async function renderProfile() {
         if (!file) return
         try {
           const base64 = await openImageCropper(file, { outW: 256, outH: 256, shape: 'circle' })
+          // FIX "kedip balik ke foto lama": sebelumnya kita nunggu response
+          // server dulu baru ganti src avatar ke URL server (`/avatar/user?v=...`).
+          // Ganti-ke-URL itu artinya browser harus request ulang ke server, dan
+          // kalau request itu kebetulan nyasar ke instance server yang belum
+          // sempat tau data barusan (server ini jalan di serverless, beberapa
+          // instance sekaligus), sempat kejadian foto SEMPAT balik nampilin
+          // yang lama dulu sebelum akhirnya ke-update.
+          // Fixnya: begitu hasil crop siap, langsung pasang sebagai preview
+          // (data URL) -- ini PERSIS byte yang bakal diupload, jadi user
+          // gak pernah lihat apa pun selain hasil crop barunya, gak ada
+          // celah waktu buat foto lama nongol lagi.
+          const previewUrl = `data:image/jpeg;base64,${base64}`
+          const avatarImgEl = document.getElementById('avatarImg')
+          avatarImgEl.src = previewUrl
+          document.querySelectorAll('#profileSnippets .avatar-circle').forEach(img => { img.src = previewUrl })
+          if (me && me.username === username) { me.avatar = previewUrl; renderAuthArea() }
+
           avatarBtn.classList.add('is-uploading')
           avatarBtn.disabled = true
           toast('Mengupload foto...')
-          const r = await api('/users/me/avatar', { method: 'POST', body: JSON.stringify({ imageBase64: base64, ext: 'jpg' }) })
-          document.getElementById('avatarImg').src = r.avatar
-          if (me && me.username === username) { me.avatar = r.avatar; renderAuthArea() }
-          // Halaman ini menampilkan kode milik sendiri -- pastikan avatar di kartu-kartu
-          // tersebut ikut ganti seketika, jangan sampai avatar lama masih nyantol.
-          document.querySelectorAll('#profileSnippets .avatar-circle').forEach(img => { img.src = r.avatar })
+          await api('/users/me/avatar', { method: 'POST', body: JSON.stringify({ imageBase64: base64, ext: 'jpg' }) })
+          // Sengaja TIDAK ganti src lagi ke URL server sesudah ini -- preview
+          // lokal di atas udah identik sama yang barusan diupload. Reload
+          // halaman berikutnya bakal otomatis pakai URL server yang baru
+          // (waktu yang udah lewat cukup buat data server settle).
           toast('Foto profil diperbarui!')
         } catch (e) { if (e.message !== 'cancelled') toast(e.message) }
         finally {
@@ -138,13 +154,21 @@ async function renderProfile() {
         if (!file) return
         try {
           const base64 = await openImageCropper(file, { outW: 960, outH: 400, shape: 'rect' })
+          // Sama kayak avatar: pasang preview lokal (data URL hasil crop)
+          // LANGSUNG duluan, biar gak ada celah waktu di mana banner sempat
+          // kelihatan balik ke yang lama pas nunggu response server / URL
+          // server di-refetch.
+          const previewUrl = `data:image/jpeg;base64,${base64}`
+          const bannerImgEl = document.getElementById('bannerImg')
+          bannerImgEl.style.backgroundImage = `url('${previewUrl}')`
+          bannerImgEl.closest('.profile-banner-wrap').classList.remove('no-banner')
+
           bannerBtn.classList.add('is-uploading')
           bannerBtn.disabled = true
           toast('Mengupload foto sampul...')
-          const r = await api('/users/me/banner', { method: 'POST', body: JSON.stringify({ imageBase64: base64, ext: 'jpg' }) })
-          const bannerImgEl = document.getElementById('bannerImg')
-          bannerImgEl.style.backgroundImage = `url('${r.banner}')`
-          bannerImgEl.closest('.profile-banner-wrap').classList.remove('no-banner')
+          await api('/users/me/banner', { method: 'POST', body: JSON.stringify({ imageBase64: base64, ext: 'jpg' }) })
+          // Gak perlu ganti background-image lagi ke URL server -- preview
+          // lokal di atas udah sama persis sama yang barusan diupload.
           toast('Foto sampul diperbarui!')
         } catch (e) { if (e.message !== 'cancelled') toast(e.message) }
         finally {

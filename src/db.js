@@ -48,6 +48,19 @@ export const Users = {
         const u = await this.all()
         return u.find(x => x.username.toLowerCase() === username.toLowerCase())
     },
+    // Versi "bypass cache" -- dipake khusus di endpoint yang nyajiin foto
+    // profil/sampul (/avatar/:username, /banner/:username). Data user biasa
+    // ('all'/'find') sengaja masih boleh baca dari cache 5 detik (lihat
+    // DB_CACHE_TTL_MS di github.js) biar hemat panggilan API buat halaman
+    // yang sering diakses. Tapi buat foto profil/sampul, cache basi sampai
+    // 5 detik itu yang bikin foto SEMPAT balik nampilin versi lama kalau
+    // request kebetulan nyasar ke instance server lain yang belum tau
+    // avatarPath/bannerPath barusan diganti -- jadi di sini kita paksa baca
+    // langsung dari GitHub tiap kali biar selalu akurat.
+    async findFresh(username) {
+        const u = (await readDbFile('users.json', { fresh: true })).data
+        return u.find(x => x.username.toLowerCase() === username.toLowerCase())
+    },
     async create(user) { return update('users.json', d => [...d, user], `add user ${user.username}`) },
     async update(username, patch) {
         return update('users.json', d => d.map(u =>

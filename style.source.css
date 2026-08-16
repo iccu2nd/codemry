@@ -2024,6 +2024,11 @@ body:not([data-no-bottom-nav]) .app { padding-bottom: 116px; }
 
 /* === Micro-interactions: ripple + smoother press feedback (menyeluruh, non-polos) === */
 .ui-ripple-host { position: relative; overflow: hidden; }
+/* Buat tombol yang posisinya UDAH absolute/relative/fixed/sticky (lihat
+   `spawnRipple` di common.js) -- cuma potong riaknya biar rapi di dalam
+   tombol, TANPA ikut ubah `position`-nya. Ini yang mencegah ikon kamera
+   avatar/banner "lompat" tempat pas dipencet. */
+.ui-ripple-clip { overflow: hidden; }
 .ui-ripple {
   position: absolute;
   border-radius: 50%;

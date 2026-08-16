@@ -981,9 +981,21 @@ document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal
     ripple.style.width = ripple.style.height = size + 'px'
     ripple.style.left = cx + 'px'
     ripple.style.top = cy + 'px'
-    el.classList.add('ui-ripple-host')
+    // BUG LAMA: `.ui-ripple-host` maksa `position:relative` ke elemen yang
+    // dipencet. Buat tombol yang emang udah `position:absolute` (mis. ikon
+    // kamera ganti foto profil/sampul, yang ditempel presisi di pojok
+    // avatar/banner pake left/right/top/bottom) itu KETIMPA jadi
+    // `position:relative` gara-gara urutan CSS -- akibatnya tombolnya
+    // "lompat" ke tempat lain persis pas dipencet. Elemen yang posisinya
+    // udah absolute/relative/fixed/sticky itu udah otomatis jadi containing
+    // block buat ripple di dalamnya, jadi gak perlu (dan gak boleh) dipaksa
+    // ganti ke relative -- cukup dikasih overflow:hidden biar riaknya
+    // kepotong rapi di dalam tombol.
+    const computedPosition = getComputedStyle(el).position
+    const hostClass = computedPosition === 'static' ? 'ui-ripple-host' : 'ui-ripple-clip'
+    el.classList.add(hostClass)
     el.appendChild(ripple)
-    ripple.addEventListener('animationend', () => ripple.remove())
+    ripple.addEventListener('animationend', () => { ripple.remove(); el.classList.remove(hostClass) })
   }
 
   document.addEventListener('click', (e) => {
@@ -1051,7 +1063,18 @@ function skelCommentItem() {
 }
 function skelCommentList(n = 2) { return Array.from({ length: n }, skelCommentItem).join('') }
 
+// PENTING: dulu fungsi ini bungkus kotak-kotak skeletonnya di dalam SATU div
+// `display:grid` sendiri, terus div itu ditaro sebagai satu-satunya isi dari
+// `#stickerPickerGrid` -- yang sendirinya JUGA udah `display:grid` 3 kolom.
+// Akibatnya div pembungkus tadi cuma keitung SATU sel grid (1/3 lebar panel),
+// dan mini-grid 3 kolom di DALAMNYA jadi keremas jadi kira-kira 1/9 lebar
+// yang seharusnya -- itu sumber bug "stiker pas loading jadi kecil banget &
+// numpuk di pojok kiri atas". Fixnya: jangan bungkus grid lagi di sini, balikin
+// kotak-kotak skeletonnya polos biar masing-masing langsung jadi sel grid punya
+// `#stickerPickerGrid`, sama persis kayak kartu stiker asli (lihat `itemsHtml`
+// di openStickerPicker) yang juga naro elemennya langsung jadi children grid
+// itu tanpa pembungkus tambahan.
 function skelGrid(n = 6, ratio = '100%') {
-  return `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">${Array.from({ length: n }, () =>
-    `<div class="skeleton" style="width:100%;padding-top:${ratio};border-radius:14px"></div>`).join('')}</div>`
+  return Array.from({ length: n }, () =>
+    `<div class="skeleton" style="width:100%;padding-top:${ratio};border-radius:14px"></div>`).join('')
 }
