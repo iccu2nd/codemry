@@ -258,7 +258,10 @@ app.get('/og/feed.png', async (req, res) => {
 })
 
 function injectMeta(template, titleTag, { title, desc, imgUrl, pageUrl }) {
-    const meta = `<meta property="og:type" content="website">
+    const meta = `<meta name="description" content="${escapeHtml(desc)}">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="${pageUrl}">
+<meta property="og:type" content="website">
 <meta property="og:title" content="${escapeHtml(title)}">
 <meta property="og:description" content="${escapeHtml(desc)}">
 <meta property="og:image" content="${imgUrl}">
@@ -274,6 +277,50 @@ function injectMeta(template, titleTag, { title, desc, imgUrl, pageUrl }) {
         .replace(titleTag, `<title>${escapeHtml(title)}</title>`)
         .replace('</head>', meta)
 }
+
+app.get('/robots.txt', (req, res) => {
+    const host = `${req.protocol}://${getRequestDomain(req)}`
+    res.set('Content-Type', 'text/plain; charset=utf-8')
+    res.set('Cache-Control', 'public, max-age=3600')
+    res.send(`User-agent: *
+Allow: /
+Disallow: /auth
+Disallow: /upload
+Disallow: /notifications
+Disallow: /liked
+Disallow: /bookmarks
+Disallow: /scrape-requests
+Disallow: /devpanel
+Disallow: /moderasi
+Disallow: /follow
+Disallow: /api/
+
+Sitemap: ${host}/sitemap.xml`)
+})
+
+app.get('/sitemap.xml', async (req, res) => {
+    try {
+        const host = `${req.protocol}://${getRequestDomain(req)}`
+        const staticUrls = ['/', '/leaderboard', '/search', '/panduan']
+        const [snippets, users] = await Promise.all([Snippets.allLive(), Users.all()])
+        const publicSnippets = snippets.filter(s => s.isPublic).slice(0, 5000)
+        const urls = [
+            ...staticUrls.map(u => ({ loc: `${host}${u}`, priority: u === '/' ? '1.0' : '0.6' })),
+            ...users.map(u => ({ loc: `${host}/profile?u=${encodeURIComponent(u.username)}`, priority: '0.5' })),
+            ...publicSnippets.map(s => ({ loc: `${host}/code?id=${encodeURIComponent(s.shortId)}`, priority: '0.7', lastmod: s.updatedAt || s.createdAt }))
+        ]
+        const body = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${urls.map(u => `<url><loc>${escapeHtml(u.loc)}</loc>${u.lastmod ? `<lastmod>${new Date(u.lastmod).toISOString()}</lastmod>` : ''}<priority>${u.priority}</priority></url>`).join('\n')}
+</urlset>`
+        res.set('Content-Type', 'application/xml; charset=utf-8')
+        res.set('Cache-Control', 'public, max-age=1800')
+        res.send(body)
+    } catch (e) {
+        console.error('sitemap error:', e.message)
+        res.status(500).end()
+    }
+})
 
 app.get('/code', async (req, res) => {
     const shortId = req.query.id

@@ -818,26 +818,44 @@ img.clickable:hover { outline: 2px solid rgba(47,143,214,.4); outline-offset: 1p
 
 .cropper-overlay {
   position: fixed; inset: 0; z-index: 1000;
-  background: #000;
+  background: #0b0e13;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   padding: 0;
+  font-family: 'Poppins', -apple-system, 'Segoe UI', Roboto, sans-serif;
 }
 .cropper-topbar {
   position: absolute; top: 0; left: 0; right: 0;
   display: flex; align-items: center; justify-content: space-between;
-  padding: 18px 20px;
-  padding-top: max(18px, env(safe-area-inset-top));
+  padding: 16px 18px;
+  padding-top: max(16px, env(safe-area-inset-top));
   z-index: 2;
+  background: linear-gradient(180deg, rgba(0,0,0,.55), rgba(0,0,0,0));
 }
 .cropper-link {
-  background: none; border: none; padding: 4px 2px;
-  font-family: inherit; font-size: 15px; font-weight: 600;
-  color: #34d399; cursor: pointer;
+  border: none; cursor: pointer;
+  font-family: inherit; font-size: 14px; font-weight: 700;
+  border-radius: 999px;
+  padding: 9px 18px;
+  transition: transform .08s ease, box-shadow .08s ease;
+  transform: translateY(0);
 }
+.cropper-link:active { transform: translateY(2px); }
+.cropper-cancel {
+  background: rgba(255,255,255,.12);
+  color: #fff;
+  box-shadow: 0 2px 0 rgba(255,255,255,.08);
+  backdrop-filter: blur(6px);
+}
+.cropper-save {
+  background: linear-gradient(180deg, #6ec1ef, #2f8fd6);
+  color: #fff;
+  box-shadow: 0 3px 0 #1f6ea8;
+}
+.cropper-save:active { box-shadow: 0 1px 0 #1f6ea8; }
 .cropper-stage {
   position: relative;
   overflow: hidden;
-  background: #000;
+  background: #0b0e13;
   touch-action: none;
   cursor: grab;
 }
@@ -847,33 +865,34 @@ img.clickable:hover { outline: 2px solid rgba(47,143,214,.4); outline-offset: 1p
   position: absolute;
   pointer-events: none;
 
-  box-shadow: 0 0 0 3000px rgba(0,0,0,.62);
-  border: 1px solid rgba(255,255,255,.9);
+  box-shadow: 0 0 0 3000px rgba(0,0,0,.68);
+  border: 1.5px solid rgba(255,255,255,.95);
 }
 .cropper-cropbox-circle { border-radius: 50%; }
-.cropper-grid-line { position: absolute; background: rgba(255,255,255,.55); }
+.cropper-grid-line { position: absolute; background: rgba(255,255,255,.4); }
 .cropper-grid-v1 { left: 33.333%; top: 0; bottom: 0; width: 1px; }
 .cropper-grid-v2 { left: 66.666%; top: 0; bottom: 0; width: 1px; }
 .cropper-grid-h1 { top: 33.333%; left: 0; right: 0; height: 1px; }
 .cropper-grid-h2 { top: 66.666%; left: 0; right: 0; height: 1px; }
 .cropper-corner {
   position: absolute; width: 18px; height: 18px;
-  border-color: #fff; border-style: solid; border-width: 0;
+  border-color: #6ec1ef; border-style: solid; border-width: 0;
   pointer-events: none;
 }
-.cropper-corner-tl { top: -1px; left: -1px; border-top-width: 3px; border-left-width: 3px; }
-.cropper-corner-tr { top: -1px; right: -1px; border-top-width: 3px; border-right-width: 3px; }
-.cropper-corner-bl { bottom: -1px; left: -1px; border-bottom-width: 3px; border-left-width: 3px; }
-.cropper-corner-br { bottom: -1px; right: -1px; border-bottom-width: 3px; border-right-width: 3px; }
+.cropper-corner-tl { top: -1.5px; left: -1.5px; border-top-width: 3px; border-left-width: 3px; border-top-left-radius: 3px; }
+.cropper-corner-tr { top: -1.5px; right: -1.5px; border-top-width: 3px; border-right-width: 3px; border-top-right-radius: 3px; }
+.cropper-corner-bl { bottom: -1.5px; left: -1.5px; border-bottom-width: 3px; border-left-width: 3px; border-bottom-left-radius: 3px; }
+.cropper-corner-br { bottom: -1.5px; right: -1.5px; border-bottom-width: 3px; border-right-width: 3px; border-bottom-right-radius: 3px; }
 .cropper-zoom-row {
   position: absolute; left: 0; right: 0; bottom: 0;
-  display: flex; align-items: center; gap: 10px;
-  padding: 18px 28px;
-  padding-bottom: max(18px, env(safe-area-inset-bottom));
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 24px;
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
   z-index: 2;
+  background: linear-gradient(0deg, rgba(0,0,0,.55), rgba(0,0,0,0));
 }
-.cropper-zoom { flex: 1; accent-color: #34d399; }
-.cropper-zoom-icon { font-size: 14px; color: #d0d0d5; user-select: none; }
+.cropper-zoom { flex: 1; accent-color: #2f8fd6; }
+.cropper-zoom-icon { font-size: 14px; color: #cfd8e0; user-select: none; }
 .profile-head { display: flex; align-items: center; gap: 16px; margin-bottom: 8px; }
 .avatar-wrap { position: relative; display: inline-flex; flex-shrink: 0; }
 .avatar { width: 64px; height: 64px; border-radius: 50%; background: #eef6fc; object-fit: cover; }
