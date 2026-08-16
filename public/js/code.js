@@ -316,18 +316,78 @@ function renderUnlockedDetail(app, shortId, s) {
       requestAnimationFrame(() => { vp.setAttribute('content', original) })
     }
 
+    // --- Fullscreen: dipaksa total lewat JS, gak nyandar ke CSS eksternal sama sekali ---
+    // Sebelumnya cuma toggle class ".fullscreen" dan andalin style.css buat
+    // "position:fixed;inset:0". Itu rapuh: kalau ada elemen leluhur mana pun
+    // (skrng atau nanti) yang punya transform/filter/contain/will-change,
+    // position:fixed jadi nempel ke elemen itu, bukan ke seluruh layar --
+    // persis gejala "gak full HP" yang kejadian. Fix totalnya: pas dibuka,
+    // elemen kotak kode difisik-pindah jadi anak langsung dari <body>, terus
+    // SEMUA style kritis dipasang lewat JS pakai setProperty(...,'important')
+    // supaya menang mutlak dari CSS apa pun. Posisi asal disimpen di
+    // placeholder buat dikembaliin persis pas ditutup.
+    let fsPlaceholder = null
+    function lockScroll(lock) {
+      document.documentElement.style.overflow = lock ? 'hidden' : ''
+      document.body.style.overflow = lock ? 'hidden' : ''
+    }
+    function forceFullscreenStyles() {
+      const s = codeWindow.style
+      s.setProperty('position', 'fixed', 'important')
+      s.setProperty('top', '0', 'important')
+      s.setProperty('left', '0', 'important')
+      s.setProperty('right', '0', 'important')
+      s.setProperty('bottom', '0', 'important')
+      s.setProperty('width', '100vw', 'important')
+      s.setProperty('height', '100dvh', 'important')
+      s.setProperty('max-width', '100vw', 'important')
+      s.setProperty('max-height', '100dvh', 'important')
+      s.setProperty('margin', '0', 'important')
+      s.setProperty('border-radius', '0', 'important')
+      s.setProperty('border', 'none', 'important')
+      s.setProperty('z-index', '2147483647', 'important')
+      s.setProperty('display', 'flex', 'important')
+      s.setProperty('flex-direction', 'column', 'important')
+      s.setProperty('touch-action', 'pan-x pan-y', 'important')
+      codeViewPre.style.setProperty('flex', '1', 'important')
+      codeViewPre.style.setProperty('overflow', 'auto', 'important')
+      codeViewPre.style.setProperty('touch-action', 'pan-x pan-y', 'important')
+    }
+    function clearFullscreenStyles() {
+      const props = ['position', 'top', 'left', 'right', 'bottom', 'width', 'height',
+        'max-width', 'max-height', 'margin', 'border-radius', 'border', 'z-index',
+        'display', 'flex-direction', 'touch-action']
+      props.forEach(p => codeWindow.style.removeProperty(p))
+      codeViewPre.style.removeProperty('flex')
+      codeViewPre.style.removeProperty('overflow')
+      codeViewPre.style.removeProperty('touch-action')
+    }
+    function enterFullscreen() {
+      fsPlaceholder = document.createComment('code-window-slot')
+      codeWindow.parentNode.insertBefore(fsPlaceholder, codeWindow)
+      document.body.appendChild(codeWindow)
+      codeWindow.classList.add('fullscreen')
+      forceFullscreenStyles()
+      lockScroll(true)
+      window.scrollTo(0, 0)
+      resetPageZoom()
+    }
+    function exitFullscreen() {
+      codeWindow.classList.remove('fullscreen')
+      clearFullscreenStyles()
+      lockScroll(false)
+      if (fsPlaceholder && fsPlaceholder.parentNode) {
+        fsPlaceholder.parentNode.replaceChild(codeWindow, fsPlaceholder)
+      }
+      fsPlaceholder = null
+    }
+
     fullscreenBtn.onclick = () => {
-      const isOpen = codeWindow.classList.toggle('fullscreen')
+      const isOpen = !codeWindow.classList.contains('fullscreen')
+      if (isOpen) enterFullscreen(); else exitFullscreen()
       fullscreenBtn.innerHTML = isOpen ? collapseIconSvg() : expandIconSvg()
       fullscreenBtn.title = isOpen ? 'Kecilkan kode' : 'Perbesar kode'
-      document.body.style.overflow = isOpen ? 'hidden' : ''
-      if (isOpen) {
-        zoom = DEFAULT_ZOOM; applyZoom()
-        window.scrollTo(0, 0)
-        resetPageZoom()
-      } else {
-        resetZoom()
-      }
+      if (isOpen) { zoom = DEFAULT_ZOOM; applyZoom() } else resetZoom()
     }
     document.addEventListener('keydown', function escClose(e) {
       if (e.key === 'Escape' && codeWindow.classList.contains('fullscreen')) fullscreenBtn.click()
