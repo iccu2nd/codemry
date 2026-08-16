@@ -6,15 +6,41 @@ import { createSnippetForUser } from './codes.js'
 // API publik buat akun sendiri -- didokumentasikan di halaman /api-docs.
 // Key dikirim lewat header X-API-Key atau query ?key=, divalidasi ke
 // Users.apiKey. Dibatasi rate-limit sederhana per key biar gak disalahgunain.
+//
+// Endpoint di bawah router.use() (middleware pengecek key) WAJIB pakai API
+// key. Endpoint yang didaftarkan SEBELUM router.use() itu publik/terbuka --
+// gak butuh key sama sekali, karena cuma nampilin data yang emang udah
+// publik (kode yang isPublic:true).
 const router = Router()
 const tooManyAttempts = createRateLimiter(60)
 const tooManyUploads = createRateLimiter(15)
+const tooManyPublicReads = createRateLimiter(120)
 
 async function findByApiKey(key) {
     if (!key) return null
     const users = await Users.all()
     return users.find(u => u.apiKey === key) || null
 }
+
+// ---- Tanpa API Key ----------------------------------------------------
+
+router.get('/snippet/:shortId', async (req, res) => {
+    const ip = req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'anon'
+    if (tooManyPublicReads(String(ip))) return res.status(429).json({ error: 'Terlalu banyak request, coba lagi nanti' })
+    try {
+        const snippet = await Snippets.findByShort(req.params.shortId)
+        if (!snippet || !snippet.isPublic) return res.status(404).json({ error: 'Snippet tidak ditemukan atau bukan publik' })
+        const [views, likes] = await Promise.all([
+            Views.count(snippet.shortId),
+            Likes.count(snippet.shortId)
+        ])
+        res.json({ ...stripSnippetSecrets(snippet), views, likes })
+    } catch (e) {
+        res.status(500).json({ error: e.response?.data?.message || e.message })
+    }
+})
+
+// ---- Butuh API Key -----------------------------------------------------
 
 router.use(async (req, res, next) => {
     const key = req.headers['x-api-key'] || req.query.key

@@ -30,96 +30,39 @@
   <div class="card">
     <div class="hero-title" style="font-size:22px">API Documentation</div>
     <div class="hero-rule"></div>
-    <div class="hero-sub" style="margin-bottom:0">Akses data akun kamu sendiri (profil &amp; kode publik) lewat API key pribadi.</div>
+    <div class="hero-sub" style="margin-bottom:0">Baru pertama kali pakai API? Semua endpoint di bawah dijelasin lengkap -- endpoint, method, butuh API key atau nggak, parameter, sampai contoh kode siap-pakai.</div>
   </div>
 
   <div class="card">
     <div class="dev-section-title">API Key Kamu</div>
-    <div class="snippet-desc">Jangan sebarkan key ini ke orang lain -- siapapun yang pegang key bisa baca data publik akun kamu lewat API.</div>
-    <div class="apikey-box">
-      <span class="apikey-value" id="apiKeyValue">Memuat...</span>
-      <button type="button" class="apikey-eye-btn" id="apiKeyEyeBtn" aria-label="Tampilkan/sembunyikan"></button>
-      <button type="button" class="apikey-copy-btn" id="apiKeyCopyBtn" aria-label="Salin"></button>
-    </div>
-    <div class="btn-row" style="margin-top:12px">
-      <button class="btn btn-white" id="apiKeyRegenBtn">Generate Ulang Key</button>
-    </div>
+    <div class="snippet-desc" id="apiKeyIntroText">API key dipakai buat ngakses endpoint yang butuh login (data akun kamu sendiri). Belum ada key yang dibuat otomatis -- kamu yang generate sendiri kapan mau pakai.</div>
+    <div id="apiKeySection"></div>
   </div>
 
   <div class="card">
-    <div class="dev-section-title">Cara Pemanggilan</div>
-    <div class="snippet-desc">Kirim key kamu lewat header <code>X-API-Key</code>, atau lewat query <code>?key=</code> kalau lebih gampang. Base URL: <code id="apiBaseUrl">/api/public</code></div>
+    <div class="dev-section-title">Dasar-dasar Sebelum Mulai</div>
     <table class="doc-param-table">
-      <thead><tr><th>Endpoint</th><th>Keterangan</th></tr></thead>
+      <thead><tr><th>Istilah</th><th>Maksudnya</th></tr></thead>
       <tbody>
-        <tr><td><code>GET /api/public/me</code></td><td>Profil dasar akun kamu</td></tr>
-        <tr><td><code>GET /api/public/snippets</code></td><td>Semua kode publik yang kamu upload</td></tr>
-        <tr><td><code>POST /api/public/snippets</code></td><td>Upload kode baru ke akun kamu</td></tr>
+        <tr><td><span class="apikey-badge apikey-badge-free">Tanpa Key</span></td><td>Bisa langsung dipanggil siapa aja, gak perlu login atau API key.</td></tr>
+        <tr><td><span class="apikey-badge apikey-badge-required">Butuh Key</span></td><td>Wajib kirim API key kamu di header <code>X-API-Key</code> (atau query <code>?key=</code>).</td></tr>
+        <tr><td><code>Base URL</code></td><td><code id="apiBaseUrl">/api/public</code> -- semua endpoint di bawah ini nyambung dari sini.</td></tr>
       </tbody>
     </table>
   </div>
 
-  <div class="card">
-    <div class="dev-section-title">Contoh Request (cURL)</div>
-    <div class="doc-endpoint-row"><span class="doc-method-pill">GET</span><span class="doc-endpoint-path">/api/public/snippets</span></div>
-    <div class="doc-code-block"><pre><code class="language-bash" id="curlExample"></code></pre></div>
-  </div>
+  <div class="section-label" id="apiListLabel">Daftar API</div>
+  <div id="apiIndexList"></div>
 
-  <div class="card">
-    <div class="dev-section-title">Contoh Request (JavaScript fetch)</div>
-    <div class="doc-code-block"><pre><code class="language-javascript" id="jsExample"></code></pre></div>
-  </div>
+  <div class="section-label">Tanpa API Key</div>
+  <div id="apiListFree"></div>
 
-  <div class="card">
-    <div class="dev-section-title">Contoh Respons</div>
-    <div class="doc-code-block"><pre><code class="language-json">{
-  "username": "reyzdesu",
-  "count": 2,
-  "snippets": [
-    {
-      "shortId": "aB3xQ1",
-      "title": "Notrack Ai",
-      "language": "javascript",
-      "isPublic": true,
-      "views": 36,
-      "likes": 4
-    }
-  ]
-}</code></pre></div>
-  </div>
-
-  <div class="card">
-    <div class="dev-section-title">Upload Kode Lewat API</div>
-    <div class="snippet-desc">Kirim <code>POST</code> ke endpoint di bawah dengan body JSON. Field wajib: <code>filename</code> &amp; <code>content</code>.</div>
-    <table class="doc-param-table">
-      <thead><tr><th>Field</th><th>Tipe</th><th>Keterangan</th></tr></thead>
-      <tbody>
-        <tr><td><code>filename</code></td><td>string</td><td>Wajib. Nama file, mis. <code>script.js</code></td></tr>
-        <tr><td><code>content</code></td><td>string</td><td>Wajib. Isi kodenya</td></tr>
-        <tr><td><code>title</code></td><td>string</td><td>Judul kode, default = filename</td></tr>
-        <tr><td><code>description</code></td><td>string</td><td>Deskripsi singkat (maks 500 karakter)</td></tr>
-        <tr><td><code>language</code></td><td>string</td><td>mis. <code>javascript</code>, <code>python</code>, dst</td></tr>
-        <tr><td><code>tags</code></td><td>array/string</td><td>Maks 5 tag</td></tr>
-        <tr><td><code>isPublic</code></td><td>boolean</td><td>Tampil di feed publik atau tidak</td></tr>
-        <tr><td><code>pin</code></td><td>string</td><td>Opsional, kunci PIN 4-8 digit</td></tr>
-      </tbody>
-    </table>
-    <div class="doc-endpoint-row"><span class="doc-method-pill">POST</span><span class="doc-endpoint-path">/api/public/snippets</span></div>
-    <div class="doc-code-block"><pre><code class="language-bash" id="uploadCurlExample"></code></pre></div>
-    <div class="doc-code-block" style="margin-top:8px"><pre><code class="language-javascript" id="uploadJsExample"></code></pre></div>
-    <div class="dev-section-title" style="margin-top:16px;font-size:13px">Contoh Respons</div>
-    <div class="doc-code-block"><pre><code class="language-json">{
-  "shortId": "kL9pT2",
-  "title": "script.js",
-  "filename": "script.js",
-  "language": "javascript",
-  "isPublic": true,
-  "createdAt": 1755311234000
-}</code></pre></div>
-  </div>
+  <div class="section-label">Butuh API Key</div>
+  <div id="apiListAuth"></div>
 
   <div class="card">
     <div class="dev-section-title">Contoh Respons Error</div>
+    <div class="snippet-desc">Kalau ada yang salah (key gak valid, data gak ketemu, dll), API bakal balikin format error yang sama di semua endpoint:</div>
     <div class="doc-code-block"><pre><code class="language-json">{ "error": "API key tidak valid" }</code></pre></div>
   </div>
 </main>

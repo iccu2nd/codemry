@@ -834,6 +834,12 @@ html:has(.code-window.fullscreen) { overflow: hidden; }
   background-size: cover;
   background-position: center;
 }
+/* Kalau user belum punya banner, tampilkan placeholder gradient -- wrapper-nya
+   tetap ada dengan tinggi & posisi yang SAMA PERSIS seperti pas ada banner,
+   jadi tombol kameranya gak pernah pindah tempat begitu banner di-upload. */
+.profile-banner-wrap.no-banner .profile-banner-img {
+  background-image: linear-gradient(135deg, var(--accent-light), var(--accent));
+}
 .profile-banner-fade {
   position: absolute; left: 0; right: 0; bottom: 0; height: 60%;
   background: linear-gradient(180deg, rgba(255,255,255,0) 0%, #fff 100%);
@@ -850,23 +856,27 @@ html:has(.code-window.fullscreen) { overflow: hidden; }
   cursor: pointer;
   box-shadow: 0 3px 6px rgba(30,27,46,.35);
   padding: 0;
+  transition: transform .12s ease;
 }
 .banner-pencil-btn svg { width: 14px; height: 14px; }
-.profile-banner-add-btn {
-  display: flex; align-items: center; gap: 8px;
-  width: 100%;
-  background: var(--accent-bg);
-  border: 1.5px dashed #c7d2fe;
-  border-radius: 14px;
-  padding: 11px 14px;
-  margin-bottom: 16px;
-  color: #000;
-  font-weight: 700;
-  font-size: 13px;
-  font-family: inherit;
-  cursor: pointer;
+
+/* Status "lagi ngupload" -- ikon kamera disembunyikan & diganti spinner,
+   TAPI tombolnya sendiri (posisi/ukuran) gak berubah sama sekali. */
+.banner-pencil-btn.is-uploading svg,
+.avatar-pencil-btn.is-uploading svg { visibility: hidden; }
+.banner-pencil-btn.is-uploading::after,
+.avatar-pencil-btn.is-uploading::after {
+  content: '';
+  position: absolute;
+  top: 50%; left: 50%;
+  margin: -6.5px 0 0 -6.5px;
+  width: 13px; height: 13px;
+  border: 2px solid rgba(255,255,255,.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: btn-spin .6s linear infinite;
 }
-.profile-banner-add-btn svg { flex-shrink: 0; }
+.banner-pencil-btn:disabled, .avatar-pencil-btn:disabled { cursor: default; }
 
 .cropper-overlay {
   position: fixed; inset: 0; z-index: 1000;
@@ -1606,6 +1616,56 @@ body:not([data-no-bottom-nav]) .app { padding-bottom: 116px; }
 .qr-modal-body { display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; }
 .qr-modal-img { width: 100%; max-width: 260px; height: auto; border-radius: 14px; border: 1px solid var(--accent-border); padding: 12px; background: #fff; }
 .qr-modal-link { font-size: 12.5px; color: #9ca3af; word-break: break-all; }
+
+/* API key: empty state (belum generate) */
+.apikey-empty-box {
+  background: var(--accent-bg-2);
+  border: 1.5px dashed #c7d2fe;
+  border-radius: 16px;
+  padding: 16px;
+  margin-top: 10px;
+  text-align: center;
+}
+.apikey-empty-text { font-size: 13.5px; color: #4b5563; margin-bottom: 12px; line-height: 1.5; }
+.apikey-regen-row { margin-top: 12px; margin-bottom: 0; grid-template-columns: max-content; justify-content: flex-start; }
+.apikey-regen-row .btn-sm { min-width: 150px; }
+
+/* Badge "Tanpa Key" / "Butuh Key" */
+.apikey-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 11px; font-weight: 800; letter-spacing: .2px;
+  padding: 4px 10px; border-radius: 999px; flex-shrink: 0; white-space: nowrap;
+}
+.apikey-badge svg { flex-shrink: 0; }
+.apikey-badge-free { background: #dcfce7; color: #166534; }
+.apikey-badge-required { background: #fef3c7; color: #92400e; }
+
+/* Index / ringkasan daftar API (mirip list singkat ala feed) */
+.api-index-card { padding: 8px; }
+.api-index-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 10px; border-radius: 14px;
+  text-decoration: none; color: inherit;
+  transition: background .12s ease;
+}
+.api-index-row:hover { background: var(--accent-bg-2); }
+.api-index-row + .api-index-row { border-top: 1px solid var(--accent-bg); }
+.api-index-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.api-index-name { font-weight: 700; font-size: 14px; color: #17293d; }
+.api-index-endpoint { font-family: 'JetBrains Mono', monospace; font-size: 11.5px; color: #9ca3af; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.api-index-method { min-width: 46px; text-align: center; }
+.method-get { background: var(--accent); }
+.method-post { background: #16a34a; }
+
+/* Kartu detail tiap API */
+.api-doc-card { scroll-margin-top: 16px; }
+.api-card-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.api-card-head-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.api-card-name { font-weight: 800; font-size: 17px; color: #17293d; }
+.api-card-endpoint { margin-top: 10px; }
+.api-card-tagline { margin-top: 6px; }
+.api-card-subtitle { font-size: 12px; font-weight: 800; color: #9ca3af; text-transform: uppercase; letter-spacing: .4px; margin-top: 16px; margin-bottom: 4px; }
+.param-required { color: #dc2626; }
 
 .dev-user-block { padding: 12px 0; border-bottom: 1px solid var(--accent-bg); }
 .dev-user-block:last-child { border-bottom: none; }

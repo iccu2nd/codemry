@@ -90,22 +90,41 @@ router.post('/me/banner', async (req, res) => {
     }
 })
 
+// Cuma NGECEK status key -- TIDAK PERNAH bikin key baru di sini. Key baru
+// hanya boleh dibuat kalau user secara eksplisit pencet tombol "Generate
+// API Key" (lihat POST /me/apikey/generate di bawah). Ini penting biar key
+// gak otomatis kebuat cuma gara-gara user buka halaman API Docs.
 router.get('/me/apikey', async (req, res) => {
     if (!req.username) return res.status(401).json({ error: 'login dulu' })
     try {
-        let user = await Users.find(req.username)
+        const user = await Users.find(req.username)
         if (!user) return res.status(401).json({ error: 'login dulu' })
-        if (!user.apiKey) {
-            const apiKey = genApiKey()
-            await Users.update(req.username, { apiKey, apiKeyCreatedAt: Date.now() })
-            user = await Users.find(req.username)
-        }
-        res.json({ apiKey: user.apiKey, createdAt: user.apiKeyCreatedAt || null })
+        res.json({ apiKey: user.apiKey || null, createdAt: user.apiKeyCreatedAt || null })
     } catch (e) {
         res.status(500).json({ error: e.response?.data?.message || e.message })
     }
 })
 
+// Bikin key baru -- cuma dipanggil pas user pencet tombol "Generate API
+// Key" secara manual. Kalau user udah punya key, tolak dan arahkan buat
+// pakai endpoint regenerate (biar gak ke-generate ulang tanpa sadar/konfirmasi).
+router.post('/me/apikey/generate', async (req, res) => {
+    if (!req.username) return res.status(401).json({ error: 'login dulu' })
+    try {
+        const user = await Users.find(req.username)
+        if (!user) return res.status(401).json({ error: 'login dulu' })
+        if (user.apiKey) return res.status(409).json({ error: 'Kamu udah punya API key. Pakai tombol Regenerate kalau mau ganti.' })
+        const apiKey = genApiKey()
+        const stamp = Date.now()
+        await Users.update(req.username, { apiKey, apiKeyCreatedAt: stamp })
+        res.json({ apiKey, createdAt: stamp })
+    } catch (e) {
+        res.status(500).json({ error: e.response?.data?.message || e.message })
+    }
+})
+
+// Ganti key lama dengan yang baru -- dipakai kalau user udah punya key dan
+// mau regenerate. Key lama langsung invalid begitu ini dipanggil.
 router.post('/me/apikey/regenerate', async (req, res) => {
     if (!req.username) return res.status(401).json({ error: 'login dulu' })
     try {
