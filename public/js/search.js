@@ -104,7 +104,7 @@ async function loadTrendingSearch() {
     const ranked = [...scoreByTag.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10)
 
     if (!ranked.length) {
-      wrap.innerHTML = `<div class="empty-state-sm">Belum ada tren. Upload kode & pakai tag biar muncul di sini!</div>`
+      wrap.innerHTML = `<div class="empty-state-sm">Belum ada tren. Unggah kode dan gunakan tag agar muncul di sini.</div>`
       return
     }
 

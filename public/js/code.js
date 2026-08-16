@@ -21,7 +21,7 @@ function renderLockedCard(app, shortId, s) {
       <div class="lock-screen">
         ${lockIconSvg()}
         <div class="lock-title">Kode Ini Dikunci</div>
-        <div class="lock-sub">Diupload oleh ${escapeHtml(s.ownerNickname || s.ownerUsername)}. Masukkan PIN buat lihat kodenya.</div>
+        <div class="lock-sub">Diunggah oleh ${escapeHtml(s.ownerNickname || s.ownerUsername)}. Masukkan PIN untuk melihat kodenya.</div>
         <div class="field"><input type="tel" inputmode="numeric" pattern="[0-9]*" id="unlockPin" maxlength="8" placeholder="Masukkan PIN"></div>
         <button class="btn btn-primary btn-block" id="unlockBtn">Buka Kode</button>
       </div>
@@ -105,7 +105,7 @@ function renderUnlockedDetail(app, shortId, s) {
             </select>
           </div>
           <div class="field"><label>Detail (opsional)</label><textarea id="reportDetail" class="textarea-autogrow" style="min-height:60px" maxlength="300" placeholder="Jelasin lebih lanjut kalau perlu..."></textarea></div>
-          <div class="snippet-meta" style="margin-bottom:12px">Laporan ini dikirim ke pengelola Codery buat ditinjau, bukan ke pemilik kode.</div>
+          <div class="snippet-meta" style="margin-bottom:12px">Laporan ini dikirim kepada pengelola Codery untuk ditinjau, bukan kepada pemilik kode.</div>
           <div class="btn-row">
             <button class="btn btn-white" id="cancelReportBtn">Batal</button>
             <button class="btn btn-danger" id="sendReportBtn">Kirim Laporan</button>
@@ -128,7 +128,7 @@ function renderUnlockedDetail(app, shortId, s) {
           <div class="checkbox-row"><input type="checkbox" id="editUsePin" ${s.locked ? 'checked' : ''}><label for="editUsePin">Kunci pakai PIN</label></div>
           <div class="field" id="editPinField" style="display:${s.locked ? 'block' : 'none'}">
             <label>PIN ${s.locked ? 'baru (opsional)' : ''} (4-8 digit angka)</label>
-            <input type="tel" inputmode="numeric" pattern="[0-9]*" id="editPinInput" maxlength="8" placeholder="${s.locked ? 'Kosongkan kalau gak mau ganti PIN' : 'misal 1234'}">
+            <input type="tel" inputmode="numeric" pattern="[0-9]*" id="editPinInput" maxlength="8" placeholder="${s.locked ? 'Kosongkan jika tidak ingin mengganti PIN' : 'misal 1234'}">
           </div>
           <div class="btn-row">
             <button class="btn btn-white" id="cancelEditBtn">Batal</button>
@@ -249,7 +249,7 @@ function renderUnlockedDetail(app, shortId, s) {
           const reason = document.getElementById('reportReason').value
           const detail = document.getElementById('reportDetail').value.trim()
           await api(`/codes/${shortId}/report`, { method: 'POST', body: JSON.stringify({ reason, detail }) })
-          toast('Laporan terkirim, makasih udah bantu jaga Codery')
+          toast('Laporan terkirim, terima kasih telah membantu menjaga Codery.')
           document.getElementById('reportDetail').value = ''
           exitReportMode()
         } catch (e) { toast(e.message) }
@@ -365,7 +365,7 @@ function renderUnlockedDetail(app, shortId, s) {
       const nowWantsPin = editUsePin.checked
       const pinVal = editPinInput.value.trim()
       if (nowWantsPin && pinVal && !/^\d{4,8}$/.test(pinVal)) { toast('PIN harus 4-8 digit angka'); return }
-      if (nowWantsPin && !s.locked && !pinVal) { toast('Isi PIN dulu buat kunci kode ini'); return }
+      if (nowWantsPin && !s.locked && !pinVal) { toast('Isi PIN terlebih dahulu untuk mengunci kode ini.'); return }
 
       const body = {
         title, filename, content,
@@ -528,7 +528,7 @@ async function setupComments(shortId, ownerUsername) {
            <button class="send-icon-btn" id="commentSendBtn" title="Kirim">${sendIconSvg()}</button>
          </div>
        </div>`
-    : `<div class="comment-form-locked">Masuk dulu buat komentar. <a href="/auth">Masuk</a></div>`
+    : `<div class="comment-form-locked">Masuk terlebih dahulu untuk berkomentar. <a href="/auth">Masuk</a></div>`
 
   function autoGrow(el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px' }
 
@@ -585,7 +585,7 @@ async function setupComments(shortId, ownerUsername) {
       countEl.textContent = comments.length ? `(${comments.length})` : ''
       listEl.innerHTML = comments.length
         ? comments.slice().reverse().map(c => commentCardHtml(c, me && (me.username === c.username || isOwner), isOwner)).join('')
-        : `<div class="empty-state-sm">Belum ada komentar. Jadi yang pertama!</div>`
+        : `<div class="empty-state-sm">Belum ada komentar. Jadilah yang pertama!</div>`
 
       listEl.querySelectorAll('[data-role="delete-comment"]').forEach(btn => {
         btn.onclick = async () => {

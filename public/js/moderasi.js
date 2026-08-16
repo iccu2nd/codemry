@@ -4,7 +4,7 @@ let reportFilter = 'pending'
 async function renderModerasiPanel() {
   const app = document.getElementById('app')
   if (!me) { app.innerHTML = `<div class="card"><div class="empty-state">Login dulu ya.</div></div>`; return }
-  if (!me.isModerator) { app.innerHTML = `<div class="card"><div class="empty-state">Halaman ini cuma buat moderator.</div></div>`; return }
+  if (!me.isModerator) { app.innerHTML = `<div class="card"><div class="empty-state">Halaman ini hanya untuk moderator.</div></div>`; return }
 
   app.innerHTML = `
     <div class="card">
@@ -27,7 +27,7 @@ async function renderModerasiPanel() {
     <div class="card">
       <div class="dev-section-title">Moderasi Kode</div>
       <div class="snippet-meta" style="margin-bottom:10px">Hapus kode siapa pun lewat short ID-nya (kelihatan di URL /code?id=...).</div>
-      <div class="field"><label>Short ID kode</label><input id="devSnippetId" placeholder="cth: aB3xY9kq" autocomplete="off"></div>
+      <div class="field"><label>Short ID kode</label><input id="devSnippetId" placeholder="contoh: aB3xY9kq" autocomplete="off"></div>
       <button class="btn btn-danger btn-block" id="devDeleteSnippetBtn">Hapus Kode</button>
     </div>
   `
@@ -37,7 +37,7 @@ async function renderModerasiPanel() {
   document.getElementById('devDeleteSnippetBtn').onclick = async () => {
     const shortId = document.getElementById('devSnippetId').value.trim()
     if (!shortId) { toast('Isi short ID dulu'); return }
-    if (!confirm(`Yakin mau hapus kode "${shortId}"? Aksi ini gak bisa dibatalin.`)) return
+    if (!confirm(`Yakin ingin menghapus kode "${shortId}"? Tindakan ini tidak dapat dibatalkan.`)) return
     try {
       await api(`/dev/snippets/${shortId}`, { method: 'DELETE' })
       toast('Kode berhasil dihapus')
@@ -136,7 +136,7 @@ function renderDevReportsList(reports) {
 
   list.querySelectorAll('.dev-report-delete').forEach(btn => {
     btn.onclick = async () => {
-      if (!confirm('Hapus kode yang dilaporkan ini? Aksi ini gak bisa dibatalin.')) return
+      if (!confirm('Hapus kode yang dilaporkan ini? Tindakan ini tidak dapat dibatalkan.')) return
       if (btn.dataset.busy) return
       btn.dataset.busy = '1'
       try {

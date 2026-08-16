@@ -880,7 +880,7 @@ function openStickerPicker() {
           // berikutnya di loop yang sama -- biar infinite scroll gak
           // kerasa "macet" nunggu user scroll ulang buat nyoba lagi.
         } while (!html && nextPos && !reset)
-        grid.innerHTML = reset ? (html || `<div class="empty-state-sm">Gak ada hasil.</div>`) : grid.innerHTML + html
+        grid.innerHTML = reset ? (html || `<div class="empty-state-sm">Tidak ada hasil.</div>`) : grid.innerHTML + html
         wireItems()
       } catch (e) {
         if (reset) grid.innerHTML = `<div class="empty-state-sm">${escapeHtml(e.message)}</div>`
