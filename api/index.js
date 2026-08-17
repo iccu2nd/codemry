@@ -16,7 +16,7 @@ export default async function handler(req, res) {
     try {
         await ready
     } catch (e) {
-        res.status(500).json({ error: 'Server belum siap (setup GitHub gagal). Cek env var GITHUB_TOKEN dkk di Vercel.' })
+        res.status(500).json({ error: 'Server sedang sibuk, coba lagi sebentar lagi.' })
         return
     }
     return app(req, res)
