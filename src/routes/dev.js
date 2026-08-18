@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import bcrypt from 'bcryptjs'
-import { Users, Follows, Snippets, Views, Reports, REPORT_REASON_LABELS, avatarUrl, ensureNickname, ensureBadges, setBadge, BADGE_TYPES, isDeveloperUsername, isModeratorUser } from '../db.js'
+import { Users, Follows, Snippets, Views, Reports, REPORT_REASON_LABELS, avatarUrl, ensureNickname, ensureBadges, setBadge, BADGE_TYPES, isDeveloperUsername, isModeratorUser, deleteUserAccount } from '../db.js'
 import { deleteGist } from '../github.js'
 
 const router = Router()
@@ -138,6 +138,18 @@ router.post('/users/:username/password', requireDeveloper, async (req, res) => {
     const passwordHash = await bcrypt.hash(password, 10)
     await Users.update(target.username, { passwordHash })
     res.json({ ok: true, username: target.username })
+})
+
+router.delete('/users/:username', requireDeveloper, async (req, res) => {
+    const target = await Users.find(req.params.username)
+    if (!target) return res.status(404).json({ error: 'user tidak ditemukan' })
+    if (isDeveloperUsername(target.username)) return res.status(403).json({ error: 'gak bisa hapus akun developer' })
+    try {
+        await deleteUserAccount(target.username, deleteGist)
+        res.json({ ok: true, username: target.username })
+    } catch (e) {
+        res.status(500).json({ error: e.message })
+    }
 })
 
 router.delete('/snippets/:shortId', requireModerator, async (req, res) => {

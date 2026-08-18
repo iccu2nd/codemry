@@ -1695,6 +1695,9 @@ body:not([data-no-bottom-nav]) .app { padding-bottom: 116px; }
 .dev-user-block { padding: 12px 0; border-bottom: 1px solid var(--accent-bg); }
 .dev-user-block:last-child { border-bottom: none; }
 .dev-badge-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.dev-kebab-btn { flex-shrink: 0; width: 32px; height: 32px; border-radius: 10px; border: none; background: var(--accent-bg); color: #6b7280; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background .12s ease, color .12s ease; }
+.dev-kebab-btn:hover { background: var(--accent-border); color: #000; }
+.dev-kebab-btn:active { transform: scale(.92); }
 .dev-badge-user { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 14px; color: #17293d; text-decoration: none; }
 .dev-badge-chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
 .badge-chip {

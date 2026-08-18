@@ -1,6 +1,8 @@
 
 const DEV_EYE_OPEN_SVG = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/><circle cx="12" cy="12" r="3"/></svg>`
 const DEV_EYE_OFF_SVG = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a21.86 21.86 0 0 1 5.06-6.06M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a21.8 21.8 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`
+const DEV_KEBAB_SVG = `<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>`
+const DEV_TRASH_SVG = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m5 0V4a2 2 0 0 1 2-2h0a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>`
 
 let allDevUsers = []
 let devUsersExpanded = false
@@ -86,7 +88,7 @@ function renderDevUserList(filter) {
           <img class="avatar-circle avatar-circle-sm" src="${u.avatar || ''}" onerror="this.style.visibility='hidden'" loading="lazy" decoding="async">
           <span>${escapeHtml(u.nickname || u.username)}${badgesHtml(u.badges)}${roleBadgeHtml(u.role)}<br><span class="snippet-meta">@${escapeHtml(u.username)} · ${u.snippetCount} kode · ${formatViews(u.totalViews)}</span></span>
         </a>
-        ${u.isDeveloper ? `<span class="lang-badge">DEV</span>` : ''}
+        ${u.isDeveloper ? `<span class="lang-badge">DEV</span>` : `<button type="button" class="dev-kebab-btn" data-username="${escapeHtml(u.username)}" aria-label="Kelola akun @${escapeHtml(u.username)}">${DEV_KEBAB_SVG}</button>`}
       </div>
       ${!u.isDeveloper ? `
       <div class="dev-badge-chip-row">
@@ -96,15 +98,6 @@ function renderDevUserList(filter) {
             <svg viewBox="0 0 24 24" width="13" height="13">${b.icon}</svg> ${b.label}
           </button>`
         }).join('')}
-      </div>
-      <div class="dev-role-row">
-        <input class="dev-role-input" data-role-username="${escapeHtml(u.username)}" placeholder="Role khusus (kosongkan untuk menghapus)" value="${escapeHtml(u.role || '')}" maxlength="24">
-        <button class="btn btn-white btn-sm dev-role-save-btn" data-role-username="${escapeHtml(u.username)}">Set Role</button>
-      </div>
-      <div class="dev-role-row" style="margin-top:8px">
-        <input class="dev-role-input dev-password-input" data-pw-username="${escapeHtml(u.username)}" type="password" placeholder="Password baru (min. 6 karakter)" autocomplete="new-password">
-        <button type="button" class="password-eye-btn dev-password-eye-btn" data-pw-username="${escapeHtml(u.username)}" aria-label="Tampilkan atau sembunyikan password" style="position:static;flex-shrink:0">${DEV_EYE_OPEN_SVG}</button>
-        <button class="btn btn-white btn-sm dev-password-save-btn" data-pw-username="${escapeHtml(u.username)}">Set Password</button>
       </div>` : ''}
     </div>
   `).join('') + (!devUsersExpanded && rows.length > 5
@@ -128,44 +121,10 @@ function renderDevUserList(filter) {
     }
   })
 
-  list.querySelectorAll('.dev-role-save-btn').forEach(btn => {
-    btn.onclick = async () => {
-      const username = btn.dataset.roleUsername
-      const input = list.querySelector(`.dev-role-input[data-role-username="${CSS.escape(username)}"]`)
-      const role = input.value.trim()
-      try {
-        await api(`/dev/users/${username}/role`, { method: 'POST', body: JSON.stringify({ role }) })
-        toast(role ? `Role @${username} di-set ke "${role}"` : `Role @${username} dihapus`)
-        loadDevUsers()
-      } catch (e) { toast(e.message) }
-    }
-  })
-
-  list.querySelectorAll('.dev-password-eye-btn').forEach(btn => {
+  list.querySelectorAll('.dev-kebab-btn').forEach(btn => {
     btn.onclick = () => {
-      const username = btn.dataset.pwUsername
-      const input = list.querySelector(`.dev-password-input[data-pw-username="${CSS.escape(username)}"]`)
-      const show = input.type === 'password'
-      input.type = show ? 'text' : 'password'
-      btn.innerHTML = show ? DEV_EYE_OFF_SVG : DEV_EYE_OPEN_SVG
-    }
-  })
-
-  list.querySelectorAll('.dev-password-save-btn').forEach(btn => {
-    btn.onclick = async () => {
-      const username = btn.dataset.pwUsername
-      const input = list.querySelector(`.dev-password-input[data-pw-username="${CSS.escape(username)}"]`)
-      const password = input.value
-      if (password.length < 6) { toast('Password minimal 6 karakter'); return }
-      if (btn.dataset.busy) return
-      btn.dataset.busy = '1'
-      setBtnLoading(btn, true)
-      try {
-        await api(`/dev/users/${username}/password`, { method: 'POST', body: JSON.stringify({ password }) })
-        toast(`Password @${username} berhasil diganti`)
-        input.value = ''
-      } catch (e) { toast(e.message) }
-      finally { delete btn.dataset.busy; setBtnLoading(btn, false) }
+      const u = allDevUsers.find(x => x.username === btn.dataset.username)
+      if (u) openUserManageModal(u)
     }
   })
 
@@ -173,6 +132,83 @@ function renderDevUserList(filter) {
   if (showAllBtn) showAllBtn.onclick = () => {
     devUsersExpanded = true
     renderDevUserList(document.getElementById('devUserSearch').value.trim().toLowerCase())
+  }
+}
+
+function openUserManageModal(u) {
+  openModal(`
+    <div class="modal-head">
+      <div class="modal-head-title">Kelola @${escapeHtml(u.username)}</div>
+      <button class="modal-close-btn" onclick="closeModal()">${closeIconSvg()}</button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label>Role</label>
+        <div class="dev-role-row" style="margin-top:0">
+          <input class="dev-role-input" id="mUmRole" placeholder="Role khusus (kosongkan untuk menghapus)" value="${escapeHtml(u.role || '')}" maxlength="24">
+          <button class="btn btn-white btn-sm" id="mUmRoleSaveBtn">Simpan</button>
+        </div>
+      </div>
+      <div class="field">
+        <label>Password Baru</label>
+        <div class="dev-role-row" style="margin-top:0">
+          <input class="dev-role-input" id="mUmPassword" type="password" placeholder="Min. 6 karakter" autocomplete="new-password">
+          <button type="button" class="password-eye-btn" id="mUmPasswordEyeBtn" aria-label="Tampilkan atau sembunyikan password" style="position:static;flex-shrink:0">${DEV_EYE_OPEN_SVG}</button>
+          <button class="btn btn-white btn-sm" id="mUmPasswordSaveBtn">Simpan</button>
+        </div>
+        <div class="field-hint">Ini bukan lihat password lama — password disimpan terenkripsi dan gak bisa ditampilkan lagi. Cuma bisa diganti dengan yang baru.</div>
+      </div>
+      <div class="detail-divider"></div>
+      <div class="field" style="margin-bottom:0">
+        <label>Zona Berbahaya</label>
+        <button class="btn btn-danger btn-block" id="mUmDeleteBtn">${DEV_TRASH_SVG} Hapus Akun @${escapeHtml(u.username)}</button>
+        <div class="field-hint">Menghapus akun akan menghapus semua kode, komentar, like, bookmark, dan follow milik user ini secara permanen. Gak bisa dibatalkan.</div>
+      </div>
+    </div>
+  `)
+
+  document.getElementById('mUmRoleSaveBtn').onclick = async () => {
+    const btn = document.getElementById('mUmRoleSaveBtn')
+    const role = document.getElementById('mUmRole').value.trim()
+    setBtnLoading(btn, true)
+    try {
+      await api(`/dev/users/${u.username}/role`, { method: 'POST', body: JSON.stringify({ role }) })
+      toast(role ? `Role @${u.username} di-set ke "${role}"` : `Role @${u.username} dihapus`)
+      closeModal()
+      loadDevUsers()
+    } catch (e) { toast(e.message); setBtnLoading(btn, false) }
+  }
+
+  document.getElementById('mUmPasswordEyeBtn').onclick = () => {
+    const input = document.getElementById('mUmPassword')
+    const eyeBtn = document.getElementById('mUmPasswordEyeBtn')
+    const show = input.type === 'password'
+    input.type = show ? 'text' : 'password'
+    eyeBtn.innerHTML = show ? DEV_EYE_OFF_SVG : DEV_EYE_OPEN_SVG
+  }
+
+  document.getElementById('mUmPasswordSaveBtn').onclick = async () => {
+    const btn = document.getElementById('mUmPasswordSaveBtn')
+    const password = document.getElementById('mUmPassword').value
+    if (password.length < 6) { toast('Password minimal 6 karakter'); return }
+    setBtnLoading(btn, true)
+    try {
+      await api(`/dev/users/${u.username}/password`, { method: 'POST', body: JSON.stringify({ password }) })
+      toast(`Password @${u.username} berhasil diganti`)
+      closeModal()
+    } catch (e) { toast(e.message); setBtnLoading(btn, false) }
+  }
+
+  document.getElementById('mUmDeleteBtn').onclick = async () => {
+    if (!confirm(`Yakin hapus akun @${u.username}? Semua kode, komentar, like, bookmark, dan follow milik akun ini akan ikut terhapus permanen.`)) return
+    const btn = document.getElementById('mUmDeleteBtn')
+    setBtnLoading(btn, true)
+    try {
+      await api(`/dev/users/${u.username}`, { method: 'DELETE' })
+      toast(`Akun @${u.username} berhasil dihapus`)
+      closeModal()
+      loadDevUsers()
+    } catch (e) { toast(e.message); setBtnLoading(btn, false) }
   }
 }
 

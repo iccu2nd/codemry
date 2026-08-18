@@ -66,6 +66,9 @@ export const Users = {
         return update('users.json', d => d.map(u =>
             u.username.toLowerCase() === username.toLowerCase() ? { ...u, ...patch } : u
         ), `update user ${username}`)
+    },
+    async remove(username) {
+        return update('users.json', d => d.filter(u => u.username.toLowerCase() !== username.toLowerCase()), `remove user ${username}`)
     }
 }
 
@@ -147,6 +150,27 @@ export async function renameUsername(oldUsername, newUsername) {
             ? { ...u, username: newUsername, usernameChangedAt: Date.now() }
             : u
     ), `rename user ${oldUsername} -> ${newUsername}`)
+}
+
+// Hapus akun beserta semua jejaknya: gist kode miliknya, dan semua baris di
+// tabel lain yang nyangkut dia (baik sebagai pemilik/pengirim maupun cuma
+// nyebut dia doang, misal follow/like/bookmark/komentar/notifikasi orang
+// lain ke dia). Dipanggil dari devpanel (developer hapus akun user).
+export async function deleteUserAccount(username, deleteGistFn) {
+    const uname = username.toLowerCase()
+    const snippets = (await readDbFile('snippets.json')).data.filter(s => s.ownerUsername.toLowerCase() === uname)
+    for (const s of snippets) {
+        try { await deleteGistFn(s.id) } catch (e) { /* gist mungkin udah gak ada, lanjut aja */ }
+    }
+    const shortIds = new Set(snippets.map(s => s.shortId))
+    await update('snippets.json', d => d.filter(s => s.ownerUsername.toLowerCase() !== uname), `remove snippets by ${username}`)
+    await update('follows.json', d => d.filter(f => f.follower !== username && f.following !== username), `remove follows for ${username}`)
+    await update('likes.json', d => d.filter(l => l.username !== username && !shortIds.has(l.shortId)), `remove likes for ${username}`)
+    await update('bookmarks.json', d => d.filter(b => b.username !== username && !shortIds.has(b.shortId)), `remove bookmarks for ${username}`)
+    await update('comments.json', d => d.filter(c => c.username !== username && !shortIds.has(c.shortId)), `remove comments for ${username}`)
+    await update('notifications.json', d => d.filter(n => n.username !== username && n.fromUsername !== username), `remove notifications for ${username}`)
+    await update('reports.json', d => d.filter(r => r.fromUsername !== username && r.ownerUsername !== username), `remove reports for ${username}`)
+    await Users.remove(username)
 }
 
 export const SCRAPE_REQUEST_TTL_MS = 7 * 24 * 60 * 60 * 1000
