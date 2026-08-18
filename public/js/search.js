@@ -156,15 +156,15 @@ function runSearch(term) {
   input.blur()
 }
 
-document.getElementById('searchSubmitBtn')?.addEventListener('click', () => {
+function submitSearch() {
   const input = document.getElementById('feedSearch')
   const val = (input?.value || '').trim()
   if (!val) { input?.focus(); return }
   runSearch(val)
-})
+}
 
 document.getElementById('feedSearch')?.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') { e.preventDefault(); document.getElementById('searchSubmitBtn')?.click() }
+  if (e.key === 'Enter') { e.preventDefault(); submitSearch() }
 })
 
 document.getElementById('feedSearch')?.addEventListener('input', () => {
