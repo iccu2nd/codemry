@@ -190,13 +190,11 @@ function renderUnlockedDetail(app, shortId, s) {
             <img class="qr-modal-img" src="${qrImgUrl}" alt="QR Code" width="320" height="320">
             <div class="qr-modal-link">${escapeHtml(pageUrl)}</div>
           </div>
-          <div class="modal-actions">
-            <a class="btn btn-white" href="${qrImgUrl}" download="qr-${s.shortId}.png" target="_blank" rel="noopener">Simpan Gambar</a>
-            <button class="btn btn-primary" id="qrCopyLinkBtn">Salin Link</button>
+          <div class="modal-actions" style="justify-content:center">
+            <a class="btn btn-primary" href="${qrImgUrl}" download="qr-${s.shortId}.png" target="_blank" rel="noopener">${downloadIconSvg()} Unduh</a>
           </div>
         </div>
       `)
-      document.getElementById('qrCopyLinkBtn').onclick = () => { navigator.clipboard.writeText(pageUrl); toast('Link disalin!') }
     }
 
     const forkBtn = document.getElementById('forkBtn')

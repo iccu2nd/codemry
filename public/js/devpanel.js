@@ -99,7 +99,7 @@ function renderDevUserList(filter) {
       </div>` : ''}
     </div>
   `).join('') + (!devUsersExpanded && rows.length > 5
-    ? `<button type="button" class="dev-showall-btn" id="devShowAllBtn">Tampilkan semua (${rows.length} user)</button>`
+    ? `<button type="button" class="dev-showall-btn" id="devShowAllBtn">Tampilkan semua (${rows.length - visible.length} user lagi)</button>`
     : '')
 
   list.querySelectorAll('.badge-chip').forEach(btn => {
