@@ -81,6 +81,7 @@ async function renderProfile() {
     }
     const saveBioBtn = document.getElementById('saveBioBtn')
     if (saveBioBtn) saveBioBtn.onclick = async () => {
+      setBtnLoading(saveBioBtn, true)
       try {
         const body = {
           bio: document.getElementById('bioInput').value,
@@ -94,7 +95,7 @@ async function renderProfile() {
         toast('Profil diperbarui!')
         if (r.username !== username) window.location.href = profileUrl(r.username)
         else renderProfile()
-      } catch (e) { toast(e.message) }
+      } catch (e) { toast(e.message); setBtnLoading(saveBioBtn, false) }
     }
 
     // Penting: tombol kamera (avatar & banner) TIDAK PERNAH dipindah posisinya.
