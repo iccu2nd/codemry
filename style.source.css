@@ -297,16 +297,43 @@ img.clickable:hover { outline: 2px solid rgba(var(--accent-rgb),.4); outline-off
 }
 .btn:active { transform: translateY(4px); }
 .btn:disabled { opacity: .7; cursor: default; }
-.btn.btn-loading {
-  position: relative; color: transparent !important;
+.btn.btn-loading { cursor: default; }
+.btn.btn-loading .load-spinner { --load-color: #fff; }
+.btn-white.btn-loading .load-spinner,
+.btn-white .load-spinner { --load-color: var(--accent-dark); }
+
+/* Spinner "blades" -- dipakai buat semua state loading (tombol, upload
+   avatar/banner, dll). Markup 12 blade-nya disuntik lewat JS (lihat
+   loadSpinnerHtml() di common.js) soalnya butuh 12 elemen anak yang gak
+   bisa dibikin cuma dari satu pseudo-element ::after. */
+.load-spinner {
+  font-size: 18px; position: relative; display: inline-block;
+  width: 1em; height: 1em; --load-color: #fff;
 }
-.btn.btn-loading::after {
-  content: ''; position: absolute; width: 16px; height: 16px;
-  border: 2px solid rgba(255,255,255,.55); border-top-color: #fff;
-  border-radius: 50%; animation: btn-spin .6s linear infinite;
+.load-spinner .load-blade {
+  position: absolute; left: .4629em; bottom: 0;
+  width: .074em; height: .2777em; border-radius: .0555em;
+  background-color: transparent;
+  transform-origin: center -.2222em;
+  animation: load-spinner-fade 1s infinite linear;
 }
-.btn-white.btn-loading::after { border-color: rgba(var(--accent-dark-rgb),.25); border-top-color: var(--accent-dark); }
-@keyframes btn-spin { to { transform: rotate(360deg); } }
+.load-spinner .load-blade:nth-child(1) { animation-delay: 0s; transform: rotate(0deg); }
+.load-spinner .load-blade:nth-child(2) { animation-delay: .083s; transform: rotate(30deg); }
+.load-spinner .load-blade:nth-child(3) { animation-delay: .166s; transform: rotate(60deg); }
+.load-spinner .load-blade:nth-child(4) { animation-delay: .249s; transform: rotate(90deg); }
+.load-spinner .load-blade:nth-child(5) { animation-delay: .332s; transform: rotate(120deg); }
+.load-spinner .load-blade:nth-child(6) { animation-delay: .415s; transform: rotate(150deg); }
+.load-spinner .load-blade:nth-child(7) { animation-delay: .498s; transform: rotate(180deg); }
+.load-spinner .load-blade:nth-child(8) { animation-delay: .581s; transform: rotate(210deg); }
+.load-spinner .load-blade:nth-child(9) { animation-delay: .664s; transform: rotate(240deg); }
+.load-spinner .load-blade:nth-child(10) { animation-delay: .747s; transform: rotate(270deg); }
+.load-spinner .load-blade:nth-child(11) { animation-delay: .83s; transform: rotate(300deg); }
+.load-spinner .load-blade:nth-child(12) { animation-delay: .913s; transform: rotate(330deg); }
+@keyframes load-spinner-fade {
+  0% { background-color: var(--load-color, #fff); }
+  100% { background-color: transparent; }
+}
+.load-spinner-abs { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 12px; }
 
 .btn-primary {
   background: linear-gradient(180deg, var(--accent-light), var(--accent));
@@ -874,18 +901,6 @@ body:has(.code-window.fullscreen) { touch-action: pan-x pan-y; }
    TAPI tombolnya sendiri (posisi/ukuran) gak berubah sama sekali. */
 .banner-pencil-btn.is-uploading svg,
 .avatar-pencil-btn.is-uploading svg { visibility: hidden; }
-.banner-pencil-btn.is-uploading::after,
-.avatar-pencil-btn.is-uploading::after {
-  content: '';
-  position: absolute;
-  top: 50%; left: 50%;
-  margin: -6.5px 0 0 -6.5px;
-  width: 13px; height: 13px;
-  border: 2px solid rgba(255,255,255,.4);
-  border-top-color: #fff;
-  border-radius: 50%;
-  animation: btn-spin .6s linear infinite;
-}
 .banner-pencil-btn:disabled, .avatar-pencil-btn:disabled { cursor: default; }
 
 .cropper-overlay {

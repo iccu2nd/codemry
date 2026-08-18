@@ -134,10 +134,7 @@ async function init() {
 
     // Langsung kasih feedback instan pas diklik, biar gak berasa nge-freeze
     // nunggu request selesai.
-    submitBtn.disabled = true
-    const originalLabel = submitBtn.textContent
-    submitBtn.textContent = 'Mengupload...'
-    submitBtn.classList.add('btn-loading')
+    setBtnLoading(submitBtn, true)
 
     try {
       const s = await api('/codes', {
@@ -155,9 +152,7 @@ async function init() {
       window.location.href = codeUrl(s.shortId)
     } catch (err) {
       toast(err.message)
-      submitBtn.disabled = false
-      submitBtn.textContent = originalLabel
-      submitBtn.classList.remove('btn-loading')
+      setBtnLoading(submitBtn, false)
     }
   }
 }

@@ -248,8 +248,7 @@ function renderApiKeySection() {
       </div>`
     const genBtn = document.getElementById('apiKeyGenBtn')
     genBtn.onclick = async () => {
-      genBtn.disabled = true
-      genBtn.classList.add('btn-loading')
+      setBtnLoading(genBtn, true)
       try {
         const r = await api('/users/me/apikey/generate', { method: 'POST' })
         currentKey = r.apiKey
@@ -259,8 +258,7 @@ function renderApiKeySection() {
         toast('API key berhasil dibuat.')
       } catch (e) {
         toast(e.message)
-        genBtn.disabled = false
-        genBtn.classList.remove('btn-loading')
+        setBtnLoading(genBtn, false)
       }
     }
     return
@@ -289,8 +287,7 @@ function renderApiKeySection() {
   document.getElementById('apiKeyRegenBtn').onclick = async () => {
     if (!confirm('Yakin ingin membuat ulang API key? Key lama akan langsung tidak berlaku dan tidak dapat dikembalikan.')) return
     const btn = document.getElementById('apiKeyRegenBtn')
-    btn.disabled = true
-    btn.classList.add('btn-loading')
+    setBtnLoading(btn, true)
     try {
       const r = await api('/users/me/apikey/regenerate', { method: 'POST' })
       currentKey = r.apiKey
@@ -300,9 +297,7 @@ function renderApiKeySection() {
       toast('API key baru berhasil dibuat.')
     } catch (e) {
       toast(e.message)
-    } finally {
-      btn.disabled = false
-      btn.classList.remove('btn-loading')
+      setBtnLoading(btn, false)
     }
   }
 }

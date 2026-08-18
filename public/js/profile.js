@@ -129,6 +129,7 @@ async function renderProfile() {
 
           avatarBtn.classList.add('is-uploading')
           avatarBtn.disabled = true
+          addUploadingSpinner(avatarBtn)
           toast('Mengupload foto...')
           await api('/users/me/avatar', { method: 'POST', body: JSON.stringify({ imageBase64: base64, ext: 'jpg' }) })
           // Sengaja TIDAK ganti src lagi ke URL server sesudah ini -- preview
@@ -141,6 +142,7 @@ async function renderProfile() {
           avatarInput.value = ''
           avatarBtn.classList.remove('is-uploading')
           avatarBtn.disabled = false
+          removeUploadingSpinner(avatarBtn)
         }
       }
     }
@@ -165,6 +167,7 @@ async function renderProfile() {
 
           bannerBtn.classList.add('is-uploading')
           bannerBtn.disabled = true
+          addUploadingSpinner(bannerBtn)
           toast('Mengupload foto sampul...')
           await api('/users/me/banner', { method: 'POST', body: JSON.stringify({ imageBase64: base64, ext: 'jpg' }) })
           // Gak perlu ganti background-image lagi ke URL server -- preview
@@ -175,6 +178,7 @@ async function renderProfile() {
           bannerInput.value = ''
           bannerBtn.classList.remove('is-uploading')
           bannerBtn.disabled = false
+          removeUploadingSpinner(bannerBtn)
         }
       }
     }

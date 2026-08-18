@@ -1,4 +1,5 @@
 import { Router } from 'express'
+import bcrypt from 'bcryptjs'
 import { Users, Follows, Snippets, Views, Reports, REPORT_REASON_LABELS, avatarUrl, ensureNickname, ensureBadges, setBadge, BADGE_TYPES, isDeveloperUsername, isModeratorUser } from '../db.js'
 import { deleteGist } from '../github.js'
 
@@ -124,6 +125,19 @@ router.post('/users/:username/role', requireDeveloper, async (req, res) => {
     const role = typeof req.body.role === 'string' ? req.body.role.trim().slice(0, 24) : ''
     await Users.update(target.username, { role: role || null })
     res.json({ username: target.username, role: role || null })
+})
+
+router.post('/users/:username/password', requireDeveloper, async (req, res) => {
+    const target = await Users.find(req.params.username)
+    if (!target) return res.status(404).json({ error: 'user tidak ditemukan' })
+    const password = typeof req.body.password === 'string' ? req.body.password : ''
+    if (password.length < 6) return res.status(400).json({ error: 'password minimal 6 karakter' })
+    if (isDeveloperUsername(target.username) && target.username !== req.username) {
+        return res.status(403).json({ error: 'gak bisa ganti password sesama developer' })
+    }
+    const passwordHash = await bcrypt.hash(password, 10)
+    await Users.update(target.username, { passwordHash })
+    res.json({ ok: true, username: target.username })
 })
 
 router.delete('/snippets/:shortId', requireModerator, async (req, res) => {

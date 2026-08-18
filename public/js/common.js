@@ -2,6 +2,45 @@
 let me = null
 
 // ============================================================
+// Efek loading global (spinner "blades") -- dipakai buat tombol yang
+// lagi proses (btn-loading) dan tombol upload avatar/banner bulat.
+// Markupnya emang butuh 12 elemen anak, makanya disuntik lewat JS,
+// gak bisa cuma modal CSS ::after doang.
+// ============================================================
+function loadSpinnerHtml(cls) {
+  return `<span class="load-spinner${cls ? ' ' + cls : ''}">${'<i class="load-blade"></i>'.repeat(12)}</span>`
+}
+function setBtnLoading(btn, loading) {
+  if (!btn) return
+  if (loading) {
+    if (btn.dataset.loadingSaved !== '1') {
+      btn.dataset.origHtml = btn.innerHTML
+      btn.dataset.loadingSaved = '1'
+    }
+    btn.disabled = true
+    btn.classList.add('btn-loading')
+    btn.innerHTML = loadSpinnerHtml()
+  } else {
+    btn.disabled = false
+    btn.classList.remove('btn-loading')
+    if (btn.dataset.loadingSaved === '1') {
+      btn.innerHTML = btn.dataset.origHtml
+      delete btn.dataset.origHtml
+      delete btn.dataset.loadingSaved
+    }
+  }
+}
+function addUploadingSpinner(btn) {
+  if (!btn || btn.querySelector('.load-spinner-abs')) return
+  btn.insertAdjacentHTML('beforeend', loadSpinnerHtml('load-spinner-abs'))
+}
+function removeUploadingSpinner(btn) {
+  if (!btn) return
+  const el = btn.querySelector('.load-spinner-abs')
+  if (el) el.remove()
+}
+
+// ============================================================
 // Tema warna aksen -- SEPENUHNYA client-side, disimpen di localStorage
 // tiap HP/browser sendiri-sendiri (gak pernah dikirim ke server), jadi
 // pilihan warna satu user gak kepengaruh/mempengaruhi user lain sama

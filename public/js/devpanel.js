@@ -1,4 +1,7 @@
 
+const DEV_EYE_OPEN_SVG = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/><circle cx="12" cy="12" r="3"/></svg>`
+const DEV_EYE_OFF_SVG = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a21.86 21.86 0 0 1 5.06-6.06M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a21.8 21.8 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`
+
 let allDevUsers = []
 let devUsersExpanded = false
 
@@ -97,6 +100,11 @@ function renderDevUserList(filter) {
       <div class="dev-role-row">
         <input class="dev-role-input" data-role-username="${escapeHtml(u.username)}" placeholder="Role khusus (kosongkan untuk menghapus)" value="${escapeHtml(u.role || '')}" maxlength="24">
         <button class="btn btn-white btn-sm dev-role-save-btn" data-role-username="${escapeHtml(u.username)}">Set Role</button>
+      </div>
+      <div class="dev-role-row" style="margin-top:8px">
+        <input class="dev-role-input dev-password-input" data-pw-username="${escapeHtml(u.username)}" type="password" placeholder="Password baru (min. 6 karakter)" autocomplete="new-password">
+        <button type="button" class="password-eye-btn dev-password-eye-btn" data-pw-username="${escapeHtml(u.username)}" aria-label="Tampilkan atau sembunyikan password" style="position:static;flex-shrink:0">${DEV_EYE_OPEN_SVG}</button>
+        <button class="btn btn-white btn-sm dev-password-save-btn" data-pw-username="${escapeHtml(u.username)}">Set Password</button>
       </div>` : ''}
     </div>
   `).join('') + (!devUsersExpanded && rows.length > 5
@@ -130,6 +138,34 @@ function renderDevUserList(filter) {
         toast(role ? `Role @${username} di-set ke "${role}"` : `Role @${username} dihapus`)
         loadDevUsers()
       } catch (e) { toast(e.message) }
+    }
+  })
+
+  list.querySelectorAll('.dev-password-eye-btn').forEach(btn => {
+    btn.onclick = () => {
+      const username = btn.dataset.pwUsername
+      const input = list.querySelector(`.dev-password-input[data-pw-username="${CSS.escape(username)}"]`)
+      const show = input.type === 'password'
+      input.type = show ? 'text' : 'password'
+      btn.innerHTML = show ? DEV_EYE_OFF_SVG : DEV_EYE_OPEN_SVG
+    }
+  })
+
+  list.querySelectorAll('.dev-password-save-btn').forEach(btn => {
+    btn.onclick = async () => {
+      const username = btn.dataset.pwUsername
+      const input = list.querySelector(`.dev-password-input[data-pw-username="${CSS.escape(username)}"]`)
+      const password = input.value
+      if (password.length < 6) { toast('Password minimal 6 karakter'); return }
+      if (btn.dataset.busy) return
+      btn.dataset.busy = '1'
+      setBtnLoading(btn, true)
+      try {
+        await api(`/dev/users/${username}/password`, { method: 'POST', body: JSON.stringify({ password }) })
+        toast(`Password @${username} berhasil diganti`)
+        input.value = ''
+      } catch (e) { toast(e.message) }
+      finally { delete btn.dataset.busy; setBtnLoading(btn, false) }
     }
   })
 
