@@ -422,20 +422,20 @@ function injectAccountLinks() {
 
 function injectStaticMenuLinks(topnav) {
   if (location.pathname !== '/') {
-    document.getElementById('leaderboardMenuLink')?.remove()
+    document.getElementById('searchMenuLink')?.remove()
     document.getElementById('requestScrapeMenuLink')?.remove()
     document.getElementById('panduanMenuLink')?.remove()
     return
   }
-  if (document.getElementById('leaderboardMenuLink')) return
+  if (document.getElementById('searchMenuLink')) return
   const authArea = document.getElementById('authArea')
 
-  const leaderboardLink = document.createElement('a')
-  leaderboardLink.id = 'leaderboardMenuLink'
-  leaderboardLink.className = 'link-btn'
-  leaderboardLink.href = '/leaderboard'
-  leaderboardLink.textContent = 'Leaderboard'
-  topnav.insertBefore(leaderboardLink, authArea)
+  const searchLink = document.createElement('a')
+  searchLink.id = 'searchMenuLink'
+  searchLink.className = 'link-btn'
+  searchLink.href = '/search'
+  searchLink.textContent = 'Search'
+  topnav.insertBefore(searchLink, authArea)
 
   const requestScrapeLink = document.createElement('a')
   requestScrapeLink.id = 'requestScrapeMenuLink'
@@ -504,7 +504,7 @@ function initBottomNav() {
   const path = location.pathname
   const isActive = (p) => (p === '/' ? path === '/' : path.startsWith(p))
 
-  // Urutan tetap 5 item kiri->kanan: Feed, Search, Upload (FAB tengah),
+  // Urutan tetap 5 item kiri->kanan: Feed, Leaderboard, Upload (FAB tengah),
   // Notifikasi, Profile. Upload sengaja jadi elemen ke-3 (persis di tengah)
   // supaya justify-content:space-around di .bottom-nav otomatis menaruhnya
   // di pusat baris, gak perlu positioning absolute manual.
@@ -513,7 +513,7 @@ function initBottomNav() {
   nav.id = 'bottomNav'
   nav.innerHTML = `
     <a class="bnav-item ${isActive('/') ? 'active' : ''}" href="/">${houseIconSvg()}<span>Feed</span></a>
-    <a class="bnav-item ${isActive('/search') ? 'active' : ''}" href="/search">${searchIconSvg()}<span>Search</span></a>
+    <a class="bnav-item ${isActive('/leaderboard') ? 'active' : ''}" href="/leaderboard">${trophyIconSvg()}<span>Leaderboard</span></a>
     <a class="bnav-fab" href="/upload" aria-label="Upload"><span class="bnav-fab-circle">${plusIconSvg()}</span></a>
     <a class="bnav-item ${isActive('/notifications') ? 'active' : ''}" id="bnavNotif" href="/notifications">
       <span class="bnav-icon-wrap">${bellIconSvg()}<span class="bnav-badge" id="notifDot" style="display:none"></span></span>
@@ -585,6 +585,7 @@ function houseIconSvg() { return `<svg viewBox="0 0 24 24" fill="none" stroke="c
 function plusIconSvg() { return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><path d="M12 8v8M8 12h8"/></svg>` }
 function userIconSvg() { return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7.5" r="3.8"/><path d="M5 19.5c1.2-3.4 3.8-5 7-5s5.8 1.6 7 5"/><path d="M12 11.2v1.2"/></svg>` }
 function searchIconSvg() { return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M16 16l5 5"/><circle cx="10.5" cy="10.5" r="2.2" opacity=".25" fill="currentColor" stroke="none"/></svg>` }
+function trophyIconSvg() { return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h8v5a4 4 0 0 1-4 4 4 4 0 0 1-4-4V4Z"/><path d="M8 5H5.5a2 2 0 0 0 0 4H7"/><path d="M16 5h2.5a2 2 0 0 1 0 4H17"/><path d="M12 13v3.5"/><path d="M9 20h6"/><path d="M10 20c-.2-1.3.3-2.2 1-2.8.6-.5 1.4-.5 2 0 .7.6 1.2 1.5 1 2.8"/></svg>` }
 function chevronLeftSvg() { return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 5.5 8 12l6.5 6.5"/></svg>` }
 function chevronRightSvg() { return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 5.5 16 12l-6.5 6.5"/></svg>` }
 function listCheckSvg() { return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 7l2 2 4-4"/><path d="M12 7h8.5"/><path d="M3.5 15l2 2 4-4"/><path d="M12 15h8.5"/></svg>` }
