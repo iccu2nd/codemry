@@ -16,7 +16,7 @@ router.patch('/me', async (req, res) => {
     if (!req.username) return res.status(401).json({ error: 'login dulu' })
     const user = await Users.find(req.username)
     if (!user) return res.status(401).json({ error: 'login dulu' })
-    const { bio, nickname, username, hideBadges } = req.body
+    const { bio, nickname, username, hideBadges, profileMusic } = req.body
 
     try {
         if (typeof bio === 'string') await Users.update(req.username, { bio })
@@ -24,6 +24,16 @@ router.patch('/me', async (req, res) => {
             await Users.update(req.username, { nickname: nickname.trim().slice(0, 32) })
         }
         if (typeof hideBadges === 'boolean') await Users.update(req.username, { hideBadges })
+        if (typeof profileMusic === 'string') {
+            const url = profileMusic.trim()
+            if (url && !/^https?:\/\//i.test(url)) {
+                return res.status(400).json({ error: 'Music URL must start with http:// or https://' })
+            }
+            if (url.length > 500) {
+                return res.status(400).json({ error: 'Music URL is too long' })
+            }
+            await Users.update(req.username, { profileMusic: url || null })
+        }
 
         let finalUsername = req.username
         if (typeof username === 'string' && username.trim() && username.trim().toLowerCase() !== req.username.toLowerCase()) {
@@ -49,6 +59,7 @@ router.patch('/me', async (req, res) => {
             username: updated.username,
             bio: updated.bio,
             nickname: finalNickname,
+            profileMusic: updated.profileMusic || null,
             avatar: avatarUrl(updated),
             hideBadges: !!updated.hideBadges,
             usernameChangedAt: updated.usernameChangedAt || null
@@ -213,6 +224,7 @@ router.get('/:username', async (req, res) => {
         ...badgeDisplay(user, badges),
         hideBadges: isMe ? !!user.hideBadges : undefined,
         bio: user.bio || '',
+        profileMusic: user.profileMusic || null,
         avatar: avatarUrl(user),
         banner: bannerUrl(user),
         createdAt: user.createdAt,

@@ -106,7 +106,7 @@ export async function createSnippetForUser(username, body) {
     const { title, filename, content, language, isPublic, description, tags, pin } = body
     if (!content || !filename) { const e = new Error('filename & content wajib'); e.status = 400; throw e }
     const trimmedPin = typeof pin === 'string' ? pin.trim() : ''
-    if (trimmedPin && !PIN_RE.test(trimmedPin)) { const e = new Error('PIN harus 4-8 digit angka'); e.status = 400; throw e }
+    if (trimmedPin && !PIN_RE.test(trimmedPin)) { const e = new Error('Password must be 4-8 digits'); e.status = 400; throw e }
     const gist = await createGist({ [filename]: { content } }, title || filename, !!isPublic)
     const file = gist.files[filename]
     const snippet = {
@@ -314,7 +314,7 @@ router.post('/:shortId/unlock', async (req, res) => {
     const key = `${req.ip}:${snippet.shortId}`
     if (tooManyAttempts(key)) return res.status(429).json({ error: 'Terlalu banyak percobaan, coba lagi nanti' })
     const ok = await verifyPin(req.body.pin, snippet.pinHash)
-    if (!ok) return res.status(403).json({ error: 'PIN salah' })
+    if (!ok) return res.status(403).json({ error: 'Wrong password' })
     try {
         const [gist, owner] = await Promise.all([
             getGist(snippet.id),
@@ -351,7 +351,7 @@ router.patch('/:shortId', requireAuth, async (req, res) => {
     const filenameChanged = newFilename !== snippet.filename
 
     const trimmedPin = typeof pin === 'string' ? pin.trim() : ''
-    if (trimmedPin && !PIN_RE.test(trimmedPin)) return res.status(400).json({ error: 'PIN harus 4-8 digit angka' })
+    if (trimmedPin && !PIN_RE.test(trimmedPin)) return res.status(400).json({ error: 'Password must be 4-8 digits' })
 
     try {
         let rawUrl = snippet.rawUrl

@@ -614,8 +614,7 @@ function snippetCard(s) {
         <div class="sc-meta">@${escapeHtml(s.ownerUsername)} · ${timeAgo(s.createdAt)}</div>
       </div>
       <div class="sc-badges">
-        ${langIconHtml(s.language)}
-        ${s.isLocked ? `<span class="lock-badge" title="Dikunci PIN">${lockIconSvg()}</span>` : ''}
+        ${s.isLocked ? `<span class="lock-badge" title="Password locked">${lockIconSvg()}</span>` : ''}
       </div>
     </header>
 
@@ -628,7 +627,7 @@ function snippetCard(s) {
 
     ${s.isLocked
       ? `<a class="sc-preview sc-preview-locked" href="${codeUrl(s.shortId)}">
-           <span class="sc-lock-msg">${lockIconSvg()} PIN locked</span>
+           <span class="sc-lock-msg">${lockIconSvg()} Password locked</span>
          </a>`
       : previewText ? `
     <a class="sc-preview" href="${codeUrl(s.shortId)}">

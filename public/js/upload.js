@@ -160,13 +160,13 @@ async function init() {
             <label class="upload-option">
               <input type="checkbox" id="usePin">
               <div>
-                <div class="upload-option-title">PIN lock</div>
-                <div class="upload-option-desc">Viewers must enter a 4–8 digit PIN first</div>
+                <div class="upload-option-title">Password lock</div>
+                <div class="upload-option-desc">Viewers must enter the password first</div>
               </div>
             </label>
           </div>
           <div class="field" id="pinField" style="display:none">
-            <label>PIN (4–8 digits)</label>
+            <label>Password (4–8 digits)</label>
             <input type="tel" inputmode="numeric" pattern="[0-9]*" id="pinInput" maxlength="8" placeholder="e.g. 1234">
           </div>
           <div class="upload-summary" id="uploadSummary"></div>
@@ -174,7 +174,7 @@ async function init() {
             <div class="up-prog-track"><div class="up-prog-bar"></div></div>
             <div class="up-prog-label">Publishing your code…</div>
           </div>
-          <div class="upload-privacy-note">You can edit or delete anytime. PIN protects the code body; the title stays visible.</div>
+          <div class="upload-privacy-note">You can edit or delete anytime. Password protects the code body; the title stays visible.</div>
           <div class="upload-nav">
             <button type="button" class="btn btn-white" id="back3">Back</button>
             <button class="btn btn-primary" type="submit" id="submitBtn">Publish code</button>
@@ -207,7 +207,7 @@ async function init() {
               <div class="up-prev-nick">${escapeHtml(nick)}</div>
               <div class="up-prev-user">@${escapeHtml(uname)}</div>
             </div>
-            ${typeof langIconHtml === 'function' ? langIconHtml(lang) : `<span class="sc-lang">${escapeHtml(lang)}</span>`}
+            <span class="up-prev-lang">${escapeHtml(lang)}</span>
           </div>
           <div class="up-prev-title">${escapeHtml(title)}</div>
           ${desc ? `<div class="up-prev-desc">${escapeHtml(desc)}</div>` : ''}
@@ -320,7 +320,7 @@ async function init() {
       if (submitBtn?.disabled) return
       applyAutoExtension()
       const pin = usePinCb?.checked ? (pinInput?.value.trim() || '') : ''
-      if (usePinCb?.checked && !/^\d{4,8}$/.test(pin)) { toast('PIN must be 4–8 digits'); return }
+      if (usePinCb?.checked && !/^\d{4,8}$/.test(pin)) { toast('Password must be 4–8 digits'); return }
       const f = new FormData(form)
       setBtnLoading(submitBtn, true)
       const progress = document.getElementById('uploadProgress')

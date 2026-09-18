@@ -35,6 +35,15 @@ async function renderProfile() {
         </div>
         <div class="profile-below-stats">
           <div class="profile-bio" id="bioText">${p.bio ? formatWaText(p.bio) : 'No bio yet'}</div>
+          ${p.profileMusic ? `
+          <div class="profile-music" id="profileMusicBar">
+            <button type="button" class="pm-btn" id="pmToggle" aria-label="Play or pause music">${playIconMini()}</button>
+            <div class="pm-meta">
+              <span class="pm-label">Profile music</span>
+              <span class="pm-hint">Soft background</span>
+            </div>
+            <audio id="profileAudio" src="${escapeHtml(p.profileMusic)}" preload="none" loop></audio>
+          </div>` : ''}
         </div>
         ${p.isMe
           ? `<div class="btn-row" style="margin-top:14px">
@@ -49,6 +58,11 @@ async function renderProfile() {
                  <div class="field-hint">${usernameCooldownHint(p.usernameChangedAt)}</div>
                </div>
                <div class="field"><label>Bio</label><textarea id="bioInput" style="min-height:80px">${escapeHtml(p.bio || '')}</textarea></div>
+               <div class="field">
+                 <label>Profile music URL <span class="label-opt">(optional)</span></label>
+                 <input id="musicInput" type="url" placeholder="https://…/audio.mp3" value="${escapeHtml(p.profileMusic || '')}">
+                 <div class="field-hint">Direct link to an audio file (mp3, ogg, wav). Plays softly when someone opens your profile.</div>
+               </div>
                <label class="checkbox-row">
                  <input type="checkbox" id="hideBadgesInput" ${p.hideBadges ? 'checked' : ''}>
                  Hide badges (including Developer tag)
@@ -75,6 +89,32 @@ async function renderProfile() {
     wireLikeButtons(list)
     wireBookmarkButtons(list)
 
+
+    // Profile music — soft volume, try autoplay, play/pause toggle
+    const audio = document.getElementById('profileAudio')
+    const pmBtn = document.getElementById('pmToggle')
+    if (audio && pmBtn) {
+      audio.volume = 0.18
+      const setIcon = (playing) => {
+        pmBtn.innerHTML = playing ? pauseIconMini() : playIconMini()
+        pmBtn.classList.toggle('playing', playing)
+      }
+      pmBtn.onclick = () => {
+        if (audio.paused) {
+          audio.play().then(() => setIcon(true)).catch(() => toast('Tap again to play music'))
+        } else {
+          audio.pause()
+          setIcon(false)
+        }
+      }
+      audio.addEventListener('ended', () => setIcon(false))
+      audio.addEventListener('pause', () => setIcon(false))
+      audio.addEventListener('play', () => setIcon(true))
+      // Soft autoplay attempt (may be blocked by browser)
+      audio.play().then(() => setIcon(true)).catch(() => setIcon(false))
+      window.addEventListener('pagehide', () => { try { audio.pause() } catch {} })
+    }
+
     const followBtn = document.getElementById('followBtn')
     if (followBtn) followBtn.onclick = async () => {
       if (!me) { window.location.href = '/auth'; return }
@@ -94,6 +134,7 @@ async function renderProfile() {
         const body = {
           bio: document.getElementById('bioInput').value,
           nickname: document.getElementById('nicknameInput').value,
+          profileMusic: (document.getElementById('musicInput')?.value || '').trim(),
           hideBadges: document.getElementById('hideBadgesInput').checked
         }
         const newUsername = document.getElementById('usernameInput').value.trim()
@@ -395,4 +436,11 @@ const themeBtn = document.getElementById('themeBtn')
 if (themeBtn) {
   themeBtn.innerHTML = paletteIconSvg()
   themeBtn.onclick = openThemePicker
+}
+
+function playIconMini() {
+  return `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>`
+}
+function pauseIconMini() {
+  return `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M6 5h4v14H6zm8 0h4v14h-4z"/></svg>`
 }

@@ -20,10 +20,10 @@ function renderLockedCard(app, shortId, s) {
     <div class="card">
       <div class="lock-screen">
         ${lockIconSvg()}
-        <div class="lock-title">Kode Ini Dikunci</div>
-        <div class="lock-sub">Diunggah oleh ${escapeHtml(s.ownerNickname || s.ownerUsername)}. Masukkan PIN untuk melihat kodenya.</div>
-        <div class="field"><input type="tel" inputmode="numeric" pattern="[0-9]*" id="unlockPin" maxlength="8" placeholder="Masukkan PIN"></div>
-        <button class="btn btn-primary btn-block" id="unlockBtn">Buka Kode</button>
+        <div class="lock-title">This code is locked</div>
+        <div class="lock-sub">Uploaded by ${escapeHtml(s.ownerNickname || s.ownerUsername)}. Enter the password to view the code.</div>
+        <div class="field"><input type="password" inputmode="numeric" pattern="[0-9]*" id="unlockPin" maxlength="8" placeholder="Password" autocomplete="off"></div>
+        <button class="btn btn-primary btn-block" id="unlockBtn">Unlock</button>
       </div>
     </div>`
   const pinInput = document.getElementById('unlockPin')
@@ -32,7 +32,7 @@ function renderLockedCard(app, shortId, s) {
   pinInput.addEventListener('keydown', e => { if (e.key === 'Enter') unlockBtn.click() })
   unlockBtn.onclick = async () => {
     const pin = pinInput.value.trim()
-    if (!pin) { toast('Masukkan PIN dulu'); return }
+    if (!pin) { toast('Enter the password'); return }
     unlockBtn.disabled = true
     try {
       const full = await api(`/codes/${shortId}/unlock`, { method: 'POST', body: JSON.stringify({ pin }) })
@@ -54,7 +54,7 @@ function renderUnlockedDetail(app, shortId, s) {
             <div class="cd-name">${escapeHtml(s.ownerNickname || s.ownerUsername)}${badgesHtml(s.ownerBadges)}${devBadgeHtml(s.ownerIsDeveloper)}${roleBadgeHtml(s.ownerRole)}</div>
             <div class="cd-handle">@${escapeHtml(s.ownerUsername)}</div>
           </div>
-          <div class="cd-lang">${langIconHtml(s.language)}${s.locked ? `<span class="lock-badge" title="PIN locked">${lockIconSvg()}</span>` : ''}</div>
+          <div class="cd-lang">${langIconHtml(s.language)}${s.locked ? `<span class="lock-badge" title="Password locked">${lockIconSvg()}</span>` : ''}</div>
         </header>
 
         <h1 class="cd-title">${escapeHtml(s.title)}</h1>
@@ -148,10 +148,10 @@ function renderUnlockedDetail(app, shortId, s) {
           </div>
           <div class="field"><label>Kode</label><textarea id="editContent" style="min-height:160px;font-family:'JetBrains Mono',monospace;font-size:13px">${escapeHtml(s.content)}</textarea></div>
           <div class="checkbox-row"><input type="checkbox" id="editIsPublic" ${s.isPublic ? 'checked' : ''}><label for="editIsPublic">Public (show on feed)</label></div>
-          <div class="checkbox-row"><input type="checkbox" id="editUsePin" ${s.locked ? 'checked' : ''}><label for="editUsePin">Lock with PIN</label></div>
+          <div class="checkbox-row"><input type="checkbox" id="editUsePin" ${s.locked ? 'checked' : ''}><label for="editUsePin">Lock with Password</label></div>
           <div class="field" id="editPinField" style="display:${s.locked ? 'block' : 'none'}">
-            <label>PIN ${s.locked ? 'baru (opsional)' : ''} (4-8 digit angka)</label>
-            <input type="tel" inputmode="numeric" pattern="[0-9]*" id="editPinInput" maxlength="8" placeholder="${s.locked ? 'Kosongkan jika tidak ingin mengganti PIN' : 'misal 1234'}">
+            <label>Password ${s.locked ? 'baru (opsional)' : ''} (4-8 digit angka)</label>
+            <input type="tel" inputmode="numeric" pattern="[0-9]*" id="editPinInput" maxlength="8" placeholder="${s.locked ? 'Kosongkan jika tidak ingin mengganti Password' : 'misal 1234'}">
           </div>
           <div class="btn-row">
             <button class="btn btn-white" id="cancelEditBtn">Cancel</button>
@@ -525,8 +525,8 @@ function renderUnlockedDetail(app, shortId, s) {
 
       const nowWantsPin = editUsePin.checked
       const pinVal = editPinInput.value.trim()
-      if (nowWantsPin && pinVal && !/^\d{4,8}$/.test(pinVal)) { toast('PIN harus 4-8 digit angka'); return }
-      if (nowWantsPin && !s.locked && !pinVal) { toast('Isi PIN terlebih dahulu untuk mengunci kode ini.'); return }
+      if (nowWantsPin && pinVal && !/^\d{4,8}$/.test(pinVal)) { toast('Password harus 4-8 digit angka'); return }
+      if (nowWantsPin && !s.locked && !pinVal) { toast('Isi Password terlebih dahulu untuk mengunci kode ini.'); return }
 
       const body = {
         title, filename, content,
@@ -902,8 +902,10 @@ async function loadRelatedCodes(s) {
           <a class="related-card" href="${codeUrl(r.shortId)}" role="listitem">
             <div class="related-card-head">
               ${avatarHtml(r.ownerAvatar, r.ownerNickname || r.ownerUsername || '?', 'avatar-tiny')}
-              <span class="related-card-user">@${escapeHtml(r.ownerUsername || '')}</span>
-              ${langIconHtml(r.language)}
+              <div class="related-card-who">
+                <span class="related-card-nick">${escapeHtml(r.ownerNickname || r.ownerUsername || '')}</span>
+                <span class="related-card-user">@${escapeHtml(r.ownerUsername || '')}</span>
+              </div>
             </div>
             <div class="related-card-title">${escapeHtml(r.title)}</div>
             ${r.description ? `<div class="related-card-desc">${escapeHtml(r.description)}</div>` : ''}
