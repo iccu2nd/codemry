@@ -1,54 +1,10 @@
-
 async function init() {
   await refreshAuth()
   if (!me) { window.location.replace('/auth'); return }
 
-  document.getElementById('uploadPage').innerHTML = `
-    <div class="card">
-      <div class="hero-title" style="font-size:22px">Upload Kode</div>
-      <div class="hero-rule"></div>
-      <div class="field">
-        <button type="button" class="btn btn-white btn-block" id="pickFileBtn">${uploadIconSvg()} Upload dari File</button>
-        <input type="file" id="fileInput" style="display:none" accept=".js,.jsx,.ts,.tsx,.py,.html,.htm,.css,.json,.java,.php,.sh,.md,.txt,.c,.cpp,.go,.rb,.rs,.kt,.swift,.xml,.yml,.yaml,.sql,.env">
-        <div class="field-hint" id="fileHint">Judul, nama file, bahasa, dan kode otomatis terisi dari file yang dipilih.</div>
-      </div>
-      <form id="uploadForm">
-        <div class="field"><label>Judul</label><input name="title" placeholder="Fungsi cek prima" required></div>
-        <div class="field">
-          <label>Deskripsi (opsional)</label>
-          <div class="textarea-counter-wrap">
-            <textarea name="description" id="descriptionInput" class="textarea-autogrow" placeholder="Penjelasan singkat soal kode ini..." style="min-height:70px" rows="2" maxlength="500"></textarea>
-            <span class="char-counter" id="descCount">0 / 500</span>
-          </div>
-        </div>
-        <div class="field">
-          <label>Nama File</label>
-          <input name="filename" placeholder="prima.js" required>
-          <div class="field-hint">Jika lupa menambahkan akhiran, sistem akan menyesuaikannya secara otomatis berdasarkan bahasa yang dipilih.</div>
-        </div>
-        <div class="field"><label>Bahasa</label>
-          <select name="language">
-            <option>javascript</option><option>typescript</option><option>python</option><option>html</option>
-            <option>css</option><option>json</option><option>java</option><option>php</option>
-            <option>bash</option><option>markdown</option><option>text</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>Tag (opsional, maks 5)</label>
-          <input name="tags" placeholder="#algoritma #tutorial atau algoritma, tutorial">
-          <div class="field-hint">Pisahkan dengan koma atau spasi, tanda # juga diperbolehkan.</div>
-        </div>
-        <div class="field"><label>Kode</label><textarea name="content" placeholder="Tempel kode di sini, atau upload file di atas..." required></textarea></div>
-        <div class="checkbox-row"><input type="checkbox" name="isPublic" id="isPublic" checked><label for="isPublic">Publik (tampil di feed)</label></div>
-        <div class="checkbox-row"><input type="checkbox" id="usePin"><label for="usePin">Kunci pakai PIN</label></div>
-        <div class="field" id="pinField" style="display:none">
-          <label>PIN (4-8 digit angka)</label>
-          <input type="tel" inputmode="numeric" pattern="[0-9]*" id="pinInput" maxlength="8" placeholder="misal 1234">
-        </div>
-        <button class="btn btn-primary btn-block" type="submit">Bagikan</button>
-      </form>
-    </div>
-  `
+  let step = 1
+  const TOTAL = 3
+  const saved = {}
 
   const EXT_LANG = {
     js: 'javascript', jsx: 'javascript', ts: 'typescript', tsx: 'typescript',
@@ -57,108 +13,278 @@ async function init() {
     c: 'text', cpp: 'text', go: 'text', rb: 'text', rs: 'text',
     kt: 'text', swift: 'text', xml: 'text', yml: 'text', yaml: 'text', sql: 'text', env: 'text'
   }
-  // Ekstensi default per bahasa, dipakai buat auto-lengkapin nama file yang
-  // belum ada akhirannya (mis. user ngetik "tiktok" doang, dilengkapin jadi "tiktok.js").
   const LANG_EXT = {
     javascript: 'js', typescript: 'ts', python: 'py', html: 'html', css: 'css',
     json: 'json', java: 'java', php: 'php', bash: 'sh', markdown: 'md', text: 'txt'
   }
-  const form = document.getElementById('uploadForm')
-  const fileInput = document.getElementById('fileInput')
-  const usePinCb = document.getElementById('usePin')
-  const pinField = document.getElementById('pinField')
-  const pinInput = document.getElementById('pinInput')
-  const filenameInput = form.elements['filename']
-  const languageInput = form.elements['language']
-  const descriptionInput = document.getElementById('descriptionInput')
-  const descCount = document.getElementById('descCount')
-  const submitBtn = form.querySelector('button[type="submit"]')
 
-  wireFilenameSpaces(filenameInput)
-  wireAutoGrowTextarea(form.elements['description'])
-
-  // Nama file otomatis dikasih akhiran sesuai bahasa yang dipilih kalau user
-  // belum nulis akhirannya sendiri.
-  function applyAutoExtension() {
-    const name = filenameInput.value.trim()
-    if (!name || name.includes('.')) return
-    const ext = LANG_EXT[languageInput.value] || 'txt'
-    filenameInput.value = `${name}.${ext}`
+  function stepDots() {
+    return Array.from({ length: TOTAL }, (_, i) => {
+      const n = i + 1
+      const cls = n < step ? 'done' : (n === step ? 'active' : '')
+      return `<div class="upload-step-dot ${cls}"><span>${n}</span></div>`
+    }).join('<div class="upload-step-line"></div>')
   }
-  filenameInput.addEventListener('blur', applyAutoExtension)
-  languageInput.addEventListener('change', applyAutoExtension)
 
-  function updateDescCount() {
-    descCount.textContent = `${descriptionInput.value.length} / 500`
-    descCount.classList.toggle('char-counter-limit', descriptionInput.value.length >= 500)
+  function snapshot() {
+    const form = document.getElementById('uploadForm')
+    if (!form) return
+    ;['content', 'language', 'title', 'description', 'filename', 'tags'].forEach(n => {
+      const el = form.elements[n]
+      if (el) saved[n] = el.value
+    })
+    const pub = document.getElementById('isPublic')
+    const pin = document.getElementById('usePin')
+    const pinVal = document.getElementById('pinInput')
+    if (pub) saved.isPublic = pub.checked
+    if (pin) saved.usePin = pin.checked
+    if (pinVal) saved.pin = pinVal.value
   }
-  descriptionInput.addEventListener('input', updateDescCount)
-  updateDescCount()
 
-  usePinCb.onchange = () => {
-    pinField.style.display = usePinCb.checked ? 'block' : 'none'
-    if (!usePinCb.checked) pinInput.value = ''
-  }
-  document.getElementById('pickFileBtn').onclick = () => fileInput.click()
-  fileInput.onchange = async () => {
-    const file = fileInput.files[0]
-    if (!file) return
-    const ext = file.name.includes('.') ? file.name.split('.').pop().toLowerCase() : ''
-    // Whitelist ekstensi kode aja (sama kayak daftar di atribut accept). Ini jaga-jaga
-    // kalau user milih "All files" di file picker dan nyoba upload gambar/zip/dll,
-    // soalnya file binary kalau dibaca via file.text() bakal jadi teks acak/rusak.
-    if (!ext || !EXT_LANG.hasOwnProperty(ext)) {
-      toast('Hanya file kode yang dapat diunggah (.js, .py, .html, dll) — bukan gambar/zip/file biner lainnya.')
-      fileInput.value = ''
-      return
+  function restore() {
+    const form = document.getElementById('uploadForm')
+    if (!form) return
+    Object.keys(saved).forEach(n => {
+      if (n === 'isPublic' || n === 'usePin' || n === 'pin') return
+      const el = form.elements[n]
+      if (el && saved[n] != null) el.value = saved[n]
+    })
+    const pub = document.getElementById('isPublic')
+    const pin = document.getElementById('usePin')
+    const pinField = document.getElementById('pinField')
+    const pinVal = document.getElementById('pinInput')
+    if (pub && saved.isPublic != null) pub.checked = saved.isPublic
+    if (pin && saved.usePin != null) {
+      pin.checked = saved.usePin
+      if (pinField) pinField.style.display = saved.usePin ? 'block' : 'none'
     }
-    try {
-      const text = await file.text()
-      const titleInput = form.elements['title']
-      form.elements['filename'].value = file.name.replace(/\s/g, '_')
-      form.elements['content'].value = text
-      form.elements['language'].value = EXT_LANG[ext] || 'text'
-      if (!titleInput.value.trim()) titleInput.value = ext ? file.name.slice(0, -(ext.length + 1)) : file.name
-      toast('File dimuat, cek isian di bawah lalu bagikan.')
-    } catch (e) { toast('Gagal membaca file') }
-    finally { fileInput.value = '' }
+    if (pinVal && saved.pin != null) pinVal.value = saved.pin
   }
 
-  form.onsubmit = async (e) => {
-    e.preventDefault()
-    if (submitBtn.disabled) return // cegah double-submit kalau user spam klik
-    applyAutoExtension()
-    const pin = usePinCb.checked ? pinInput.value.trim() : ''
-    if (usePinCb.checked && !/^\d{4,8}$/.test(pin)) { toast('PIN harus 4-8 digit angka'); return }
-    const f = new FormData(e.target)
+  function render() {
+    snapshot()
+    document.getElementById('uploadPage').innerHTML = `
+    <div class="card upload-wizard">
+      <div class="upload-steps">${stepDots()}</div>
+      <div class="upload-step-labels">
+        <span class="${step === 1 ? 'on' : ''}">Kode</span>
+        <span class="${step === 2 ? 'on' : ''}">Detail</span>
+        <span class="${step === 3 ? 'on' : ''}">Publikasikan</span>
+      </div>
+      <form id="uploadForm" autocomplete="off">
+        <div class="upload-panel" style="display:${step === 1 ? 'block' : 'none'}">
+          <div class="upload-panel-title">Masukkan kode</div>
+          <div class="upload-panel-sub">Upload file atau tempel kode langsung</div>
+          <div class="upload-source-row">
+            <button type="button" class="btn btn-white btn-block" id="pickFileBtn">${uploadIconSvg()} Pilih file kode</button>
+            <input type="file" id="fileInput" style="display:none" accept=".js,.jsx,.ts,.tsx,.py,.html,.htm,.css,.json,.java,.php,.sh,.md,.txt,.c,.cpp,.go,.rb,.rs,.kt,.swift,.xml,.yml,.yaml,.sql,.env">
+          </div>
+          <div class="field-hint" style="margin-bottom:14px">Judul, nama file, dan bahasa terisi otomatis dari file.</div>
+          <div class="field"><label>Bahasa</label>
+            <select name="language">
+              <option>javascript</option><option>typescript</option><option>python</option><option>html</option>
+              <option>css</option><option>json</option><option>java</option><option>php</option>
+              <option>bash</option><option>markdown</option><option>text</option>
+            </select>
+          </div>
+          <div class="field"><label>Kode</label>
+            <textarea name="content" placeholder="Tempel kode di sini…" required rows="12"></textarea>
+          </div>
+          <div class="upload-nav">
+            <span></span>
+            <button type="button" class="btn btn-primary" id="next1">Lanjut</button>
+          </div>
+        </div>
+        <div class="upload-panel" style="display:${step === 2 ? 'block' : 'none'}">
+          <div class="upload-panel-title">Detail snippet</div>
+          <div class="upload-panel-sub">Biar mudah ditemukan di feed & search</div>
+          <div class="field"><label>Judul</label>
+            <input name="title" placeholder="Contoh: Fungsi cek bilangan prima" required>
+          </div>
+          <div class="field">
+            <label>Deskripsi <span class="label-opt">(opsional)</span></label>
+            <div class="textarea-counter-wrap">
+              <textarea name="description" id="descriptionInput" class="textarea-autogrow" placeholder="Penjelasan singkat…" style="min-height:70px" rows="2" maxlength="500"></textarea>
+              <span class="char-counter" id="descCount">0 / 500</span>
+            </div>
+          </div>
+          <div class="field">
+            <label>Nama file</label>
+            <input name="filename" placeholder="prima.js" required>
+            <div class="field-hint">Ekstensi otomatis menyesuaikan bahasa jika belum diisi.</div>
+          </div>
+          <div class="field">
+            <label>Tag <span class="label-opt">(opsional, maks 5)</span></label>
+            <input name="tags" placeholder="#algoritma #tutorial">
+            <div class="field-hint">Pisahkan dengan spasi atau koma.</div>
+          </div>
+          <div class="upload-nav">
+            <button type="button" class="btn btn-white" id="back2">Kembali</button>
+            <button type="button" class="btn btn-primary" id="next2">Lanjut</button>
+          </div>
+        </div>
+        <div class="upload-panel" style="display:${step === 3 ? 'block' : 'none'}">
+          <div class="upload-panel-title">Publikasikan</div>
+          <div class="upload-panel-sub">Atur visibilitas lalu bagikan</div>
+          <div class="upload-options">
+            <label class="upload-option">
+              <input type="checkbox" name="isPublic" id="isPublic" checked>
+              <div>
+                <div class="upload-option-title">Publik</div>
+                <div class="upload-option-desc">Tampil di feed & bisa dicari semua orang</div>
+              </div>
+            </label>
+            <label class="upload-option">
+              <input type="checkbox" id="usePin">
+              <div>
+                <div class="upload-option-title">Kunci dengan PIN</div>
+                <div class="upload-option-desc">Hanya yang punya PIN yang bisa melihat kode</div>
+              </div>
+            </label>
+          </div>
+          <div class="field" id="pinField" style="display:none">
+            <label>PIN (4–8 digit angka)</label>
+            <input type="tel" inputmode="numeric" pattern="[0-9]*" id="pinInput" maxlength="8" placeholder="mis. 1234">
+          </div>
+          <div class="upload-summary" id="uploadSummary"></div>
+          <div class="upload-nav">
+            <button type="button" class="btn btn-white" id="back3">Kembali</button>
+            <button class="btn btn-primary" type="submit" id="submitBtn">Bagikan</button>
+          </div>
+        </div>
+      </form>
+    </div>`
+    restore()
+    wire()
+    if (step === 3) {
+      const sum = document.getElementById('uploadSummary')
+      if (sum) {
+        sum.innerHTML = `
+          <div class="upload-sum-row"><span>Judul</span><b>${escapeHtml(saved.title || '')}</b></div>
+          <div class="upload-sum-row"><span>File</span><b>${escapeHtml(saved.filename || '')}</b></div>
+          <div class="upload-sum-row"><span>Bahasa</span><b>${escapeHtml(saved.language || '')}</b></div>`
+      }
+    }
+  }
 
-    // Langsung kasih feedback instan pas diklik, biar gak berasa nge-freeze
-    // nunggu request selesai.
-    setBtnLoading(submitBtn, true)
+  function wire() {
+    const form = document.getElementById('uploadForm')
+    const fileInput = document.getElementById('fileInput')
+    const usePinCb = document.getElementById('usePin')
+    const pinField = document.getElementById('pinField')
+    const pinInput = document.getElementById('pinInput')
+    const filenameInput = form.elements['filename']
+    const languageInput = form.elements['language']
+    const descriptionInput = document.getElementById('descriptionInput')
+    const descCount = document.getElementById('descCount')
+    const submitBtn = document.getElementById('submitBtn')
+    const contentInput = form.elements['content']
+    const titleInput = form.elements['title']
 
-    try {
-      const s = await api('/codes', {
-        method: 'POST',
-        body: JSON.stringify({
-          title: f.get('title'), filename: f.get('filename'),
-          content: f.get('content'), language: f.get('language'),
-          description: f.get('description'),
-          tags: f.get('tags'),
-          isPublic: f.get('isPublic') === 'on',
-          pin
+    if (filenameInput) wireFilenameSpaces(filenameInput)
+    if (descriptionInput) {
+      wireAutoGrowTextarea(descriptionInput)
+      const updateDescCount = () => {
+        if (!descCount) return
+        descCount.textContent = `${descriptionInput.value.length} / 500`
+        descCount.classList.toggle('char-counter-limit', descriptionInput.value.length >= 500)
+      }
+      descriptionInput.addEventListener('input', updateDescCount)
+      updateDescCount()
+    }
+
+    function applyAutoExtension() {
+      if (!filenameInput || !languageInput) return
+      const name = filenameInput.value.trim()
+      if (!name || name.includes('.')) return
+      filenameInput.value = `${name}.${LANG_EXT[languageInput.value] || 'txt'}`
+    }
+    filenameInput?.addEventListener('blur', applyAutoExtension)
+    languageInput?.addEventListener('change', applyAutoExtension)
+
+    if (usePinCb) {
+      usePinCb.onchange = () => {
+        pinField.style.display = usePinCb.checked ? 'block' : 'none'
+        if (!usePinCb.checked && pinInput) pinInput.value = ''
+      }
+    }
+
+    document.getElementById('pickFileBtn')?.addEventListener('click', () => fileInput?.click())
+    if (fileInput) {
+      fileInput.onchange = async () => {
+        const file = fileInput.files[0]
+        if (!file) return
+        const ext = file.name.includes('.') ? file.name.split('.').pop().toLowerCase() : ''
+        if (!ext || !EXT_LANG.hasOwnProperty(ext)) {
+          toast('Hanya file kode (.js, .py, .html, dll)')
+          fileInput.value = ''
+          return
+        }
+        try {
+          const text = await file.text()
+          if (contentInput) contentInput.value = text
+          if (filenameInput) filenameInput.value = file.name.replace(/\s/g, '_')
+          if (languageInput) languageInput.value = EXT_LANG[ext] || 'text'
+          if (titleInput && !titleInput.value.trim()) {
+            titleInput.value = ext ? file.name.slice(0, -(ext.length + 1)) : file.name
+          }
+          toast('File dimuat')
+        } catch { toast('Gagal membaca file') }
+        finally { fileInput.value = '' }
+      }
+    }
+
+    document.getElementById('next1')?.addEventListener('click', () => {
+      if (!contentInput?.value.trim()) { toast('Isi kode dulu'); return }
+      step = 2
+      render()
+    })
+    document.getElementById('next2')?.addEventListener('click', () => {
+      if (!titleInput?.value.trim()) { toast('Isi judul dulu'); return }
+      if (!filenameInput?.value.trim()) { toast('Isi nama file dulu'); return }
+      applyAutoExtension()
+      step = 3
+      render()
+    })
+    document.getElementById('back2')?.addEventListener('click', () => { step = 1; render() })
+    document.getElementById('back3')?.addEventListener('click', () => { step = 2; render() })
+
+    form.onsubmit = async (e) => {
+      e.preventDefault()
+      if (submitBtn?.disabled) return
+      applyAutoExtension()
+      const pin = usePinCb?.checked ? (pinInput?.value.trim() || '') : ''
+      if (usePinCb?.checked && !/^\d{4,8}$/.test(pin)) { toast('PIN harus 4–8 digit angka'); return }
+      const f = new FormData(form)
+      setBtnLoading(submitBtn, true)
+      try {
+        const s = await api('/codes', {
+          method: 'POST',
+          body: JSON.stringify({
+            title: f.get('title'),
+            filename: f.get('filename'),
+            content: f.get('content'),
+            language: f.get('language'),
+            description: f.get('description'),
+            tags: f.get('tags'),
+            isPublic: f.get('isPublic') === 'on',
+            pin
+          })
         })
-      })
-      toast('Berhasil diupload!')
-      window.location.href = codeUrl(s.shortId)
-    } catch (err) {
-      toast(err.message)
-      setBtnLoading(submitBtn, false)
+        toast('Berhasil diupload!')
+        window.location.href = codeUrl(s.shortId)
+      } catch (err) {
+        toast(err.message)
+        setBtnLoading(submitBtn, false)
+      }
     }
   }
+
+  render()
 }
 
 function uploadIconSvg() {
-  return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>`
+  return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><path d="M12 3.5v11"/><path d="M7.5 10.5 12 15l4.5-4.5"/><path d="M4.5 18.5h15"/></svg>`
 }
 
 init()

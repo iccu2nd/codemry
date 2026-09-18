@@ -49,24 +49,23 @@ function removeUploadingSpinner(btn) {
 // ============================================================
 const ACCENT_THEME_KEY = 'codery-accent-theme'
 const ACCENT_THEMES = {
-  indigo: { label: 'Indigo', accent: '#4f46e5', accentRgb: '79,70,229',  dark: '#3730a3', darkRgb: '55,48,163',  light: '#818cf8', bg: '#eef2ff', bg2: '#f5f7ff', border: '#c7d2fe', bgHover: '#e0e7ff', glow: '#a5b4fc' },
-  blue:   { label: 'Biru',   accent: '#2563eb', accentRgb: '37,99,235',  dark: '#1d4ed8', darkRgb: '29,78,216',  light: '#60a5fa', bg: '#eff6ff', bg2: '#f5f9ff', border: '#bfdbfe', bgHover: '#dbeafe', glow: '#93c5fd' },
-  teal:   { label: 'Teal',   accent: '#0d9488', accentRgb: '13,148,136', dark: '#0f766e', darkRgb: '15,118,110', light: '#2dd4bf', bg: '#f0fdfa', bg2: '#f5fffd', border: '#99f6e4', bgHover: '#ccfbf1', glow: '#5eead4' },
-  green:  { label: 'Hijau',  accent: '#16a34a', accentRgb: '22,163,74',  dark: '#15803d', darkRgb: '21,128,61',  light: '#4ade80', bg: '#f0fdf4', bg2: '#f5fef8', border: '#bbf7d0', bgHover: '#dcfce7', glow: '#86efac' },
-  violet: { label: 'Ungu',   accent: '#7c3aed', accentRgb: '124,58,237', dark: '#6d28d9', darkRgb: '109,40,217', light: '#a78bfa', bg: '#f5f3ff', bg2: '#faf8ff', border: '#ddd6fe', bgHover: '#ede9fe', glow: '#c4b5fd' },
-  rose:   { label: 'Rose',   accent: '#e11d48', accentRgb: '225,29,72',  dark: '#be123c', darkRgb: '190,18,60',  light: '#fb7185', bg: '#fff1f2', bg2: '#fff7f8', border: '#fecdd3', bgHover: '#ffe4e6', glow: '#fda4af' }
+  soft:   { label: 'Soft',   accent: '#5b7c99', accentRgb: '91,124,153',  dark: '#3d5a73', darkRgb: '61,90,115',  light: '#8aabc4', bg: '#eef3f7', bg2: '#f5f8fb', border: '#d0dde8', bgHover: '#e4edf4', glow: '#b8cddc' },
+  sage:   { label: 'Sage',   accent: '#6b8f71', accentRgb: '107,143,113', dark: '#4f6b54', darkRgb: '79,107,84',  light: '#9bb89f', bg: '#f0f4f1', bg2: '#f6f9f6', border: '#d4e0d6', bgHover: '#e5ede7', glow: '#b8ceb9' },
+  sand:   { label: 'Sand',   accent: '#a08060', accentRgb: '160,128,96',  dark: '#7a5f45', darkRgb: '122,95,69',  light: '#c4a882', bg: '#f7f3ee', bg2: '#faf7f3', border: '#e8ddd0', bgHover: '#f0e8de', glow: '#d4c4a8' },
+  slate:  { label: 'Slate',  accent: '#64748b', accentRgb: '100,116,139', dark: '#475569', darkRgb: '71,85,105',  light: '#94a3b8', bg: '#f1f5f9', bg2: '#f8fafc', border: '#e2e8f0', bgHover: '#e2e8f0', glow: '#cbd5e1' },
+  lavender:{ label: 'Lavender', accent: '#8b7ba8', accentRgb: '139,123,168', dark: '#6b5b88', darkRgb: '107,91,136', light: '#b0a3c4', bg: '#f4f1f8', bg2: '#f9f7fb', border: '#e0d8eb', bgHover: '#ebe4f2', glow: '#c9bdd9' },
+  rose:   { label: 'Rose',   accent: '#a67c7c', accentRgb: '166,124,124', dark: '#855f5f', darkRgb: '133,95,95',  light: '#c4a0a0', bg: '#f7f1f1', bg2: '#faf6f6', border: '#e8d9d9', bgHover: '#f0e4e4', glow: '#d4b8b8' }
 }
 function getAccentThemeId() {
   try {
-    const id = localStorage.getItem(ACCENT_THEME_KEY) || 'indigo'
-    // migrate old keys
-    if (id === 'purple') return 'violet'
-    if (id === 'orange' || id === 'slate') return 'indigo'
-    return ACCENT_THEMES[id] ? id : 'indigo'
-  } catch { return 'indigo' }
+    const id = localStorage.getItem(ACCENT_THEME_KEY) || 'soft'
+    const migrate = { indigo: 'soft', blue: 'soft', teal: 'sage', green: 'sage', violet: 'lavender', purple: 'lavender', orange: 'sand' }
+    const mapped = migrate[id] || id
+    return ACCENT_THEMES[mapped] ? mapped : 'soft'
+  } catch { return 'soft' }
 }
 function applyAccentTheme(id) {
-  const t = ACCENT_THEMES[id] || ACCENT_THEMES.indigo
+  const t = ACCENT_THEMES[id] || ACCENT_THEMES.soft
   const root = document.documentElement.style
   root.setProperty('--accent', t.accent)
   root.setProperty('--accent-rgb', t.accentRgb)
