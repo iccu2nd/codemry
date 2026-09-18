@@ -26,31 +26,27 @@
 <div class="nav-backdrop" id="navBackdrop"></div>
 
 <main class="app">
-  <div class="card feed-toolbar">
-    <div class="feed-toolbar-inner">
-      <div>
-        <div class="hero-title" style="font-size:18px;text-align:left;margin:0">Feed</div>
-        <div class="hero-sub" style="text-align:left;margin:2px 0 0;font-size:12.5px">Latest & trending code</div>
-      </div>
-      <div class="btn-row" style="margin:0;grid-template-columns:auto auto;gap:8px">
-        <a class="btn btn-primary btn-sm" href="/upload">Upload</a>
-        <button class="btn btn-white btn-sm" id="refreshBtn">Refresh</button>
-      </div>
+  <!-- Single cohesive feed header (Gist-style: title + sort + search) -->
+  <div class="feed-head">
+    <div class="feed-head-top">
+      <h1 class="feed-head-title">Feed</h1>
+      <a class="btn btn-primary btn-sm" href="/upload">Upload</a>
     </div>
-  </div>
-
-  <div class="card feed-controls">
+    <div class="feed-tabs" id="feedSortTabs" role="tablist">
+      <button type="button" class="feed-tab active" data-sort="new" role="tab">New</button>
+      <button type="button" class="feed-tab" data-sort="trending" role="tab">Trending</button>
+      <button type="button" class="feed-tab" data-sort="following" role="tab">Following</button>
+    </div>
     <div class="feed-search-wrap">
       <span class="feed-search-icon" id="feedSearchIcon"></span>
       <input type="search" id="feedSearch" class="feed-search-input" placeholder="Search code, tags, users…" autocomplete="off">
+      <button type="button" class="feed-filter-toggle" id="feedFilterToggle" aria-expanded="false">Filter</button>
     </div>
-    <div class="feed-sort-tabs" id="feedSortTabs">
-      <button type="button" class="lb-tab-btn active" data-sort="new">New</button>
-      <button type="button" class="lb-tab-btn" data-sort="trending">Trending</button>
-      <button type="button" class="lb-tab-btn" data-sort="following">Following</button>
+    <div class="feed-active-chips" id="feedActiveChips" hidden></div>
+    <div class="feed-filters" id="feedFilters" hidden>
+      <div class="feed-lang-row" id="feedLangRow"></div>
+      <div class="tag-row" id="feedTagPills"></div>
     </div>
-    <div class="feed-lang-row" id="feedLangRow"></div>
-    <div class="tag-row" id="feedTagPills"></div>
   </div>
 
   <div id="recentSection" class="recent-section" style="display:none"></div>

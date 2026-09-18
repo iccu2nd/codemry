@@ -69,6 +69,20 @@ function renderUnlockedDetail(app, shortId, s) {
         ${s.description ? `<p class="cd-desc">${formatWaText(s.description)}</p>` : ''}
         ${s.tags && s.tags.length ? `<div class="cd-tags">${s.tags.map(t => `<span class="tag-pill">#${escapeHtml(t)}</span>`).join('')}</div>` : ''}
 
+        <div class="code-window" id="codeWindow">
+          <div class="code-window-bar">
+            <span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>
+            <span class="code-window-filename">${escapeHtml(s.filename)}</span>
+            <div class="zoom-controls" id="zoomControls">
+              <button type="button" class="zoom-btn" id="zoomOutBtn" title="Zoom out">−</button>
+              <span class="zoom-level" id="zoomLevel">100%</span>
+              <button type="button" class="zoom-btn" id="zoomInBtn" title="Zoom in">+</button>
+            </div>
+            <button type="button" class="code-expand-btn" id="codeFullscreenBtn" title="Fullscreen">${expandIconSvg()}</button>
+          </div>
+          <pre class="code-view" id="codeViewPre"><code id="codeBlock" class="language-${hljsLang(s.language)}">${escapeHtml(s.content)}</code></pre>
+
+
         <div class="cd-actions">
           <button class="cd-btn cd-btn-primary" id="copyBtn" type="button">${copyIconSvg()}<span>Copy</span></button>
           <button class="cd-btn" type="button" onclick="window.open('/raw/${s.shortId}','_blank')">${rawIconSvg()}<span>Raw</span></button>
@@ -83,7 +97,7 @@ function renderUnlockedDetail(app, shortId, s) {
           <button class="cd-btn-sm" id="qrBtn" type="button">${qrIconSvg()}<span>QR</span></button>
           ${!me || me.username !== s.ownerUsername ? `<button class="cd-btn-sm" id="reportBtn" type="button">${flagIconSvg()}<span>Report</span></button>` : ''}
         </div>
-        <div id="relatedCodes" class="related-codes" style="display:none"></div>
+
 
         <div class="cd-engage">
           <button type="button" class="like-btn like-btn-detail t-like ${s.likedByMe ? 'liked' : ''}" data-role="like" data-short="${s.shortId}" data-liked="${s.likedByMe ? 'true' : 'false'}">
@@ -145,18 +159,6 @@ function renderUnlockedDetail(app, shortId, s) {
             <button class="btn btn-primary" id="saveEditBtn">Save</button>
           </div>
         </div>` : ''}
-        <div class="code-window" id="codeWindow">
-          <div class="code-window-bar">
-            <span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>
-            <span class="code-window-filename">${escapeHtml(s.filename)}</span>
-            <div class="zoom-controls" id="zoomControls">
-              <button type="button" class="zoom-btn" id="zoomOutBtn" title="Zoom out">−</button>
-              <span class="zoom-level" id="zoomLevel">100%</span>
-              <button type="button" class="zoom-btn" id="zoomInBtn" title="Zoom in">+</button>
-            </div>
-            <button type="button" class="code-expand-btn" id="codeFullscreenBtn" title="Fullscreen">${expandIconSvg()}</button>
-          </div>
-          <pre class="code-view" id="codeViewPre"><code id="codeBlock" class="language-${hljsLang(s.language)}">${escapeHtml(s.content)}</code></pre>
         </div>
 
         <div class="comments-section" id="commentsSection">
@@ -164,6 +166,8 @@ function renderUnlockedDetail(app, shortId, s) {
           <div id="commentForm"></div>
           <div id="commentList">${skelCommentList(2)}</div>
         </div>
+
+        <div id="relatedCodes" class="related-codes" style="display:none"></div>
       </div>
     `
     if (window.hljs) hljs.highlightElement(document.getElementById('codeBlock'))

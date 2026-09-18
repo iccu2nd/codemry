@@ -99,6 +99,7 @@ function buildTagPills() {
       feedActiveTag = feedActiveTag === tag ? null : tag
       el.querySelectorAll('.tag-pill').forEach(b => b.classList.toggle('active', b.dataset.tag === feedActiveTag))
       resetFeedPage()
+      renderActiveChips()
       renderFeed()
     }
   })
@@ -120,6 +121,7 @@ function buildLangPills() {
       feedActiveLang = btn.dataset.lang || null
       el.querySelectorAll('.lang-pill').forEach(b => b.classList.toggle('active', (b.dataset.lang || null) === feedActiveLang))
       resetFeedPage()
+      renderActiveChips()
       renderFeed()
     }
   })
@@ -134,26 +136,56 @@ function getRecentViews() {
 function renderRecentSection() {
   const el = document.getElementById('recentSection')
   if (!el) return
-  const recent = getRecentViews().slice(0, 5)
+  const recent = getRecentViews().slice(0, 3)
   if (!recent.length) { el.style.display = 'none'; el.innerHTML = ''; return }
   el.style.display = 'block'
   el.innerHTML = `
     <div class="recent-head">
-      <span class="recent-title">Recently viewed</span>
+      <span class="recent-title">Recent</span>
       <button type="button" class="recent-clear" id="clearRecentBtn">Clear</button>
     </div>
-    <div class="recent-list">
+    <div class="recent-scroll">
       ${recent.map(r => `
-        <a class="recent-item" href="${codeUrl(r.shortId)}">
-          <span class="recent-item-title">${escapeHtml(r.title || r.shortId)}</span>
-          <span class="recent-item-meta">${escapeHtml(r.language || '')} · ${escapeHtml(r.filename || '')}</span>
-        </a>
+        <a class="recent-chip" href="${codeUrl(r.shortId)}">${escapeHtml(r.title || r.shortId)}</a>
       `).join('')}
     </div>
   `
   document.getElementById('clearRecentBtn')?.addEventListener('click', () => {
     localStorage.removeItem('codery-recent-views')
     renderRecentSection()
+  })
+}
+
+function renderActiveChips() {
+  const el = document.getElementById('feedActiveChips')
+  if (!el) return
+  const chips = []
+  if (feedActiveLang) chips.push({ type: 'lang', label: feedActiveLang })
+  if (feedActiveTag) chips.push({ type: 'tag', label: '#' + feedActiveTag })
+  if (!chips.length) { el.hidden = true; el.innerHTML = ''; return }
+  el.hidden = false
+  el.innerHTML = chips.map(c =>
+    `<button type="button" class="active-chip" data-type="${c.type}">${escapeHtml(c.label)} ×</button>`
+  ).join('') + `<button type="button" class="active-chip-clear" id="clearAllFilters">Clear</button>`
+  el.querySelectorAll('.active-chip').forEach(btn => {
+    btn.onclick = () => {
+      if (btn.dataset.type === 'lang') feedActiveLang = null
+      if (btn.dataset.type === 'tag') feedActiveTag = null
+      document.querySelectorAll('.lang-pill').forEach(b => b.classList.toggle('active', (b.dataset.lang || null) === feedActiveLang))
+      document.querySelectorAll('#feedTagPills .tag-pill').forEach(b => b.classList.toggle('active', b.dataset.tag === feedActiveTag))
+      resetFeedPage()
+      renderActiveChips()
+      renderFeed()
+    }
+  })
+  document.getElementById('clearAllFilters')?.addEventListener('click', () => {
+    feedActiveLang = null
+    feedActiveTag = null
+    document.querySelectorAll('.lang-pill').forEach(b => b.classList.toggle('active', !b.dataset.lang))
+    document.querySelectorAll('#feedTagPills .tag-pill').forEach(b => b.classList.remove('active'))
+    resetFeedPage()
+    renderActiveChips()
+    renderFeed()
   })
 }
 
@@ -234,6 +266,7 @@ async function loadFeed() {
     feedPage = Number.isInteger(pageFromUrl) && pageFromUrl > 0 ? pageFromUrl : 1
     buildTagPills()
     buildLangPills()
+    renderActiveChips()
     renderRecentSection()
     renderFeed()
   } catch (e) {
@@ -247,10 +280,10 @@ document.getElementById('feedSearch')?.addEventListener('input', () => {
   resetFeedPage()
   renderFeed()
 })
-document.getElementById('feedSortTabs')?.querySelectorAll('.lb-tab-btn').forEach(btn => {
+document.getElementById('feedSortTabs')?.querySelectorAll('.feed-tab').forEach(btn => {
   btn.onclick = async () => {
     feedSort = btn.dataset.sort
-    document.getElementById('feedSortTabs').querySelectorAll('.lb-tab-btn').forEach(b => b.classList.toggle('active', b === btn))
+    document.getElementById('feedSortTabs').querySelectorAll('.feed-tab').forEach(b => b.classList.toggle('active', b === btn))
     if (feedSort === 'following' && !followingSet.size) await loadFollowing()
     resetFeedPage()
     renderFeed()
@@ -260,5 +293,16 @@ document.getElementById('feedSortTabs')?.querySelectorAll('.lb-tab-btn').forEach
 // search icon
 const iconEl = document.getElementById('feedSearchIcon')
 if (iconEl) iconEl.innerHTML = searchIconSvg()
+
+document.getElementById('feedFilterToggle')?.addEventListener('click', () => {
+  const box = document.getElementById('feedFilters')
+  const btn = document.getElementById('feedFilterToggle')
+  if (!box || !btn) return
+  const open = box.hasAttribute('hidden')
+  if (open) box.removeAttribute('hidden')
+  else box.setAttribute('hidden', '')
+  btn.classList.toggle('active', open)
+  btn.setAttribute('aria-expanded', open ? 'true' : 'false')
+})
 
 refreshAuth().then(loadFeed)
