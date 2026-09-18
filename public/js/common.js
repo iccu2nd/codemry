@@ -1162,11 +1162,10 @@ function skelGrid(n = 6, ratio = '100%') {
 }
 
 
-const RECENT_KEY = 'codery-recent-views'
 function trackRecentView(snippet) {
   if (!snippet || !snippet.shortId) return
   try {
-    let list = JSON.parse(localStorage.getItem(RECENT_KEY) || '[]')
+    let list = JSON.parse(localStorage.getItem('codery-recent-views') || '[]')
     list = list.filter(x => x.shortId !== snippet.shortId)
     list.unshift({
       shortId: snippet.shortId,
@@ -1175,7 +1174,7 @@ function trackRecentView(snippet) {
       filename: snippet.filename || '',
       at: Date.now()
     })
-    localStorage.setItem(RECENT_KEY, JSON.stringify(list.slice(0, 20)))
+    localStorage.setItem('codery-recent-views', JSON.stringify(list.slice(0, 20)))
   } catch {}
 }
 

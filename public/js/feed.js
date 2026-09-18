@@ -1,5 +1,4 @@
 const FEED_PAGE_SIZE = 9
-const RECENT_KEY = 'codery-recent-views'
 
 let feedAll = []
 let feedSort = 'new'
@@ -128,7 +127,7 @@ function buildLangPills() {
 
 function getRecentViews() {
   try {
-    return JSON.parse(localStorage.getItem(RECENT_KEY) || '[]')
+    return JSON.parse(localStorage.getItem('codery-recent-views') || '[]')
   } catch { return [] }
 }
 
@@ -153,7 +152,7 @@ function renderRecentSection() {
     </div>
   `
   document.getElementById('clearRecentBtn')?.addEventListener('click', () => {
-    localStorage.removeItem(RECENT_KEY)
+    localStorage.removeItem('codery-recent-views')
     renderRecentSection()
   })
 }
@@ -210,11 +209,12 @@ function renderFeed(opts = {}) {
 
 async function loadFollowing() {
   followingSet = new Set()
-  if (!me) return
+  if (!me || !me.username) return
   try {
     const list = await api(`/users/${encodeURIComponent(me.username)}/following`)
-    ;(list || []).forEach(u => {
-      const name = typeof u === 'string' ? u : (u.username || u)
+    if (!Array.isArray(list)) return
+    list.forEach(u => {
+      const name = typeof u === 'string' ? u : (u && u.username)
       if (name) followingSet.add(String(name).toLowerCase())
     })
   } catch { /* ignore */ }
@@ -225,8 +225,11 @@ async function loadFeed() {
   list.innerHTML = skelFeedList(3)
   try {
     await refreshAuth()
-    const [codes] = await Promise.all([api('/codes'), loadFollowing()])
-    feedAll = codes
+    const [codes] = await Promise.all([
+      api('/codes').catch(err => { throw err }),
+      loadFollowing().catch(() => {})
+    ])
+    feedAll = Array.isArray(codes) ? codes : []
     const pageFromUrl = parseInt(qs('page'), 10)
     feedPage = Number.isInteger(pageFromUrl) && pageFromUrl > 0 ? pageFromUrl : 1
     buildTagPills()
