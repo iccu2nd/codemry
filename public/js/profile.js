@@ -142,7 +142,29 @@ async function renderProfile() {
       audio.addEventListener('pause', () => setIcon(false))
       audio.addEventListener('play', () => setIcon(true))
       audio.play().then(() => setIcon(true)).catch(() => setIcon(false))
-      window.addEventListener('pagehide', () => { try { audio.pause() } catch {} })
+
+      const stopMusic = () => {
+        try {
+          audio.pause()
+          audio.currentTime = 0
+          setIcon(false)
+          tick()
+        } catch {}
+      }
+      // Stop when leaving page / closing tab / switching away
+      window.addEventListener('pagehide', stopMusic)
+      window.addEventListener('beforeunload', stopMusic)
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') stopMusic()
+      })
+      // SPA-style navigation within site
+      window.addEventListener('popstate', stopMusic)
+      document.querySelectorAll('a[href]').forEach(a => {
+        a.addEventListener('click', (e) => {
+          const href = a.getAttribute('href')
+          if (href && !href.startsWith('#') && !href.startsWith('javascript:')) stopMusic()
+        }, { once: false, passive: true })
+      })
       tick()
     }
 
