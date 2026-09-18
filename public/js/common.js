@@ -49,23 +49,17 @@ function removeUploadingSpinner(btn) {
 // ============================================================
 const ACCENT_THEME_KEY = 'codery-accent-theme'
 const ACCENT_THEMES = {
-  soft:   { label: 'Soft',   accent: '#5b7c99', accentRgb: '91,124,153',  dark: '#3d5a73', darkRgb: '61,90,115',  light: '#8aabc4', bg: '#eef3f7', bg2: '#f5f8fb', border: '#d0dde8', bgHover: '#e4edf4', glow: '#b8cddc' },
-  sage:   { label: 'Sage',   accent: '#6b8f71', accentRgb: '107,143,113', dark: '#4f6b54', darkRgb: '79,107,84',  light: '#9bb89f', bg: '#f0f4f1', bg2: '#f6f9f6', border: '#d4e0d6', bgHover: '#e5ede7', glow: '#b8ceb9' },
-  sand:   { label: 'Sand',   accent: '#a08060', accentRgb: '160,128,96',  dark: '#7a5f45', darkRgb: '122,95,69',  light: '#c4a882', bg: '#f7f3ee', bg2: '#faf7f3', border: '#e8ddd0', bgHover: '#f0e8de', glow: '#d4c4a8' },
-  slate:  { label: 'Slate',  accent: '#64748b', accentRgb: '100,116,139', dark: '#475569', darkRgb: '71,85,105',  light: '#94a3b8', bg: '#f1f5f9', bg2: '#f8fafc', border: '#e2e8f0', bgHover: '#e2e8f0', glow: '#cbd5e1' },
-  lavender:{ label: 'Lavender', accent: '#8b7ba8', accentRgb: '139,123,168', dark: '#6b5b88', darkRgb: '107,91,136', light: '#b0a3c4', bg: '#f4f1f8', bg2: '#f9f7fb', border: '#e0d8eb', bgHover: '#ebe4f2', glow: '#c9bdd9' },
-  rose:   { label: 'Rose',   accent: '#a67c7c', accentRgb: '166,124,124', dark: '#855f5f', darkRgb: '133,95,95',  light: '#c4a0a0', bg: '#f7f1f1', bg2: '#faf6f6', border: '#e8d9d9', bgHover: '#f0e4e4', glow: '#d4b8b8' }
+  black: { label: 'Black', accent: '#111111', accentRgb: '17,17,17', dark: '#000000', darkRgb: '0,0,0', light: '#444444', bg: '#f0f0f0', bg2: '#f7f7f7', border: '#d4d4d4', bgHover: '#e8e8e8', glow: '#c0c0c0' },
+  gray:  { label: 'Gray',  accent: '#333333', accentRgb: '51,51,51',  dark: '#111111', darkRgb: '17,17,17', light: '#666666', bg: '#f2f2f2', bg2: '#fafafa', border: '#d8d8d8', bgHover: '#ebebeb', glow: '#c8c8c8' }
 }
 function getAccentThemeId() {
   try {
-    const id = localStorage.getItem(ACCENT_THEME_KEY) || 'soft'
-    const migrate = { indigo: 'soft', blue: 'soft', teal: 'sage', green: 'sage', violet: 'lavender', purple: 'lavender', orange: 'sand' }
-    const mapped = migrate[id] || id
-    return ACCENT_THEMES[mapped] ? mapped : 'soft'
-  } catch { return 'soft' }
+    const id = localStorage.getItem(ACCENT_THEME_KEY) || 'black'
+    return ACCENT_THEMES[id] ? id : 'black'
+  } catch { return 'black' }
 }
 function applyAccentTheme(id) {
-  const t = ACCENT_THEMES[id] || ACCENT_THEMES.soft
+  const t = ACCENT_THEMES[id] || ACCENT_THEMES.black
   const root = document.documentElement.style
   root.setProperty('--accent', t.accent)
   root.setProperty('--accent-rgb', t.accentRgb)
@@ -83,7 +77,8 @@ function setAccentTheme(id) {
   try { localStorage.setItem(ACCENT_THEME_KEY, id) } catch {}
   applyAccentTheme(id)
 }
-applyAccentTheme(getAccentThemeId())
+try { localStorage.setItem(ACCENT_THEME_KEY, 'black') } catch {}
+applyAccentTheme('black')
 
 function paletteIconSvg() {
   return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c-4.8 0-8.5 3.5-8.5 8.2 0 4.2 3.2 7.8 7.5 8.1.7 0 1.3-.5 1.3-1.2 0-.3-.1-.6-.3-.9-.2-.3-.3-.6-.3-1 0-.7.6-1.3 1.3-1.3h2.8c2.6 0 4.7-2 4.7-4.6C20.5 6.2 16.8 3 12 3z"/><circle cx="8" cy="9.2" r="1.15" fill="currentColor" stroke="none"/><circle cx="12" cy="7.2" r="1.15" fill="currentColor" stroke="none"/><circle cx="16" cy="9.2" r="1.15" fill="currentColor" stroke="none"/><circle cx="9.5" cy="13.2" r="1.15" fill="currentColor" stroke="none"/></svg>`

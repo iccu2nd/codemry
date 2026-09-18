@@ -72,9 +72,21 @@ function renderUnlockedDetail(app, shortId, s) {
         <div class="cd-actions">
           <button class="cd-btn cd-btn-primary" id="copyBtn" type="button">${copyIconSvg()}<span>Copy</span></button>
           <button class="cd-btn" type="button" onclick="window.open('/raw/${s.shortId}','_blank')">${rawIconSvg()}<span>Raw</span></button>
-          <a class="cd-btn" href="${profileUrl(s.ownerUsername)}">${userIconSvg()}<span>Profile</span></a>
+          <button class="cd-btn" id="runBtn" type="button">${runIconSvg()}<span>Run</span></button>
+        </div>
+        <div class="run-panel" id="runPanel" style="display:none">
+          <div class="run-panel-head">
+            <span class="run-panel-title">Output</span>
+            <button type="button" class="run-panel-close" id="runCloseBtn">${closeIconSvg()}</button>
+          </div>
+          <pre class="run-output" id="runOutput">Ready.</pre>
+          <div class="run-panel-foot">
+            <button type="button" class="btn btn-primary btn-sm" id="runAgainBtn">Run again</button>
+            <span class="run-hint" id="runHint"></span>
+          </div>
         </div>
         <div class="cd-actions-more">
+          <a class="cd-btn-sm" href="${profileUrl(s.ownerUsername)}">${userIconSvg()}<span>Profile</span></a>
           <button class="cd-btn-sm" id="shareBtn" type="button">${shareIconSvg()}<span>Share</span></button>
           ${!me || me.username !== s.ownerUsername ? `<button class="cd-btn-sm" id="forkBtn" type="button">${forkIconSvg()}<span>Fork</span></button>` : ''}
           <button class="cd-btn-sm" id="downloadBtn" type="button">${downloadIconSvg()}<span>Download</span></button>
@@ -167,6 +179,39 @@ function renderUnlockedDetail(app, shortId, s) {
     wireLikeButtons(app)
     wireBookmarkButtons(app)
     document.getElementById('copyBtn').onclick = () => { navigator.clipboard.writeText(s.content); toast('Copied!') }
+
+    const runBtn = document.getElementById('runBtn')
+    const runPanel = document.getElementById('runPanel')
+    const runOutput = document.getElementById('runOutput')
+    const runHint = document.getElementById('runHint')
+    async function executeCode() {
+      if (!runPanel || !runOutput) return
+      runPanel.style.display = 'block'
+      runOutput.textContent = 'Running…'
+      if (runHint) runHint.textContent = ''
+      const lang = (s.language || '').toLowerCase()
+      const code = s.content || ''
+      try {
+        if (lang === 'python' || lang === 'py') {
+          if (runHint) runHint.textContent = 'Python via Pyodide (browser)'
+          await runPython(code, runOutput)
+        } else if (lang === 'javascript' || lang === 'js' || lang === 'typescript' || lang === 'html') {
+          if (runHint) runHint.textContent = 'JavaScript in sandbox'
+          await runJavaScript(code, runOutput)
+        } else if (lang === 'bash' || lang === 'sh') {
+          runOutput.textContent = 'Bash cannot run in the browser.\nTip: copy the script and run it in your terminal.'
+        } else {
+          // try as JS for scrape-like snippets
+          if (runHint) runHint.textContent = 'Tried as JavaScript'
+          await runJavaScript(code, runOutput)
+        }
+      } catch (err) {
+        runOutput.textContent = String(err && err.message ? err.message : err)
+      }
+    }
+    if (runBtn) runBtn.onclick = executeCode
+    document.getElementById('runAgainBtn')?.addEventListener('click', executeCode)
+    document.getElementById('runCloseBtn')?.addEventListener('click', () => { if (runPanel) runPanel.style.display = 'none' })
     document.getElementById('shareBtn').onclick = () => { navigator.clipboard.writeText(location.href); toast('Link copied!') }
 
     const downloadBtn = document.getElementById('downloadBtn')
@@ -543,6 +588,10 @@ function commentCardHtml(c, canDelete, isOwner) {
   </div>`
 }
 
+function runIconSvg() {
+  return `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.14v14l11-7-11-7z"/></svg>`
+}
+
 function copyIconSvg() {
   return `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="8.5" y="8.5" width="11.5" height="11.5" rx="2.5"/><path d="M6 15.5H5.2A2.2 2.2 0 0 1 3 13.3V5.2A2.2 2.2 0 0 1 5.2 3h8.1A2.2 2.2 0 0 1 15.5 5.2V6"/></svg>`
 }
@@ -758,3 +807,80 @@ async function setupComments(shortId, ownerUsername) {
 
 renderCodeDetail(refreshAuth())
 
+
+
+async function runJavaScript(code, outEl) {
+  return new Promise((resolve) => {
+    const logs = []
+    const iframe = document.createElement('iframe')
+    iframe.style.display = 'none'
+    iframe.sandbox = 'allow-scripts'
+    document.body.appendChild(iframe)
+    const win = iframe.contentWindow
+    const doc = iframe.contentDocument
+    const timeout = setTimeout(() => {
+      logs.push('[timeout] stopped after 5s')
+      cleanup()
+    }, 5000)
+    function cleanup() {
+      clearTimeout(timeout)
+      try { iframe.remove() } catch {}
+      outEl.textContent = logs.length ? logs.join('\n') : '(no output)'
+      resolve()
+    }
+    win.console.log = (...a) => logs.push(a.map(x => formatRunVal(x)).join(' '))
+    win.console.error = (...a) => logs.push('[error] ' + a.map(x => formatRunVal(x)).join(' '))
+    win.console.warn = (...a) => logs.push('[warn] ' + a.map(x => formatRunVal(x)).join(' '))
+    try {
+      const result = win.eval(code)
+      if (result !== undefined) logs.push('=> ' + formatRunVal(result))
+    } catch (e) {
+      logs.push('[error] ' + (e && e.message ? e.message : String(e)))
+    }
+    setTimeout(cleanup, 50)
+  })
+}
+
+function formatRunVal(v) {
+  try {
+    if (v === undefined) return 'undefined'
+    if (v === null) return 'null'
+    if (typeof v === 'string') return v
+    if (typeof v === 'object') return JSON.stringify(v, null, 2)
+    return String(v)
+  } catch { return String(v) }
+}
+
+let _pyodidePromise = null
+async function loadPyodideOnce() {
+  if (window.loadPyodide) {
+    if (!_pyodidePromise) _pyodidePromise = window.loadPyodide({ indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.26.2/full/' })
+    return _pyodidePromise
+  }
+  await new Promise((resolve, reject) => {
+    const s = document.createElement('script')
+    s.src = 'https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js'
+    s.onload = resolve
+    s.onerror = () => reject(new Error('Failed to load Pyodide'))
+    document.head.appendChild(s)
+  })
+  _pyodidePromise = window.loadPyodide({ indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.26.2/full/' })
+  return _pyodidePromise
+}
+
+async function runPython(code, outEl) {
+  outEl.textContent = 'Loading Python runtime…'
+  const pyodide = await loadPyodideOnce()
+  pyodide.setStdout({ batched: (t) => { outEl.textContent = (outEl.textContent === 'Loading Python runtime…' ? '' : outEl.textContent + '\n') + t } })
+  pyodide.setStderr({ batched: (t) => { outEl.textContent += '\n[stderr] ' + t } })
+  try {
+    const result = await pyodide.runPythonAsync(code)
+    if (result !== undefined && result !== null) {
+      outEl.textContent = (outEl.textContent && outEl.textContent !== 'Loading Python runtime…' ? outEl.textContent + '\n' : '') + '=> ' + String(result)
+    } else if (!outEl.textContent || outEl.textContent === 'Loading Python runtime…') {
+      outEl.textContent = '(no output)'
+    }
+  } catch (e) {
+    outEl.textContent = '[error] ' + (e && e.message ? e.message : String(e))
+  }
+}

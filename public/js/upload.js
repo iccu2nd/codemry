@@ -67,89 +67,89 @@ async function init() {
     <div class="card upload-wizard">
       <div class="upload-steps">${stepDots()}</div>
       <div class="upload-step-labels">
-        <span class="${step === 1 ? 'on' : ''}">Kode</span>
-        <span class="${step === 2 ? 'on' : ''}">Detail</span>
-        <span class="${step === 3 ? 'on' : ''}">Publikasikan</span>
+        <span class="${step === 1 ? 'on' : ''}">Code</span>
+        <span class="${step === 2 ? 'on' : ''}">Details</span>
+        <span class="${step === 3 ? 'on' : ''}">Publish</span>
       </div>
       <form id="uploadForm" autocomplete="off">
         <div class="upload-panel" style="display:${step === 1 ? 'block' : 'none'}">
-          <div class="upload-panel-title">Masukkan kode</div>
-          <div class="upload-panel-sub">Upload file atau tempel kode langsung</div>
+          <div class="upload-panel-title">Add your code</div>
+          <div class="upload-panel-sub">Upload a file or paste code below</div>
           <div class="upload-source-row">
-            <button type="button" class="btn btn-white btn-block" id="pickFileBtn">${uploadIconSvg()} Pilih file kode</button>
+            <button type="button" class="btn btn-white btn-block" id="pickFileBtn">${uploadIconSvg()} Choose file</button>
             <input type="file" id="fileInput" style="display:none" accept=".js,.jsx,.ts,.tsx,.py,.html,.htm,.css,.json,.java,.php,.sh,.md,.txt,.c,.cpp,.go,.rb,.rs,.kt,.swift,.xml,.yml,.yaml,.sql,.env">
           </div>
-          <div class="field-hint" style="margin-bottom:14px">Judul, nama file, dan bahasa terisi otomatis dari file.</div>
-          <div class="field"><label>Bahasa</label>
+          <div class="field-hint" style="margin-bottom:14px">Title, filename, and language fill automatically from the file.</div>
+          <div class="field"><label>Language</label>
             <select name="language">
               <option>javascript</option><option>typescript</option><option>python</option><option>html</option>
               <option>css</option><option>json</option><option>java</option><option>php</option>
               <option>bash</option><option>markdown</option><option>text</option>
             </select>
           </div>
-          <div class="field"><label>Kode</label>
-            <textarea name="content" placeholder="Tempel kode di sini…" required rows="12"></textarea>
+          <div class="field"><label>Code</label>
+            <textarea name="content" placeholder="Paste code here…" required rows="12"></textarea>
           </div>
           <div class="upload-nav">
             <span></span>
-            <button type="button" class="btn btn-primary" id="next1">Lanjut</button>
+            <button type="button" class="btn btn-primary" id="next1">Next</button>
           </div>
         </div>
         <div class="upload-panel" style="display:${step === 2 ? 'block' : 'none'}">
-          <div class="upload-panel-title">Detail snippet</div>
-          <div class="upload-panel-sub">Biar mudah ditemukan di feed & search</div>
-          <div class="field"><label>Judul</label>
-            <input name="title" placeholder="Contoh: Fungsi cek bilangan prima" required>
+          <div class="upload-panel-title">Details</div>
+          <div class="upload-panel-sub">Help others find this snippet</div>
+          <div class="field"><label>Title</label>
+            <input name="title" placeholder="e.g. Prime number checker" required>
           </div>
           <div class="field">
-            <label>Deskripsi <span class="label-opt">(opsional)</span></label>
+            <label>Description <span class="label-opt">(optional)</span></label>
             <div class="textarea-counter-wrap">
-              <textarea name="description" id="descriptionInput" class="textarea-autogrow" placeholder="Penjelasan singkat…" style="min-height:70px" rows="2" maxlength="500"></textarea>
+              <textarea name="description" id="descriptionInput" class="textarea-autogrow" placeholder="Short description…" style="min-height:70px" rows="2" maxlength="500"></textarea>
               <span class="char-counter" id="descCount">0 / 500</span>
             </div>
           </div>
           <div class="field">
-            <label>Nama file</label>
-            <input name="filename" placeholder="prima.js" required>
-            <div class="field-hint">Ekstensi otomatis menyesuaikan bahasa jika belum diisi.</div>
+            <label>Filename</label>
+            <input name="filename" placeholder="script.js" required>
+            <div class="field-hint">Extension is added automatically if missing.</div>
           </div>
           <div class="field">
-            <label>Tag <span class="label-opt">(opsional, maks 5)</span></label>
-            <input name="tags" placeholder="#algoritma #tutorial">
-            <div class="field-hint">Pisahkan dengan spasi atau koma.</div>
+            <label>Tags <span class="label-opt">(optional, max 5)</span></label>
+            <input name="tags" placeholder="#search #tools">
+            <div class="field-hint">Separate with spaces or commas.</div>
           </div>
           <div class="upload-nav">
-            <button type="button" class="btn btn-white" id="back2">Kembali</button>
-            <button type="button" class="btn btn-primary" id="next2">Lanjut</button>
+            <button type="button" class="btn btn-white" id="back2">Back</button>
+            <button type="button" class="btn btn-primary" id="next2">Next</button>
           </div>
         </div>
         <div class="upload-panel" style="display:${step === 3 ? 'block' : 'none'}">
-          <div class="upload-panel-title">Publikasikan</div>
-          <div class="upload-panel-sub">Atur visibilitas lalu bagikan</div>
+          <div class="upload-panel-title">Publish</div>
+          <div class="upload-panel-sub">Choose visibility, then share</div>
           <div class="upload-options">
             <label class="upload-option">
               <input type="checkbox" name="isPublic" id="isPublic" checked>
               <div>
-                <div class="upload-option-title">Publik</div>
-                <div class="upload-option-desc">Tampil di feed & bisa dicari semua orang</div>
+                <div class="upload-option-title">Public</div>
+                <div class="upload-option-desc">Visible on the feed and searchable</div>
               </div>
             </label>
             <label class="upload-option">
               <input type="checkbox" id="usePin">
               <div>
-                <div class="upload-option-title">Kunci dengan PIN</div>
-                <div class="upload-option-desc">Hanya yang punya PIN yang bisa melihat kode</div>
+                <div class="upload-option-title">Lock with PIN</div>
+                <div class="upload-option-desc">Only people with the PIN can view the code</div>
               </div>
             </label>
           </div>
           <div class="field" id="pinField" style="display:none">
-            <label>PIN (4–8 digit angka)</label>
-            <input type="tel" inputmode="numeric" pattern="[0-9]*" id="pinInput" maxlength="8" placeholder="mis. 1234">
+            <label>PIN (4–8 digits)</label>
+            <input type="tel" inputmode="numeric" pattern="[0-9]*" id="pinInput" maxlength="8" placeholder="e.g. 1234">
           </div>
           <div class="upload-summary" id="uploadSummary"></div>
           <div class="upload-nav">
-            <button type="button" class="btn btn-white" id="back3">Kembali</button>
-            <button class="btn btn-primary" type="submit" id="submitBtn">Bagikan</button>
+            <button type="button" class="btn btn-white" id="back3">Back</button>
+            <button class="btn btn-primary" type="submit" id="submitBtn">Share</button>
           </div>
         </div>
       </form>
@@ -160,9 +160,9 @@ async function init() {
       const sum = document.getElementById('uploadSummary')
       if (sum) {
         sum.innerHTML = `
-          <div class="upload-sum-row"><span>Judul</span><b>${escapeHtml(saved.title || '')}</b></div>
+          <div class="upload-sum-row"><span>Title</span><b>${escapeHtml(saved.title || '')}</b></div>
           <div class="upload-sum-row"><span>File</span><b>${escapeHtml(saved.filename || '')}</b></div>
-          <div class="upload-sum-row"><span>Bahasa</span><b>${escapeHtml(saved.language || '')}</b></div>`
+          <div class="upload-sum-row"><span>Language</span><b>${escapeHtml(saved.language || '')}</b></div>`
       }
     }
   }
@@ -216,7 +216,7 @@ async function init() {
         if (!file) return
         const ext = file.name.includes('.') ? file.name.split('.').pop().toLowerCase() : ''
         if (!ext || !EXT_LANG.hasOwnProperty(ext)) {
-          toast('Hanya file kode (.js, .py, .html, dll)')
+          toast('Only code files (.js, .py, .html, etc.)')
           fileInput.value = ''
           return
         }
@@ -228,20 +228,20 @@ async function init() {
           if (titleInput && !titleInput.value.trim()) {
             titleInput.value = ext ? file.name.slice(0, -(ext.length + 1)) : file.name
           }
-          toast('File dimuat')
-        } catch { toast('Gagal membaca file') }
+          toast('File loaded')
+        } catch { toast('Failed to read file') }
         finally { fileInput.value = '' }
       }
     }
 
     document.getElementById('next1')?.addEventListener('click', () => {
-      if (!contentInput?.value.trim()) { toast('Isi kode dulu'); return }
+      if (!contentInput?.value.trim()) { toast('Please add code first'); return }
       step = 2
       render()
     })
     document.getElementById('next2')?.addEventListener('click', () => {
-      if (!titleInput?.value.trim()) { toast('Isi judul dulu'); return }
-      if (!filenameInput?.value.trim()) { toast('Isi nama file dulu'); return }
+      if (!titleInput?.value.trim()) { toast('Please add a title'); return }
+      if (!filenameInput?.value.trim()) { toast('Please add a filename'); return }
       applyAutoExtension()
       step = 3
       render()
@@ -254,7 +254,7 @@ async function init() {
       if (submitBtn?.disabled) return
       applyAutoExtension()
       const pin = usePinCb?.checked ? (pinInput?.value.trim() || '') : ''
-      if (usePinCb?.checked && !/^\d{4,8}$/.test(pin)) { toast('PIN harus 4–8 digit angka'); return }
+      if (usePinCb?.checked && !/^\d{4,8}$/.test(pin)) { toast('PIN must be 4–8 digits'); return }
       const f = new FormData(form)
       setBtnLoading(submitBtn, true)
       try {
@@ -271,7 +271,7 @@ async function init() {
             pin
           })
         })
-        toast('Berhasil diupload!')
+        toast('Uploaded!')
         window.location.href = codeUrl(s.shortId)
       } catch (err) {
         toast(err.message)
