@@ -891,24 +891,23 @@ async function loadRelatedCodes(s) {
       })
       .filter(r => r.score > 0)
       .sort((a, b) => b.score - a.score || b.x.createdAt - a.x.createdAt)
-      .slice(0, 4)
+      .slice(0, 8)
       .map(r => r.x)
     if (!related.length) return
     box.style.display = 'block'
     box.innerHTML = `
       <div class="related-title">Related Code</div>
-      <div class="related-mini-list">
-        ${related.map(r => {
-          const prev = escapeHtml((r.preview || '').split('\n').filter(l => l.trim()).slice(0, 3).join('\n'))
-          return `<a class="related-mini" href="${codeUrl(r.shortId)}">
-            <div class="related-mini-top">
-              <span class="related-mini-title">${escapeHtml(r.title)}</span>
+      <div class="related-scroll" role="list">
+        ${related.map(r => `
+          <a class="related-card" href="${codeUrl(r.shortId)}" role="listitem">
+            <div class="related-card-head">
+              ${avatarHtml(r.ownerAvatar, r.ownerNickname || r.ownerUsername || '?', 'avatar-tiny')}
+              <span class="related-card-user">@${escapeHtml(r.ownerUsername || '')}</span>
               ${langIconHtml(r.language)}
             </div>
-            <div class="related-mini-meta">@${escapeHtml(r.ownerUsername || '')}${r.likes ? ' · ' + r.likes + ' likes' : ''}</div>
-            ${prev ? `<pre class="related-mini-code"><code>${prev}</code></pre>` : ''}
-          </a>`
-        }).join('')}
+            <div class="related-card-title">${escapeHtml(r.title)}</div>
+          </a>
+        `).join('')}
       </div>
     `
   } catch {}
