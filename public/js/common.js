@@ -298,7 +298,7 @@ function renderAuthArea() {
     ? `${onProfilePage ? '' : `<a class="link-btn link-btn-avatar" href="${profileUrl(me.username)}">
          ${avatarHtml(me.avatar, me.nickname || me.username, 'avatar-circle-xs')} ${escapeHtml(me.nickname || me.username)}${badgesHtml(me.badges)}${devBadgeHtml(me.isDeveloper)}${roleBadgeHtml(me.role)}
        </a>`}
-       <button class="link-btn" id="logoutBtn">Keluar</button>`
+       <button class="link-btn" id="logoutBtn">Sign out</button>`
     : `<a class="link-btn" href="/auth">Masuk</a>`
   const logoutBtn = document.getElementById('logoutBtn')
   if (logoutBtn) {

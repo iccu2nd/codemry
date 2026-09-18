@@ -7,7 +7,7 @@ async function init() {
   try {
     const snippets = await api('/codes/liked')
     container.innerHTML = `
-      <div class="section-label">Kode yang Disukai</div>
+      <div class="section-label">Liked Code</div>
       <div id="likedList">${snippets.length ? snippets.map(snippetCard).join('') : `<div class="card"><div class="empty-state">Belum ada kode yang disukai.</div></div>`}</div>
     `
     highlightAllIn('#likedList pre code')

@@ -690,7 +690,7 @@ async function setupComments(shortId, ownerUsername) {
            <button class="send-icon-btn" id="commentSendBtn" title="Kirim">${sendIconSvg()}</button>
          </div>
        </div>`
-    : `<div class="comment-form-locked">Masuk terlebih dahulu untuk berkomentar. <a href="/auth">Masuk</a></div>`
+    : `<div class="comment-form-locked">Sign in to comment. <a href="/auth">Sign in</a></div>`
 
   function autoGrow(el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px' }
 
@@ -747,7 +747,7 @@ async function setupComments(shortId, ownerUsername) {
       countEl.textContent = comments.length ? `(${comments.length})` : ''
       listEl.innerHTML = comments.length
         ? comments.slice().reverse().map(c => commentCardHtml(c, me && (me.username === c.username || isOwner), isOwner)).join('')
-        : `<div class="empty-state-sm">Belum ada komentar. Jadilah yang pertama!</div>`
+        : `<div class="empty-state-sm">No comments yet. Be the first!</div>`
 
       listEl.querySelectorAll('[data-role="delete-comment"]').forEach(btn => {
         btn.onclick = async () => {
@@ -896,14 +896,19 @@ async function loadRelatedCodes(s) {
     if (!related.length) return
     box.style.display = 'block'
     box.innerHTML = `
-      <div class="related-title">Related code</div>
-      <div class="related-list">
-        ${related.map(r => `
-          <a class="related-item" href="${codeUrl(r.shortId)}">
-            <div class="related-item-title">${escapeHtml(r.title)}</div>
-            <div class="related-item-meta">${escapeHtml(r.language || '')} · ${escapeHtml(r.ownerNickname || r.ownerUsername || '')}</div>
-          </a>
-        `).join('')}
+      <div class="related-title">Related Code</div>
+      <div class="related-mini-list">
+        ${related.map(r => {
+          const prev = escapeHtml((r.preview || '').split('\n').filter(l => l.trim()).slice(0, 3).join('\n'))
+          return `<a class="related-mini" href="${codeUrl(r.shortId)}">
+            <div class="related-mini-top">
+              <span class="related-mini-title">${escapeHtml(r.title)}</span>
+              ${langIconHtml(r.language)}
+            </div>
+            <div class="related-mini-meta">@${escapeHtml(r.ownerUsername || '')}${r.likes ? ' · ' + r.likes + ' likes' : ''}</div>
+            ${prev ? `<pre class="related-mini-code"><code>${prev}</code></pre>` : ''}
+          </a>`
+        }).join('')}
       </div>
     `
   } catch {}

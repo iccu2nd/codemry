@@ -27,19 +27,19 @@ async function renderProfile() {
           </div>
         </div>
         <div class="stat-row">
-          <div class="stat"><b>${p.snippets.length}</b><span>Kode</span></div>
+          <div class="stat"><b>${p.snippets.length}</b><span>Codes</span></div>
           <div class="stat"><b>${p.totalViews ?? totalViews}</b><span>Views</span></div>
-          <div class="stat"><b>${p.totalLikes ?? 0}</b><span>Suka</span></div>
+          <div class="stat"><b>${p.totalLikes ?? 0}</b><span>Likes</span></div>
           <a class="stat" href="${followUrl(p.username, 'followers')}"><b>${p.followersCount}</b><span>Followers</span></a>
           <a class="stat" href="${followUrl(p.username, 'following')}"><b>${p.followingCount}</b><span>Following</span></a>
         </div>
         <div class="profile-below-stats">
-          <div class="profile-bio" id="bioText">${p.bio ? formatWaText(p.bio) : 'Belum ada bio'}</div>
+          <div class="profile-bio" id="bioText">${p.bio ? formatWaText(p.bio) : 'No bio yet'}</div>
         </div>
         ${p.isMe
           ? `<div class="btn-row" style="margin-top:14px">
-               <button class="btn btn-white" id="editProfileBtn">Edit Profil</button>
-               <button class="btn btn-white" id="signOutBtn">Keluar</button>
+               <button class="btn btn-white" id="editProfileBtn">Edit profile</button>
+               <button class="btn btn-white" id="signOutBtn">Sign out</button>
              </div>
              <div id="editProfileForm" style="display:none;margin-top:14px">
                <div class="field"><label>Nickname</label><input id="nicknameInput" value="${escapeHtml(p.nickname || '')}" maxlength="32"></div>
@@ -51,18 +51,26 @@ async function renderProfile() {
                <div class="field"><label>Bio</label><textarea id="bioInput" style="min-height:80px">${escapeHtml(p.bio || '')}</textarea></div>
                <label class="checkbox-row">
                  <input type="checkbox" id="hideBadgesInput" ${p.hideBadges ? 'checked' : ''}>
-                 Sembunyikan lencana (termasuk tag Developer & role)
+                 Hide badges (including Developer tag)
                </label>
-               <button class="btn btn-primary btn-block" id="saveBioBtn">Simpan</button>
+               <button class="btn btn-primary btn-block" id="saveBioBtn">Save</button>
              </div>`
           : `<button class="btn ${p.isFollowing ? 'btn-white' : 'btn-primary'} btn-block" id="followBtn" style="margin-top:14px">${p.isFollowing ? 'Following' : 'Follow'}</button>`}
       </div>
-      <div class="section-label">Kode yang Dibagikan</div>
+      <div class="section-label">Shared Code</div>
       <div id="profileSnippets"></div>
     `
 
     const list = document.getElementById('profileSnippets')
-    list.innerHTML = p.snippets.length ? p.snippets.map(snippetCard).join('') : `<div class="empty-state">Belum ada kode.</div>`
+    list.innerHTML = p.snippets.length
+      ? p.snippets.map(snippetCard).join('')
+      : (p.isMe
+          ? `<div class="empty-state empty-cta">
+               <div class="empty-cta-title">No code yet</div>
+               <div class="empty-cta-sub">Share your first snippet with the community.</div>
+               <a class="btn btn-primary" href="/upload">Upload code</a>
+             </div>`
+          : `<div class="empty-state">No code shared yet.</div>`)
     highlightAllIn('#profileSnippets pre code')
     wireLikeButtons(list)
     wireBookmarkButtons(list)
