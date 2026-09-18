@@ -19,7 +19,7 @@ function lbRowHtml(row, rank, unit) {
   return `
   <a class="lb-row" href="${profileUrl(row.username)}">
     ${medalHtml(rank)}
-    <img class="avatar-circle avatar-circle-sm" src="${row.avatar || ''}" onerror="this.style.visibility='hidden'" loading="lazy" decoding="async">
+    ${avatarHtml(row.avatar, row.nickname || row.username, 'avatar-circle-sm')}
     <div class="lb-row-info">
       <div class="snippet-uploader">${escapeHtml(row.nickname)}${badgesHtml(row.badges)}${devBadgeHtml(row.isDeveloper)}${roleBadgeHtml(row.role)}</div>
       <div class="snippet-meta">@${escapeHtml(row.username)}</div>

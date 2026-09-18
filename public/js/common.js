@@ -154,9 +154,26 @@ function timeAgo(ts) {
   return `${Math.floor(s / 86400)}h lalu`
 }
 
+
 function escapeHtml(s) {
   return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
 }
+
+/** Lightweight avatar: real image if available, else colored initials (no network). Saves data. */
+function avatarHtml(url, name, sizeClass = 'avatar-circle-sm', extraClass = '') {
+  const safeName = escapeHtml(name || '?')
+  const initial = (name || '?').trim().charAt(0).toUpperCase() || '?'
+  const colors = ['#3b82f6','#8b5cf6','#06b6d4','#10b981','#f59e0b','#ef4444','#ec4899','#6366f1']
+  let hash = 0
+  for (let i = 0; i < (name || '').length; i++) hash = (hash * 31 + (name || '').charCodeAt(i)) >>> 0
+  const bg = colors[hash % colors.length]
+  const cls = `avatar-circle ${sizeClass} ${extraClass}`.trim()
+  if (url && String(url).trim() && !String(url).includes('undefined')) {
+    return `<img class="${cls}" src="${escapeHtml(url)}" alt="${safeName}" loading="lazy" decoding="async" width="34" height="34" onerror="this.outerHTML=this.dataset.fb" data-fb="<span class='${cls} avatar-initials' style='background:${bg}' aria-label='${safeName}'>${initial}</span>">`
+  }
+  return `<span class="${cls} avatar-initials" style="background:${bg}" aria-label="${safeName}">${initial}</span>`
+}
+
 
 function roleBadgeHtml(role) {
   return role ? `<span class="role-badge">${escapeHtml(role)}</span>` : ''
@@ -276,7 +293,7 @@ function renderAuthArea() {
   const onProfilePage = location.pathname.startsWith('/profile')
   authArea.innerHTML = me
     ? `${onProfilePage ? '' : `<a class="link-btn link-btn-avatar" href="${profileUrl(me.username)}">
-         <img class="avatar-circle avatar-circle-xs" src="${me.avatar}"> ${escapeHtml(me.nickname || me.username)}${badgesHtml(me.badges)}${devBadgeHtml(me.isDeveloper)}${roleBadgeHtml(me.role)}
+         ${avatarHtml(me.avatar, me.nickname || me.username, 'avatar-circle-xs')} ${escapeHtml(me.nickname || me.username)}${badgesHtml(me.badges)}${devBadgeHtml(me.isDeveloper)}${roleBadgeHtml(me.role)}
        </a>`}
        <button class="link-btn" id="logoutBtn">Keluar</button>`
     : `<a class="link-btn" href="/auth">Masuk</a>`
@@ -570,7 +587,7 @@ function snippetCard(s) {
     <div class="snippet-head">
       <div class="snippet-head-info">
         <a href="${profileUrl(s.ownerUsername)}" aria-label="Lihat profil @${escapeHtml(s.ownerUsername)}">
-          <img class="avatar-circle avatar-circle-sm clickable" src="${s.ownerAvatar || ''}" onerror="this.style.visibility='hidden'" loading="lazy" decoding="async">
+          ${avatarHtml(s.ownerAvatar, s.ownerNickname || s.ownerUsername, 'avatar-circle-sm', 'clickable')}
         </a>
         <div>
           <div class="snippet-uploader">${escapeHtml(s.ownerNickname || s.ownerUsername)}${badgesHtml(s.ownerBadges)}${devBadgeHtml(s.ownerIsDeveloper)}${roleBadgeHtml(s.ownerRole)}</div>

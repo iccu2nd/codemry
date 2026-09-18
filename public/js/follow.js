@@ -12,7 +12,7 @@ async function renderFollowList() {
         <div class="hero-rule"></div>
         ${list.length ? list.map(u => `
           <a class="btn btn-white btn-block" style="margin-bottom:10px;justify-content:flex-start;gap:10px" href="${profileUrl(u.username)}">
-            <img class="avatar-circle avatar-circle-sm" src="${u.avatar || ''}" onerror="this.style.visibility='hidden'" loading="lazy" decoding="async"> @${escapeHtml(u.username)}
+            ${avatarHtml(u.avatar, u.nickname || u.username, 'avatar-circle-sm')} @${escapeHtml(u.username)}
           </a>
         `).join('') : `<div class="empty-state">Belum ada.</div>`}
       </div>

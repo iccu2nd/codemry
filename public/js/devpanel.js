@@ -83,7 +83,7 @@ function renderDevUserList(filter) {
     <div class="dev-user-block">
       <div class="dev-badge-row">
         <a class="dev-badge-user" href="${profileUrl(u.username)}">
-          <img class="avatar-circle avatar-circle-sm" src="${u.avatar || ''}" onerror="this.style.visibility='hidden'" loading="lazy" decoding="async">
+          ${avatarHtml(u.avatar, u.nickname || u.username, 'avatar-circle-sm')}
           <span>${escapeHtml(u.nickname || u.username)}${badgesHtml(u.badges)}${roleBadgeHtml(u.role)}<br><span class="snippet-meta">@${escapeHtml(u.username)} · ${u.snippetCount} kode · ${formatViews(u.totalViews)}</span></span>
         </a>
         ${u.isDeveloper ? `<span class="lang-badge">DEV</span>` : `<button type="button" class="dev-kebab-btn" data-username="${escapeHtml(u.username)}" aria-label="Kelola akun @${escapeHtml(u.username)}">${DEV_KEBAB_SVG}</button>`}

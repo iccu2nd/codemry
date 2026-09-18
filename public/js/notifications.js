@@ -18,7 +18,7 @@ function notifTargetUrl(n) {
 function notifItemHtml(n) {
   return `
   <a class="notif-item ${n.read ? '' : 'unread'}" href="${notifTargetUrl(n)}" data-id="${n.id}">
-    <img class="avatar-circle avatar-circle-sm" src="${n.fromAvatar || ''}" onerror="this.style.visibility='hidden'" loading="lazy">
+    ${avatarHtml(n.fromAvatar, n.fromNickname || n.fromUsername, 'avatar-circle-sm')}
     <span class="notif-icon notif-icon-${n.type}">${notifIconSvg(n.type)}</span>
     <div class="notif-body">
       <div class="notif-text"><b>${escapeHtml(n.fromNickname || n.fromUsername)}</b> ${escapeHtml(n.text)}${n.snippetTitle ? ` <span class="notif-target">"${escapeHtml(n.snippetTitle)}"</span>` : ''}</div>

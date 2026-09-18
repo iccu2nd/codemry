@@ -49,7 +49,7 @@ function renderUnlockedDetail(app, shortId, s) {
         <div class="snippet-head">
           <div class="snippet-head-info">
             <a href="${profileUrl(s.ownerUsername)}" aria-label="Lihat profil @${escapeHtml(s.ownerUsername)}">
-              <img class="avatar-circle avatar-circle-sm clickable" src="${s.ownerAvatar || ''}" onerror="this.style.visibility='hidden'" loading="lazy" decoding="async">
+              ${avatarHtml(s.ownerAvatar, s.ownerNickname || s.ownerUsername, 'avatar-circle-sm', 'clickable')}
             </a>
             <div>
               <div class="snippet-uploader">${escapeHtml(s.ownerNickname || s.ownerUsername)}${badgesHtml(s.ownerBadges)}${devBadgeHtml(s.ownerIsDeveloper)}${roleBadgeHtml(s.ownerRole)}</div>

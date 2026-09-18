@@ -28,14 +28,16 @@
 <div class="nav-backdrop" id="navBackdrop"></div>
 
 <main class="app">
-  <div class="card">
-    <div class="window-dots"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span></div>
-    <div class="hero-title">Codery</div>
-    <div class="hero-rule"></div>
-    <div class="hero-sub">Code Sharing Platform</div>
-    <div class="btn-row">
-      <a class="btn btn-primary" href="/upload">Upload Kode</a>
-      <button class="btn btn-white" id="refreshBtn">Refresh</button>
+  <div class="card feed-toolbar">
+    <div class="feed-toolbar-inner">
+      <div>
+        <div class="hero-title" style="font-size:18px;text-align:left;margin:0">Feed</div>
+        <div class="hero-sub" style="text-align:left;margin:2px 0 0;font-size:12.5px">Kode terbaru & trending</div>
+      </div>
+      <div class="btn-row" style="margin:0;grid-template-columns:auto auto;gap:8px">
+        <a class="btn btn-primary btn-sm" href="/upload">Upload</a>
+        <button class="btn btn-white btn-sm" id="refreshBtn">Refresh</button>
+      </div>
     </div>
   </div>
   <div id="feedList"></div>
