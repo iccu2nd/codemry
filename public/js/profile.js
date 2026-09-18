@@ -37,12 +37,20 @@ async function renderProfile() {
           <div class="profile-bio" id="bioText">${p.bio ? formatWaText(p.bio) : 'No bio yet'}</div>
           ${p.profileMusic ? `
           <div class="profile-music" id="profileMusicBar">
-            <button type="button" class="pm-btn" id="pmToggle" aria-label="Play or pause music">${playIconMini()}</button>
-            <div class="pm-meta">
-              <span class="pm-label">Profile music</span>
-              <span class="pm-hint">Soft background</span>
+            <div class="pm-circle-wrap">
+              <svg class="pm-ring" viewBox="0 0 36 36" aria-hidden="true">
+                <circle class="pm-ring-bg" cx="18" cy="18" r="15.5" fill="none"/>
+                <circle class="pm-ring-fg" id="pmRingFg" cx="18" cy="18" r="15.5" fill="none"
+                  stroke-dasharray="97.4" stroke-dashoffset="97.4"/>
+              </svg>
+              <button type="button" class="pm-btn" id="pmToggle" aria-label="Play or pause music">${playIconMini()}</button>
             </div>
-            <audio id="profileAudio" src="${escapeHtml(p.profileMusic)}" preload="none" loop></audio>
+            <div class="pm-meta">
+              <span class="pm-label">${escapeHtml(p.nickname || p.username)} · Music</span>
+              <span class="pm-hint" id="pmTrackName">${escapeHtml(musicTitleFromUrl(p.profileMusic))}</span>
+            </div>
+            <span class="pm-time" id="pmTime">0:00</span>
+            <audio id="profileAudio" src="${escapeHtml(p.profileMusic)}" preload="metadata" loop></audio>
           </div>` : ''}
         </div>
         ${p.isMe
@@ -90,14 +98,35 @@ async function renderProfile() {
     wireBookmarkButtons(list)
 
 
-    // Profile music — soft volume, try autoplay, play/pause toggle
+    // Profile music — circular progress + duration next to play button
     const audio = document.getElementById('profileAudio')
     const pmBtn = document.getElementById('pmToggle')
+    const pmTime = document.getElementById('pmTime')
+    const pmRing = document.getElementById('pmRingFg')
+    const RING = 97.4 // 2 * PI * 15.5
     if (audio && pmBtn) {
-      audio.volume = 0.18
+      audio.volume = 0.22
+      const fmt = (s) => {
+        if (!isFinite(s) || s < 0) return '0:00'
+        const m = Math.floor(s / 60)
+        const sec = Math.floor(s % 60)
+        return m + ':' + String(sec).padStart(2, '0')
+      }
       const setIcon = (playing) => {
         pmBtn.innerHTML = playing ? pauseIconMini() : playIconMini()
         pmBtn.classList.toggle('playing', playing)
+      }
+      const tick = () => {
+        const cur = audio.currentTime || 0
+        const dur = audio.duration
+        if (pmTime) {
+          if (isFinite(dur) && dur > 0) pmTime.textContent = fmt(cur) + ' / ' + fmt(dur)
+          else pmTime.textContent = fmt(cur)
+        }
+        if (pmRing && isFinite(dur) && dur > 0) {
+          const pct = Math.min(1, cur / dur)
+          pmRing.style.strokeDashoffset = String(RING * (1 - pct))
+        }
       }
       pmBtn.onclick = () => {
         if (audio.paused) {
@@ -107,12 +136,14 @@ async function renderProfile() {
           setIcon(false)
         }
       }
-      audio.addEventListener('ended', () => setIcon(false))
+      audio.addEventListener('timeupdate', tick)
+      audio.addEventListener('loadedmetadata', tick)
+      audio.addEventListener('ended', () => { setIcon(false); tick() })
       audio.addEventListener('pause', () => setIcon(false))
       audio.addEventListener('play', () => setIcon(true))
-      // Soft autoplay attempt (may be blocked by browser)
       audio.play().then(() => setIcon(true)).catch(() => setIcon(false))
       window.addEventListener('pagehide', () => { try { audio.pause() } catch {} })
+      tick()
     }
 
     const followBtn = document.getElementById('followBtn')
@@ -438,9 +469,20 @@ if (themeBtn) {
   themeBtn.onclick = openThemePicker
 }
 
+function musicTitleFromUrl(url) {
+  try {
+    const path = decodeURIComponent(new URL(url).pathname)
+    const base = path.split('/').filter(Boolean).pop() || 'Track'
+    const name = base.replace(/\.[a-z0-9]{2,5}$/i, '').replace(/[_-]+/g, ' ').trim()
+    return name || 'Track'
+  } catch {
+    return 'Track'
+  }
+}
+
 function playIconMini() {
-  return `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>`
+  return `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>`
 }
 function pauseIconMini() {
-  return `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M6 5h4v14H6zm8 0h4v14h-4z"/></svg>`
+  return `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M6 5h4v14H6zm8 0h4v14h-4z"/></svg>`
 }

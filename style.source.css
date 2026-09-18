@@ -3135,21 +3135,62 @@ html.light .toast {
   padding: 10px 12px;
   background: var(--bg-muted);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 14px;
+}
+.pm-circle-wrap {
+  position: relative;
+  width: 40px; height: 40px;
+  flex-shrink: 0;
+}
+.pm-ring {
+  position: absolute; inset: 0;
+  width: 40px; height: 40px;
+  transform: rotate(-90deg);
+}
+.pm-ring-bg {
+  stroke: var(--border-strong);
+  stroke-width: 2.5;
+}
+.pm-ring-fg {
+  stroke: var(--accent);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  transition: stroke-dashoffset .15s linear;
 }
 .pm-btn {
-  width: 36px; height: 36px; border-radius: 50%;
-  border: 1px solid var(--border-strong);
+  position: absolute; inset: 4px;
+  width: 32px; height: 32px; border-radius: 50%;
+  border: none;
   background: var(--accent);
   color: var(--on-accent);
   display: flex; align-items: center; justify-content: center;
-  cursor: pointer; flex-shrink: 0;
-  padding: 0;
+  cursor: pointer; padding: 0;
 }
-.pm-btn.playing { background: var(--bg-card); color: var(--text); }
-.pm-meta { display: flex; flex-direction: column; min-width: 0; }
-.pm-label { font-size: 13px; font-weight: 700; color: var(--text); }
-.pm-hint { font-size: 11.5px; color: var(--text-muted); }
+.pm-btn.playing {
+  background: var(--bg-card);
+  color: var(--text);
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+.pm-meta {
+  display: flex; flex-direction: column; min-width: 0; flex: 1;
+  gap: 1px;
+}
+.pm-label {
+  font-size: 13.5px; font-weight: 700; color: var(--text);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.pm-hint {
+  font-size: 12px; color: var(--text-muted);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.pm-time {
+  flex-shrink: 0;
+  font-size: 11.5px;
+  font-weight: 600;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
 
 .up-prev-lang {
   font-size: 11px; font-weight: 600; color: var(--text-muted);
