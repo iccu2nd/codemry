@@ -69,20 +69,6 @@ function renderUnlockedDetail(app, shortId, s) {
         ${s.description ? `<p class="cd-desc">${formatWaText(s.description)}</p>` : ''}
         ${s.tags && s.tags.length ? `<div class="cd-tags">${s.tags.map(t => `<span class="tag-pill">#${escapeHtml(t)}</span>`).join('')}</div>` : ''}
 
-        <div class="code-window" id="codeWindow">
-          <div class="code-window-bar">
-            <span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>
-            <span class="code-window-filename">${escapeHtml(s.filename)}</span>
-            <div class="zoom-controls" id="zoomControls">
-              <button type="button" class="zoom-btn" id="zoomOutBtn" title="Zoom out">−</button>
-              <span class="zoom-level" id="zoomLevel">100%</span>
-              <button type="button" class="zoom-btn" id="zoomInBtn" title="Zoom in">+</button>
-            </div>
-            <button type="button" class="code-expand-btn" id="codeFullscreenBtn" title="Fullscreen">${expandIconSvg()}</button>
-          </div>
-          <pre class="code-view" id="codeViewPre"><code id="codeBlock" class="language-${hljsLang(s.language)}">${escapeHtml(s.content)}</code></pre>
-
-
         <div class="cd-toolbar">
           <button class="cd-btn cd-btn-primary" id="copyBtn" type="button">${copyIconSvg()}<span>Copy</span></button>
           <button class="cd-btn" type="button" onclick="window.open('/raw/${s.shortId}','_blank')">${rawIconSvg()}<span>Raw</span></button>
@@ -101,6 +87,20 @@ function renderUnlockedDetail(app, shortId, s) {
               ${me && me.username === s.ownerUsername ? `<button type="button" class="cd-more-item cd-more-danger" id="delBtn">${trashIconSvg()}<span>Delete</span></button>` : ''}
             </div>
           </div>
+        </div>
+
+        <div class="code-window" id="codeWindow">
+          <div class="code-window-bar">
+            <span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>
+            <span class="code-window-filename">${escapeHtml(s.filename)}</span>
+            <div class="zoom-controls" id="zoomControls">
+              <button type="button" class="zoom-btn" id="zoomOutBtn" title="Zoom out">−</button>
+              <span class="zoom-level" id="zoomLevel">100%</span>
+              <button type="button" class="zoom-btn" id="zoomInBtn" title="Zoom in">+</button>
+            </div>
+            <button type="button" class="code-expand-btn" id="codeFullscreenBtn" title="Fullscreen">${expandIconSvg()}</button>
+          </div>
+          <pre class="code-view" id="codeViewPre"><code id="codeBlock" class="language-${hljsLang(s.language)}">${escapeHtml(s.content)}</code></pre>
         </div>
 
         <div class="cd-engage">

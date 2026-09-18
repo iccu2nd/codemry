@@ -2250,16 +2250,15 @@ body:not([data-no-bottom-nav]) .app { padding-bottom: 116px; }
    halaman jadi berat banget pas scroll di HP low-end). Cukup 1 elemen per
    kotak, animasi background-position doang, gak ada layer tambahan. */
 .skeleton {
-  background: linear-gradient(100deg, #e3edf6 30%, #eef4fa 45%, #e3edf6 60%);
-  background-size: 250% 100%;
-  border-radius: 8px;
-  contain: paint;
+  background: linear-gradient(90deg, var(--bg-muted) 0%, var(--border) 50%, var(--bg-muted) 100%);
+  background-size: 200% 100%;
   animation: skeleton-shimmer 1.6s ease-in-out infinite;
+  border-radius: 8px;
 }
 @keyframes skeleton-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -50% 0; } }
-@media (prefers-reduced-motion: reduce) { .skeleton { animation: none; background: #e3edf6; } }
+@media (prefers-reduced-motion: reduce) { .skeleton { animation: none; background: var(--bg-muted); } }
 
-.skel-card { background: var(--bg-card); border: 1.5px solid var(--accent-bg); border-radius: 20px; padding: 18px; margin-bottom: 18px; }
+.skel-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 16px; margin-bottom: 12px; }
 .skel-card.skel-card-plain { border-radius: 28px; padding: 24px; }
 .skel-row { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
 .skel-avatar { flex-shrink: 0; border-radius: 50%; }
@@ -2806,3 +2805,42 @@ html.light .toast {
 .cd-more-danger:hover { background: var(--bg-muted); color: var(--text); }
 
 .cd-engage { margin-top: 4px; }
+
+
+/* Detail page polish */
+#detailInfo { display: flex; flex-direction: column; gap: 0; }
+.cd-toolbar {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  margin: 12px 0 14px;
+  order: 0;
+}
+.cd-toolbar .cd-btn {
+  flex: 1;
+  min-height: 44px;
+  background: var(--bg-muted);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+.cd-toolbar .cd-btn-primary {
+  background: var(--accent) !important;
+  color: var(--on-accent) !important;
+  border-color: var(--accent) !important;
+}
+.cd-toolbar .cd-btn:not(.cd-btn-primary):hover {
+  background: var(--accent-bg-hover);
+  border-color: var(--border-strong);
+}
+#codeWindow {
+  margin: 0 0 14px;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.cd-engage {
+  margin: 0 0 8px;
+}
+/* skeleton never pure white */
+.skeleton, .skel-line, .skel-block, .skel-avatar {
+  background-color: var(--bg-muted) !important;
+}
