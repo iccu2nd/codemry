@@ -189,14 +189,34 @@ async function init() {
       if (!box) return
       const title = (document.querySelector('[name=title]')?.value || saved.title || 'Untitled').trim()
       const lang = document.querySelector('[name=language]')?.value || saved.language || 'text'
+      const filename = (document.querySelector('[name=filename]')?.value || saved.filename || '').trim()
       const content = document.querySelector('[name=content]')?.value || saved.content || ''
-      const lines = content.split('\n').filter(Boolean).slice(0, 6).join('\n')
+      const lines = content.split('\n').filter(Boolean).slice(0, 5).join('\n')
       const desc = (document.querySelector('[name=description]')?.value || saved.description || '').trim()
+      const tagsRaw = (document.querySelector('[name=tags]')?.value || saved.tags || '').trim()
+      const tags = tagsRaw.split(/[\s,]+/).map(t => t.replace(/^#/, '')).filter(Boolean).slice(0, 5)
+      const nick = (me && (me.nickname || me.username)) || 'You'
+      const uname = (me && me.username) || 'you'
+      const av = me ? me.avatar : null
       box.innerHTML = `
         <div class="up-prev-label">Preview</div>
-        <div class="up-prev-title">${escapeHtml(title)}</div>
-        <div class="up-prev-meta">${escapeHtml(lang)}${desc ? ' · ' + escapeHtml(desc.slice(0, 80)) : ''}</div>
-        <pre class="up-prev-code"><code>${escapeHtml(lines || '(empty)')}</code></pre>
+        <div class="up-prev-card">
+          <div class="up-prev-head">
+            ${avatarHtml(av, nick, 'avatar-circle-sm')}
+            <div class="up-prev-names">
+              <div class="up-prev-nick">${escapeHtml(nick)}</div>
+              <div class="up-prev-user">@${escapeHtml(uname)}</div>
+            </div>
+            ${typeof langIconHtml === 'function' ? langIconHtml(lang) : `<span class="sc-lang">${escapeHtml(lang)}</span>`}
+          </div>
+          <div class="up-prev-title">${escapeHtml(title)}</div>
+          ${desc ? `<div class="up-prev-desc">${escapeHtml(desc)}</div>` : ''}
+          ${tags.length ? `<div class="up-prev-tags">${tags.map(t => `<span class="tag-pill">#${escapeHtml(t)}</span>`).join('')}</div>` : ''}
+          <div class="up-prev-code-wrap">
+            <div class="up-prev-file">${escapeHtml(filename || 'file')}</div>
+            <pre class="up-prev-code"><code>${escapeHtml(lines || '// empty')}</code></pre>
+          </div>
+        </div>
       `
     }
     updatePreview()
