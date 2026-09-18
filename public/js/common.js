@@ -449,7 +449,24 @@ function injectStaticMenuLinks(topnav) {
   topnav.insertBefore(panduanLink, authArea)
 }
 
+function injectDarkModeToggle() {
+  const topnav = document.getElementById('topnav')
+  if (!topnav || document.getElementById('darkModeToggle')) return
+  const btn = document.createElement('button')
+  btn.type = 'button'
+  btn.id = 'darkModeToggle'
+  btn.className = 'menu-link menu-btn'
+  btn.textContent = isDarkMode() ? 'Light mode' : 'Dark mode'
+  btn.onclick = () => {
+    toggleDarkMode()
+    btn.textContent = isDarkMode() ? 'Light mode' : 'Dark mode'
+  }
+  topnav.appendChild(btn)
+}
+
 function initHamburger() {
+  injectDarkModeToggle()
+
   const hamburgerBtn = document.getElementById('hamburgerBtn')
   const topnav = document.getElementById('topnav')
   const navBackdrop = document.getElementById('navBackdrop')
@@ -1143,3 +1160,34 @@ function skelGrid(n = 6, ratio = '100%') {
   return Array.from({ length: n }, () =>
     `<div class="skeleton" style="width:100%;padding-top:${ratio};border-radius:14px"></div>`).join('')
 }
+
+
+const RECENT_KEY = 'codery-recent-views'
+function trackRecentView(snippet) {
+  if (!snippet || !snippet.shortId) return
+  try {
+    let list = JSON.parse(localStorage.getItem(RECENT_KEY) || '[]')
+    list = list.filter(x => x.shortId !== snippet.shortId)
+    list.unshift({
+      shortId: snippet.shortId,
+      title: snippet.title || '',
+      language: snippet.language || '',
+      filename: snippet.filename || '',
+      at: Date.now()
+    })
+    localStorage.setItem(RECENT_KEY, JSON.stringify(list.slice(0, 20)))
+  } catch {}
+}
+
+const DARK_KEY = 'codery-dark-mode'
+function isDarkMode() {
+  try { return localStorage.getItem(DARK_KEY) === '1' } catch { return false }
+}
+function applyDarkMode(on) {
+  document.documentElement.classList.toggle('dark', !!on)
+  try { localStorage.setItem(DARK_KEY, on ? '1' : '0') } catch {}
+}
+function toggleDarkMode() {
+  applyDarkMode(!isDarkMode())
+}
+applyDarkMode(isDarkMode())

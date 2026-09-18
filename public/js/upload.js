@@ -1,3 +1,15 @@
+const UPLOAD_DRAFT_KEY = 'codery-upload-draft'
+
+function loadDraft() {
+  try { return JSON.parse(localStorage.getItem(UPLOAD_DRAFT_KEY) || 'null') } catch { return null }
+}
+function saveDraft(data) {
+  try { localStorage.setItem(UPLOAD_DRAFT_KEY, JSON.stringify({ ...data, savedAt: Date.now() })) } catch {}
+}
+function clearDraft() {
+  try { localStorage.removeItem(UPLOAD_DRAFT_KEY) } catch {}
+}
+
 async function init() {
   await refreshAuth()
   if (!me) { window.location.replace('/auth'); return }
@@ -5,6 +17,11 @@ async function init() {
   let step = 1
   const TOTAL = 3
   const saved = {}
+  const draft = loadDraft()
+  if (draft) {
+    Object.assign(saved, draft)
+    if (draft.content) toast('Draft restored')
+  }
 
   const EXT_LANG = {
     js: 'javascript', jsx: 'javascript', ts: 'typescript', tsx: 'typescript',
@@ -39,6 +56,7 @@ async function init() {
     if (pub) saved.isPublic = pub.checked
     if (pin) saved.usePin = pin.checked
     if (pinVal) saved.pin = pinVal.value
+    if (saved.content) saveDraft(saved)
   }
 
   function restore() {
@@ -271,7 +289,7 @@ async function init() {
             pin
           })
         })
-        toast('Uploaded!')
+        clearDraft(); toast('Uploaded!')
         window.location.href = codeUrl(s.shortId)
       } catch (err) {
         toast(err.message)

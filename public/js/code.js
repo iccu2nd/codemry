@@ -72,27 +72,18 @@ function renderUnlockedDetail(app, shortId, s) {
         <div class="cd-actions">
           <button class="cd-btn cd-btn-primary" id="copyBtn" type="button">${copyIconSvg()}<span>Copy</span></button>
           <button class="cd-btn" type="button" onclick="window.open('/raw/${s.shortId}','_blank')">${rawIconSvg()}<span>Raw</span></button>
-          <button class="cd-btn" id="runBtn" type="button">${runIconSvg()}<span>Run</span></button>
-        </div>
-        <div class="run-panel" id="runPanel" style="display:none">
-          <div class="run-panel-head">
-            <span class="run-panel-title">Output</span>
-            <button type="button" class="run-panel-close" id="runCloseBtn">${closeIconSvg()}</button>
-          </div>
-          <pre class="run-output" id="runOutput">Ready.</pre>
-          <div class="run-panel-foot">
-            <button type="button" class="btn btn-primary btn-sm" id="runAgainBtn">Run again</button>
-            <span class="run-hint" id="runHint"></span>
-          </div>
+          <a class="cd-btn" href="${profileUrl(s.ownerUsername)}">${userIconSvg()}<span>Profile</span></a>
         </div>
         <div class="cd-actions-more">
-          <a class="cd-btn-sm" href="${profileUrl(s.ownerUsername)}">${userIconSvg()}<span>Profile</span></a>
           <button class="cd-btn-sm" id="shareBtn" type="button">${shareIconSvg()}<span>Share</span></button>
+          <button class="cd-btn-sm" id="embedBtn" type="button">${embedIconSvg()}<span>Embed</span></button>
           ${!me || me.username !== s.ownerUsername ? `<button class="cd-btn-sm" id="forkBtn" type="button">${forkIconSvg()}<span>Fork</span></button>` : ''}
+          ${me && me.username === s.ownerUsername ? `<button class="cd-btn-sm" id="duplicateBtn" type="button">${copyIconSvg()}<span>Duplicate</span></button>` : ''}
           <button class="cd-btn-sm" id="downloadBtn" type="button">${downloadIconSvg()}<span>Download</span></button>
           <button class="cd-btn-sm" id="qrBtn" type="button">${qrIconSvg()}<span>QR</span></button>
           ${!me || me.username !== s.ownerUsername ? `<button class="cd-btn-sm" id="reportBtn" type="button">${flagIconSvg()}<span>Report</span></button>` : ''}
         </div>
+        <div id="relatedCodes" class="related-codes" style="display:none"></div>
 
         <div class="cd-engage">
           <button type="button" class="like-btn like-btn-detail t-like ${s.likedByMe ? 'liked' : ''}" data-role="like" data-short="${s.shortId}" data-liked="${s.likedByMe ? 'true' : 'false'}">
@@ -176,43 +167,63 @@ function renderUnlockedDetail(app, shortId, s) {
       </div>
     `
     if (window.hljs) hljs.highlightElement(document.getElementById('codeBlock'))
+    try { trackRecentView(s) } catch {}
+    highlightLinesFromHash()
+    wireCodeKeyboard(s)
+    loadRelatedCodes(s)
     wireLikeButtons(app)
     wireBookmarkButtons(app)
     document.getElementById('copyBtn').onclick = () => { navigator.clipboard.writeText(s.content); toast('Copied!') }
 
-    const runBtn = document.getElementById('runBtn')
-    const runPanel = document.getElementById('runPanel')
-    const runOutput = document.getElementById('runOutput')
-    const runHint = document.getElementById('runHint')
-    async function executeCode() {
-      if (!runPanel || !runOutput) return
-      runPanel.style.display = 'block'
-      runOutput.textContent = 'Running…'
-      if (runHint) runHint.textContent = ''
-      const lang = (s.language || '').toLowerCase()
-      const code = s.content || ''
-      try {
-        if (lang === 'python' || lang === 'py') {
-          if (runHint) runHint.textContent = 'Python via Pyodide (browser)'
-          await runPython(code, runOutput)
-        } else if (lang === 'javascript' || lang === 'js' || lang === 'typescript' || lang === 'html') {
-          if (runHint) runHint.textContent = 'JavaScript in sandbox'
-          await runJavaScript(code, runOutput)
-        } else if (lang === 'bash' || lang === 'sh') {
-          runOutput.textContent = 'Bash cannot run in the browser.\nTip: copy the script and run it in your terminal.'
-        } else {
-          // try as JS for scrape-like snippets
-          if (runHint) runHint.textContent = 'Tried as JavaScript'
-          await runJavaScript(code, runOutput)
-        }
-      } catch (err) {
-        runOutput.textContent = String(err && err.message ? err.message : err)
-      }
-    }
-    if (runBtn) runBtn.onclick = executeCode
-    document.getElementById('runAgainBtn')?.addEventListener('click', executeCode)
-    document.getElementById('runCloseBtn')?.addEventListener('click', () => { if (runPanel) runPanel.style.display = 'none' })
     document.getElementById('shareBtn').onclick = () => { navigator.clipboard.writeText(location.href); toast('Link copied!') }
+
+    document.getElementById('embedBtn')?.addEventListener('click', () => {
+      const url = location.origin + '/code?id=' + encodeURIComponent(s.shortId)
+      const embed = `<iframe src="${url}" width="100%" height="400" style="border:1px solid #e5e5e5;border-radius:12px" loading="lazy" title="${escapeHtml(s.title || 'Code')}"></iframe>`
+      openModal(`
+        <div class="modal-head">
+          <div class="modal-head-title">Embed</div>
+          <button class="modal-close-btn" onclick="closeModal()">${closeIconSvg()}</button>
+        </div>
+        <div class="modal-body">
+          <p class="field-hint" style="margin-bottom:10px">Paste this HTML on your site:</p>
+          <textarea id="embedCode" readonly rows="4" style="width:100%;font-family:monospace;font-size:12px">${escapeHtml(embed)}</textarea>
+          <div class="modal-actions" style="margin-top:12px">
+            <button class="btn btn-primary" type="button" id="copyEmbedBtn">Copy embed</button>
+          </div>
+        </div>
+      `)
+      document.getElementById('copyEmbedBtn').onclick = () => {
+        navigator.clipboard.writeText(embed)
+        toast('Embed copied!')
+        closeModal()
+      }
+    })
+
+    document.getElementById('duplicateBtn')?.addEventListener('click', async () => {
+      if (!me) { toast('Login required'); return }
+      const btn = document.getElementById('duplicateBtn')
+      setBtnLoading(btn, true)
+      try {
+        const created = await api('/codes', {
+          method: 'POST',
+          body: JSON.stringify({
+            title: (s.title || 'Untitled') + ' (copy)',
+            filename: s.filename,
+            content: s.content,
+            language: s.language,
+            description: s.description || '',
+            tags: (s.tags || []).join(' '),
+            isPublic: false
+          })
+        })
+        toast('Duplicated')
+        window.location.href = codeUrl(created.shortId)
+      } catch (e) {
+        toast(e.message)
+        setBtnLoading(btn, false)
+      }
+    })
 
     const downloadBtn = document.getElementById('downloadBtn')
     if (downloadBtn) downloadBtn.onclick = () => {
@@ -588,9 +599,6 @@ function commentCardHtml(c, canDelete, isOwner) {
   </div>`
 }
 
-function runIconSvg() {
-  return `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.14v14l11-7-11-7z"/></svg>`
-}
 
 function copyIconSvg() {
   return `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="8.5" y="8.5" width="11.5" height="11.5" rx="2.5"/><path d="M6 15.5H5.2A2.2 2.2 0 0 1 3 13.3V5.2A2.2 2.2 0 0 1 5.2 3h8.1A2.2 2.2 0 0 1 15.5 5.2V6"/></svg>`
@@ -808,79 +816,74 @@ async function setupComments(shortId, ownerUsername) {
 renderCodeDetail(refreshAuth())
 
 
+function embedIconSvg() {
+  return `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 8 5 12l4 4"/><path d="M15 8l4 4-4 4"/><path d="M13 6l-2 12"/></svg>`
+}
 
-async function runJavaScript(code, outEl) {
-  return new Promise((resolve) => {
-    const logs = []
-    const iframe = document.createElement('iframe')
-    iframe.style.display = 'none'
-    iframe.sandbox = 'allow-scripts'
-    document.body.appendChild(iframe)
-    const win = iframe.contentWindow
-    const doc = iframe.contentDocument
-    const timeout = setTimeout(() => {
-      logs.push('[timeout] stopped after 5s')
-      cleanup()
-    }, 5000)
-    function cleanup() {
-      clearTimeout(timeout)
-      try { iframe.remove() } catch {}
-      outEl.textContent = logs.length ? logs.join('\n') : '(no output)'
-      resolve()
+function wireCodeKeyboard(s) {
+  if (window.__coderyKeyWired) return
+  window.__coderyKeyWired = true
+  document.addEventListener('keydown', (e) => {
+    if (e.target && /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return
+    if (e.key === 'c' || e.key === 'C') {
+      if (!s?.content) return
+      navigator.clipboard.writeText(s.content)
+      toast('Copied!')
     }
-    win.console.log = (...a) => logs.push(a.map(x => formatRunVal(x)).join(' '))
-    win.console.error = (...a) => logs.push('[error] ' + a.map(x => formatRunVal(x)).join(' '))
-    win.console.warn = (...a) => logs.push('[warn] ' + a.map(x => formatRunVal(x)).join(' '))
-    try {
-      const result = win.eval(code)
-      if (result !== undefined) logs.push('=> ' + formatRunVal(result))
-    } catch (e) {
-      logs.push('[error] ' + (e && e.message ? e.message : String(e)))
-    }
-    setTimeout(cleanup, 50)
   })
 }
 
-function formatRunVal(v) {
-  try {
-    if (v === undefined) return 'undefined'
-    if (v === null) return 'null'
-    if (typeof v === 'string') return v
-    if (typeof v === 'object') return JSON.stringify(v, null, 2)
-    return String(v)
-  } catch { return String(v) }
-}
-
-let _pyodidePromise = null
-async function loadPyodideOnce() {
-  if (window.loadPyodide) {
-    if (!_pyodidePromise) _pyodidePromise = window.loadPyodide({ indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.26.2/full/' })
-    return _pyodidePromise
-  }
-  await new Promise((resolve, reject) => {
-    const s = document.createElement('script')
-    s.src = 'https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js'
-    s.onload = resolve
-    s.onerror = () => reject(new Error('Failed to load Pyodide'))
-    document.head.appendChild(s)
+function highlightLinesFromHash() {
+  const pre = document.getElementById('codeViewPre')
+  if (!pre) return
+  const m = location.hash.match(/^#L(\d+)(?:-L?(\d+))?$/i)
+  if (!m) return
+  const start = parseInt(m[1], 10)
+  const end = m[2] ? parseInt(m[2], 10) : start
+  const code = pre.querySelector('code')
+  if (!code) return
+  const lines = code.innerHTML.split('\n')
+  const out = lines.map((line, i) => {
+    const n = i + 1
+    if (n >= start && n <= end) return `<span class="line-hl">${line}</span>`
+    return line
   })
-  _pyodidePromise = window.loadPyodide({ indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.26.2/full/' })
-  return _pyodidePromise
+  code.innerHTML = out.join('\n')
+  const hl = pre.querySelector('.line-hl')
+  if (hl) hl.scrollIntoView({ block: 'center', behavior: 'smooth' })
 }
 
-async function runPython(code, outEl) {
-  outEl.textContent = 'Loading Python runtime…'
-  const pyodide = await loadPyodideOnce()
-  pyodide.setStdout({ batched: (t) => { outEl.textContent = (outEl.textContent === 'Loading Python runtime…' ? '' : outEl.textContent + '\n') + t } })
-  pyodide.setStderr({ batched: (t) => { outEl.textContent += '\n[stderr] ' + t } })
+async function loadRelatedCodes(s) {
+  const box = document.getElementById('relatedCodes')
+  if (!box || !s) return
   try {
-    const result = await pyodide.runPythonAsync(code)
-    if (result !== undefined && result !== null) {
-      outEl.textContent = (outEl.textContent && outEl.textContent !== 'Loading Python runtime…' ? outEl.textContent + '\n' : '') + '=> ' + String(result)
-    } else if (!outEl.textContent || outEl.textContent === 'Loading Python runtime…') {
-      outEl.textContent = '(no output)'
-    }
-  } catch (e) {
-    outEl.textContent = '[error] ' + (e && e.message ? e.message : String(e))
-  }
+    const all = await api('/codes')
+    const tags = new Set((s.tags || []).map(t => t.toLowerCase()))
+    const lang = (s.language || '').toLowerCase()
+    const related = all
+      .filter(x => x.shortId !== s.shortId)
+      .map(x => {
+        let score = 0
+        if ((x.language || '').toLowerCase() === lang) score += 2
+        ;(x.tags || []).forEach(t => { if (tags.has(t.toLowerCase())) score += 3 })
+        return { x, score }
+      })
+      .filter(r => r.score > 0)
+      .sort((a, b) => b.score - a.score || b.x.createdAt - a.x.createdAt)
+      .slice(0, 4)
+      .map(r => r.x)
+    if (!related.length) return
+    box.style.display = 'block'
+    box.innerHTML = `
+      <div class="related-title">Related code</div>
+      <div class="related-list">
+        ${related.map(r => `
+          <a class="related-item" href="${codeUrl(r.shortId)}">
+            <div class="related-item-title">${escapeHtml(r.title)}</div>
+            <div class="related-item-meta">${escapeHtml(r.language || '')} · ${escapeHtml(r.ownerNickname || r.ownerUsername || '')}</div>
+          </a>
+        `).join('')}
+      </div>
+    `
+  } catch {}
 }

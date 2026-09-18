@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -14,10 +14,8 @@
 <body>
 
 <header class="topbar">
-  <div class="brand">
-    Codery
-  </div>
-  <button class="hamburger" id="hamburgerBtn" aria-label="Buka menu">
+  <div class="brand">Codery</div>
+  <button class="hamburger" id="hamburgerBtn" aria-label="Open menu">
     <span></span><span></span><span></span>
   </button>
   <nav class="topnav" id="topnav">
@@ -40,6 +38,22 @@
       </div>
     </div>
   </div>
+
+  <div class="card feed-controls">
+    <div class="feed-search-wrap">
+      <span class="feed-search-icon" id="feedSearchIcon"></span>
+      <input type="search" id="feedSearch" class="feed-search-input" placeholder="Search code, tags, users…" autocomplete="off">
+    </div>
+    <div class="feed-sort-tabs" id="feedSortTabs">
+      <button type="button" class="lb-tab-btn active" data-sort="new">New</button>
+      <button type="button" class="lb-tab-btn" data-sort="trending">Trending</button>
+      <button type="button" class="lb-tab-btn" data-sort="following">Following</button>
+    </div>
+    <div class="feed-lang-row" id="feedLangRow"></div>
+    <div class="tag-row" id="feedTagPills"></div>
+  </div>
+
+  <div id="recentSection" class="recent-section" style="display:none"></div>
   <div id="feedList"></div>
   <div id="feedPagination" class="feed-pagination"></div>
 </main>

@@ -1,12 +1,12 @@
-
-// 9 kode/halaman: pas buat card preview yang lumayan "berat" (avatar, tag, cuplikan kode)
-// biar tiap halaman gak kepanjangan scroll-nya tapi tetep berasa isinya banyak.
 const FEED_PAGE_SIZE = 9
+const RECENT_KEY = 'codery-recent-views'
 
 let feedAll = []
 let feedSort = 'new'
 let feedActiveTag = null
+let feedActiveLang = null
 let feedPage = 1
+let followingSet = new Set()
 
 function trendingScore(s) {
   return (s.likes || 0) * 3 + (s.views || 0)
@@ -60,7 +60,7 @@ function renderPagination(totalItems, totalPages) {
   if (totalPages <= 1) { el.innerHTML = ''; return }
 
   const btn = (label, page, { active = false, disabled = false, arrow = false } = {}) =>
-    `<button type="button" class="page-btn ${active ? 'active' : ''} ${arrow ? 'page-btn-arrow' : ''}" ${disabled ? 'disabled' : ''} data-page="${page}" aria-label="Halaman ${page}">${label}</button>`
+    `<button type="button" class="page-btn ${active ? 'active' : ''} ${arrow ? 'page-btn-arrow' : ''}" ${disabled ? 'disabled' : ''} data-page="${page}" aria-label="Page ${page}">${label}</button>`
 
   const middle = paginationPageList(feedPage, totalPages)
     .map(p => p === '...' ? `<span class="page-ellipsis">…</span>` : btn(p, p, { active: p === feedPage }))
@@ -72,34 +72,89 @@ function renderPagination(totalItems, totalPages) {
       ${middle}
       ${btn(chevronRightSvg(), feedPage + 1, { disabled: feedPage === totalPages, arrow: true })}
     </div>
-    <div class="pagination-info">Halaman ${feedPage} dari ${totalPages} · ${totalItems} kode</div>
+    <div class="pagination-info">Page ${feedPage} of ${totalPages} · ${totalItems} codes</div>
   `
 
   el.querySelectorAll('.page-btn[data-page]').forEach(b => {
     b.onclick = () => {
-      const p = parseInt(b.dataset.page, 10)
-      if (!p || p === feedPage || p < 1 || p > totalPages) return
-      goToFeedPage(p)
+      if (b.disabled) return
+      const page = parseInt(b.dataset.page, 10)
+      if (Number.isInteger(page)) goToFeedPage(page)
     }
   })
 }
 
 function buildTagPills() {
-  const pillsEl = document.getElementById('feedTagPills')
-  if (!pillsEl) return
-  const tagSet = new Set()
-  feedAll.forEach(s => (s.tags || []).forEach(t => tagSet.add(t)))
-  const tags = [...tagSet].sort()
-  if (!tags.length) { pillsEl.innerHTML = ''; return }
-  pillsEl.innerHTML = tags.map(t =>
-    `<span class="tag-pill ${feedActiveTag === t ? 'active' : ''}" data-tag="${escapeHtml(t)}">#${escapeHtml(t)}</span>`
+  const el = document.getElementById('feedTagPills')
+  if (!el) return
+  const counts = {}
+  feedAll.forEach(s => (s.tags || []).forEach(t => { counts[t] = (counts[t] || 0) + 1 }))
+  const tags = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 12)
+  if (!tags.length) { el.innerHTML = ''; return }
+  el.innerHTML = tags.map(([t, n]) =>
+    `<button type="button" class="tag-pill ${feedActiveTag === t ? 'active' : ''}" data-tag="${escapeHtml(t)}">#${escapeHtml(t)} <span class="tag-count">${n}</span></button>`
   ).join('')
-  pillsEl.querySelectorAll('.tag-pill').forEach(el => {
-    el.onclick = () => {
-      feedActiveTag = feedActiveTag === el.dataset.tag ? null : el.dataset.tag
+  el.querySelectorAll('.tag-pill').forEach(btn => {
+    btn.onclick = () => {
+      const tag = btn.dataset.tag
+      feedActiveTag = feedActiveTag === tag ? null : tag
+      el.querySelectorAll('.tag-pill').forEach(b => b.classList.toggle('active', b.dataset.tag === feedActiveTag))
       resetFeedPage()
       renderFeed()
     }
+  })
+}
+
+function buildLangPills() {
+  const el = document.getElementById('feedLangRow')
+  if (!el) return
+  const counts = {}
+  feedAll.forEach(s => { const l = (s.language || 'text').toLowerCase(); counts[l] = (counts[l] || 0) + 1 })
+  const langs = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 8)
+  if (!langs.length) { el.innerHTML = ''; return }
+  el.innerHTML = `<button type="button" class="lang-pill ${!feedActiveLang ? 'active' : ''}" data-lang="">All</button>` +
+    langs.map(([l, n]) =>
+      `<button type="button" class="lang-pill ${feedActiveLang === l ? 'active' : ''}" data-lang="${escapeHtml(l)}">${escapeHtml(l)} <span class="tag-count">${n}</span></button>`
+    ).join('')
+  el.querySelectorAll('.lang-pill').forEach(btn => {
+    btn.onclick = () => {
+      feedActiveLang = btn.dataset.lang || null
+      el.querySelectorAll('.lang-pill').forEach(b => b.classList.toggle('active', (b.dataset.lang || null) === feedActiveLang))
+      resetFeedPage()
+      renderFeed()
+    }
+  })
+}
+
+function getRecentViews() {
+  try {
+    return JSON.parse(localStorage.getItem(RECENT_KEY) || '[]')
+  } catch { return [] }
+}
+
+function renderRecentSection() {
+  const el = document.getElementById('recentSection')
+  if (!el) return
+  const recent = getRecentViews().slice(0, 5)
+  if (!recent.length) { el.style.display = 'none'; el.innerHTML = ''; return }
+  el.style.display = 'block'
+  el.innerHTML = `
+    <div class="recent-head">
+      <span class="recent-title">Recently viewed</span>
+      <button type="button" class="recent-clear" id="clearRecentBtn">Clear</button>
+    </div>
+    <div class="recent-list">
+      ${recent.map(r => `
+        <a class="recent-item" href="${codeUrl(r.shortId)}">
+          <span class="recent-item-title">${escapeHtml(r.title || r.shortId)}</span>
+          <span class="recent-item-meta">${escapeHtml(r.language || '')} · ${escapeHtml(r.filename || '')}</span>
+        </a>
+      `).join('')}
+    </div>
+  `
+  document.getElementById('clearRecentBtn')?.addEventListener('click', () => {
+    localStorage.removeItem(RECENT_KEY)
+    renderRecentSection()
   })
 }
 
@@ -109,7 +164,11 @@ function renderFeed(opts = {}) {
   const query = (document.getElementById('feedSearch')?.value || '').trim().toLowerCase()
 
   let items = feedAll.filter(s => {
+    if (feedSort === 'following' && followingSet.size) {
+      if (!followingSet.has((s.ownerUsername || '').toLowerCase())) return false
+    }
     if (feedActiveTag && !(s.tags || []).includes(feedActiveTag)) return false
+    if (feedActiveLang && (s.language || '').toLowerCase() !== feedActiveLang) return false
     if (!query) return true
     const haystack = [
       s.title, s.description, s.language, s.filename,
@@ -123,14 +182,18 @@ function renderFeed(opts = {}) {
   )
 
   if (!items.length) {
-    list.innerHTML = `<div class="empty-state">${feedAll.length ? 'Gak ada yang cocok. Coba kata kunci lain.' : 'Belum ada kode publik. Jadi yang pertama!'}</div>`
+    let msg = 'No public code yet. Be the first!'
+    if (feedAll.length) {
+      if (feedSort === 'following') msg = followingSet.size ? 'No posts from people you follow yet.' : 'Follow someone to see their posts here.'
+      else msg = 'No matches. Try another keyword.'
+    }
+    list.innerHTML = `<div class="empty-state">${msg}</div>`
     if (pagerEl) pagerEl.innerHTML = ''
     return
   }
 
   const totalPages = Math.max(1, Math.ceil(items.length / FEED_PAGE_SIZE))
   feedPage = clampFeedPage(feedPage, totalPages)
-
   const start = (feedPage - 1) * FEED_PAGE_SIZE
   const pageItems = items.slice(start, start + FEED_PAGE_SIZE)
 
@@ -145,14 +208,30 @@ function renderFeed(opts = {}) {
   }
 }
 
+async function loadFollowing() {
+  followingSet = new Set()
+  if (!me) return
+  try {
+    const list = await api(`/users/${encodeURIComponent(me.username)}/following`)
+    ;(list || []).forEach(u => {
+      const name = typeof u === 'string' ? u : (u.username || u)
+      if (name) followingSet.add(String(name).toLowerCase())
+    })
+  } catch { /* ignore */ }
+}
+
 async function loadFeed() {
   const list = document.getElementById('feedList')
   list.innerHTML = skelFeedList(3)
   try {
-    feedAll = await api('/codes')
+    await refreshAuth()
+    const [codes] = await Promise.all([api('/codes'), loadFollowing()])
+    feedAll = codes
     const pageFromUrl = parseInt(qs('page'), 10)
     feedPage = Number.isInteger(pageFromUrl) && pageFromUrl > 0 ? pageFromUrl : 1
     buildTagPills()
+    buildLangPills()
+    renderRecentSection()
     renderFeed()
   } catch (e) {
     list.innerHTML = `<div class="empty-state">${escapeHtml(e.message)}</div>`
@@ -166,13 +245,17 @@ document.getElementById('feedSearch')?.addEventListener('input', () => {
   renderFeed()
 })
 document.getElementById('feedSortTabs')?.querySelectorAll('.lb-tab-btn').forEach(btn => {
-  btn.onclick = () => {
+  btn.onclick = async () => {
     feedSort = btn.dataset.sort
     document.getElementById('feedSortTabs').querySelectorAll('.lb-tab-btn').forEach(b => b.classList.toggle('active', b === btn))
+    if (feedSort === 'following' && !followingSet.size) await loadFollowing()
     resetFeedPage()
     renderFeed()
   }
 })
 
-refreshAuth()
-loadFeed()
+// search icon
+const iconEl = document.getElementById('feedSearchIcon')
+if (iconEl) iconEl.innerHTML = searchIconSvg()
+
+refreshAuth().then(loadFeed)
