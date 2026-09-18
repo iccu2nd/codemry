@@ -49,18 +49,24 @@ function removeUploadingSpinner(btn) {
 // ============================================================
 const ACCENT_THEME_KEY = 'codery-accent-theme'
 const ACCENT_THEMES = {
-  blue:   { label: 'Biru',   accent: '#2f8fd6', accentRgb: '47,143,214',  dark: '#1f6ea8', darkRgb: '31,110,168',  light: '#6ec1ef', bg: '#e2eef8', bg2: '#eef6fc', border: '#d5e6f3', bgHover: '#dcedfa', glow: '#a9d4f0' },
-  purple: { label: 'Ungu',   accent: '#8b5cf6', accentRgb: '139,92,246', dark: '#6d3fd1', darkRgb: '109,63,209', light: '#c4b5fd', bg: '#efe9fe', bg2: '#f5f2fe', border: '#e0d4fb', bgHover: '#e6dcfd', glow: '#c4b5fd' },
-  green:  { label: 'Hijau',  accent: '#22a35a', accentRgb: '34,163,90',  dark: '#17803f', darkRgb: '23,128,63',  light: '#6fd39b', bg: '#e2f5ea', bg2: '#eefaf3', border: '#c9ecd9', bgHover: '#d7f2e2', glow: '#9ee3bd' },
-  rose:   { label: 'Merah Muda', accent: '#ec4899', accentRgb: '236,72,153', dark: '#c22a76', darkRgb: '194,42,118', light: '#f9a8d4', bg: '#fce7f3', bg2: '#fef1f8', border: '#fbcfe8', bgHover: '#fbd7ec', glow: '#f9a8d4' },
-  orange: { label: 'Oranye', accent: '#f97316', accentRgb: '249,115,22', dark: '#c2570a', darkRgb: '194,87,10',  light: '#fdba74', bg: '#feead9', bg2: '#fef3ea', border: '#fcd9b5', bgHover: '#fde0c0', glow: '#fdba74' },
-  slate:  { label: 'Abu Gelap', accent: '#475569', accentRgb: '71,85,105', dark: '#334155', darkRgb: '51,65,85',  light: '#94a3b8', bg: '#e6eaef', bg2: '#f0f2f5', border: '#d3d9e0', bgHover: '#dbe0e6', glow: '#94a3b8' }
+  indigo: { label: 'Indigo', accent: '#4f46e5', accentRgb: '79,70,229',  dark: '#3730a3', darkRgb: '55,48,163',  light: '#818cf8', bg: '#eef2ff', bg2: '#f5f7ff', border: '#c7d2fe', bgHover: '#e0e7ff', glow: '#a5b4fc' },
+  blue:   { label: 'Biru',   accent: '#2563eb', accentRgb: '37,99,235',  dark: '#1d4ed8', darkRgb: '29,78,216',  light: '#60a5fa', bg: '#eff6ff', bg2: '#f5f9ff', border: '#bfdbfe', bgHover: '#dbeafe', glow: '#93c5fd' },
+  teal:   { label: 'Teal',   accent: '#0d9488', accentRgb: '13,148,136', dark: '#0f766e', darkRgb: '15,118,110', light: '#2dd4bf', bg: '#f0fdfa', bg2: '#f5fffd', border: '#99f6e4', bgHover: '#ccfbf1', glow: '#5eead4' },
+  green:  { label: 'Hijau',  accent: '#16a34a', accentRgb: '22,163,74',  dark: '#15803d', darkRgb: '21,128,61',  light: '#4ade80', bg: '#f0fdf4', bg2: '#f5fef8', border: '#bbf7d0', bgHover: '#dcfce7', glow: '#86efac' },
+  violet: { label: 'Ungu',   accent: '#7c3aed', accentRgb: '124,58,237', dark: '#6d28d9', darkRgb: '109,40,217', light: '#a78bfa', bg: '#f5f3ff', bg2: '#faf8ff', border: '#ddd6fe', bgHover: '#ede9fe', glow: '#c4b5fd' },
+  rose:   { label: 'Rose',   accent: '#e11d48', accentRgb: '225,29,72',  dark: '#be123c', darkRgb: '190,18,60',  light: '#fb7185', bg: '#fff1f2', bg2: '#fff7f8', border: '#fecdd3', bgHover: '#ffe4e6', glow: '#fda4af' }
 }
 function getAccentThemeId() {
-  try { return localStorage.getItem(ACCENT_THEME_KEY) || 'blue' } catch { return 'blue' }
+  try {
+    const id = localStorage.getItem(ACCENT_THEME_KEY) || 'indigo'
+    // migrate old keys
+    if (id === 'purple') return 'violet'
+    if (id === 'orange' || id === 'slate') return 'indigo'
+    return ACCENT_THEMES[id] ? id : 'indigo'
+  } catch { return 'indigo' }
 }
 function applyAccentTheme(id) {
-  const t = ACCENT_THEMES[id] || ACCENT_THEMES.blue
+  const t = ACCENT_THEMES[id] || ACCENT_THEMES.indigo
   const root = document.documentElement.style
   root.setProperty('--accent', t.accent)
   root.setProperty('--accent-rgb', t.accentRgb)
@@ -81,7 +87,7 @@ function setAccentTheme(id) {
 applyAccentTheme(getAccentThemeId())
 
 function paletteIconSvg() {
-  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.9 0 1.7-.7 1.7-1.7 0-.4-.2-.8-.4-1.1-.2-.3-.4-.7-.4-1.1 0-.9.7-1.7 1.7-1.7H16c3.3 0 6-2.7 6-6C22 6 17.5 2 12 2z"/></svg>`
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c-4.8 0-8.5 3.5-8.5 8.2 0 4.2 3.2 7.8 7.5 8.1.7 0 1.3-.5 1.3-1.2 0-.3-.1-.6-.3-.9-.2-.3-.3-.6-.3-1 0-.7.6-1.3 1.3-1.3h2.8c2.6 0 4.7-2 4.7-4.6C20.5 6.2 16.8 3 12 3z"/><circle cx="8" cy="9.2" r="1.15" fill="currentColor" stroke="none"/><circle cx="12" cy="7.2" r="1.15" fill="currentColor" stroke="none"/><circle cx="16" cy="9.2" r="1.15" fill="currentColor" stroke="none"/><circle cx="9.5" cy="13.2" r="1.15" fill="currentColor" stroke="none"/></svg>`
 }
 
 function openThemePicker() {
@@ -345,7 +351,7 @@ function injectDevMenuLink() {
 }
 
 function devIconSvg() {
-  return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>`
+  return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M15.5 6.5 21 12l-5.5 5.5"/><path d="M8.5 6.5 3 12l5.5 5.5"/><path d="M13.5 4.5 10.5 19.5"/></svg>`
 }
 
 function closeHamburgerMenu() {
@@ -561,13 +567,13 @@ function langIconHtml(lang) {
   const conf = LANG_ICON[key] || LANG_ICON.text
   return `<span class="lang-icon" title="${escapeHtml(lang || '')}" aria-label="${escapeHtml(lang || '')}">${langBadgeSvg(conf.label, conf.color, conf.text || '#fff')}</span>`
 }
-function houseIconSvg() { return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>` }
-function plusIconSvg() { return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>` }
-function userIconSvg() { return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>` }
-function searchIconSvg() { return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>` }
-function chevronLeftSvg() { return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>` }
-function chevronRightSvg() { return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>` }
-function listCheckSvg() { return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 7 5 9 9 5"/><line x1="12" y1="7" x2="21" y2="7"/><polyline points="3 15 5 17 9 13"/><line x1="12" y1="15" x2="21" y2="15"/></svg>` }
+function houseIconSvg() { return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5 12 3.5l8 7"/><path d="M6.5 9.5V19a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1V9.5"/><path d="M10 20v-5.5a1.5 1.5 0 0 1 1.5-1.5h1A1.5 1.5 0 0 1 14 14.5V20"/><path d="M16 4.5v2.2"/></svg>` }
+function plusIconSvg() { return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><path d="M12 8v8M8 12h8"/></svg>` }
+function userIconSvg() { return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7.5" r="3.8"/><path d="M5 19.5c1.2-3.4 3.8-5 7-5s5.8 1.6 7 5"/><path d="M12 11.2v1.2"/></svg>` }
+function searchIconSvg() { return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M16 16l5 5"/><circle cx="10.5" cy="10.5" r="2.2" opacity=".25" fill="currentColor" stroke="none"/></svg>` }
+function chevronLeftSvg() { return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 5.5 8 12l6.5 6.5"/></svg>` }
+function chevronRightSvg() { return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 5.5 16 12l-6.5 6.5"/></svg>` }
+function listCheckSvg() { return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 7l2 2 4-4"/><path d="M12 7h8.5"/><path d="M3.5 15l2 2 4-4"/><path d="M12 15h8.5"/></svg>` }
 
 function truncateText(s, maxLen) {
   if (!s || s.length <= maxLen) return s
@@ -632,11 +638,11 @@ function snippetCard(s) {
 }
 
 function lockIconSvg() {
-  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10.5" width="16" height="11" rx="3"/><path d="M8 10.5V7.2a4 4 0 0 1 8 0v3.3"/><circle cx="12" cy="15.5" r="1.4" fill="currentColor" stroke="none"/><path d="M12 16.5v1.8"/></svg>`
 }
 
 function heartIconSvg() {
-  return `<svg class="t-like-heart" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M12.001 4.529c2.349-2.532 6.155-2.532 8.504 0 2.35 2.532 2.35 6.638 0 9.17l-8.201 8.3a.42.42 0 0 1-.606 0l-8.201-8.3c-2.35-2.532-2.35-6.638 0-9.17 2.349-2.532 6.155-2.532 8.504 0z"/></svg>`
+  return `<svg class="t-like-heart" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"><path d="M12 5.2c2.1-2.4 5.8-2.6 8.1-.4 2.3 2.2 2.4 5.9.2 8.3L12.6 20.8a.9.9 0 0 1-1.2 0L3.7 13.1c-2.2-2.4-2.1-6.1.2-8.3 2.3-2.2 6-2 8.1.4z"/></svg>`
 }
 
 function likeParticlesHtml() {
@@ -699,11 +705,11 @@ function wireBookmarkButtons(root, opts = {}) {
 }
 
 function bookmarkIconSvg() {
-  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="bookmark-icon"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>`
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="bookmark-icon"><path d="M6.5 3.5h11A1.5 1.5 0 0 1 19 5v15.2l-6.2-4.1a1.4 1.4 0 0 0-1.6 0L5 20.2V5a1.5 1.5 0 0 1 1.5-1.5z"/></svg>`
 }
 
 function bellIconSvg() {
-  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>`
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5a1.2 1.2 0 0 1 1.2 1.2v.4a5.8 5.8 0 0 1 4.8 5.7c0 3.8 1.2 5 1.8 5.5H4.2c.6-.5 1.8-1.7 1.8-5.5a5.8 5.8 0 0 1 4.8-5.7v-.4A1.2 1.2 0 0 1 12 3.5z"/><path d="M9.5 18.8a2.6 2.6 0 0 0 5 0"/><circle cx="12" cy="2.2" r=".8" fill="currentColor" stroke="none"/></svg>`
 }
 
 // Badge notifikasi: nempel di tombol "Notif" pada bottom nav (kayak TikTok),
@@ -761,11 +767,11 @@ function wireLikeButtons(root) {
 }
 
 function expandIconSvg() {
-  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>`
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6"/><path d="M10 20H4v-6"/><path d="M20 4l-7 7"/><path d="M4 20l7-7"/></svg>`
 }
 
 function collapseIconSvg() {
-  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/></svg>`
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14H4v6"/><path d="M14 10h6V4"/><path d="M4 20l7-7"/><path d="M20 4l-7 7"/></svg>`
 }
 
 function ensureModalOverlay() {
@@ -795,27 +801,27 @@ function closeModal() {
 }
 
 function flagIconSvg() {
-  return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="3"/></svg>`
+  return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3.5v17"/><path d="M5 4.5c2 0 3.2-.8 5.2-.8s3.5.8 5.5.8 2.8-.5 4.3-.5v9c-1.5 0-2.5.5-4.3.5s-3.5-.8-5.5-.8-3.2.8-5.2.8z" fill="currentColor" fill-opacity=".15"/></svg>`
 }
 
 function checkIconSvg() {
-  return `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`
+  return `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12.5l5 5 10-11"/></svg>`
 }
 
 function trashIconSvg() {
-  return `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`
+  return `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/><path d="M6.5 7l.8 12.2A1.5 1.5 0 0 0 8.8 20.5h6.4a1.5 1.5 0 0 0 1.5-1.3L17.5 7"/><path d="M10 11v6M14 11v6"/></svg>`
 }
 
 function closeIconSvg() {
-  return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`
+  return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg>`
 }
 
 function downloadIconSvg() {
-  return `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`
+  return `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5v11"/><path d="M7.5 10.5 12 15l4.5-4.5"/><path d="M4.5 18.5h15" stroke-width="2.4"/></svg>`
 }
 
 function stickerIconSvg() {
-  return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3H6a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3h9l6-6V6a3 3 0 0 0-3-3Z"/><path d="M15 3v4a2 2 0 0 0 2 2h4"/></svg>`
+  return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 3.5H6.2A2.7 2.7 0 0 0 3.5 6.2v11.6A2.7 2.7 0 0 0 6.2 20.5h8.3l6-6V6.2a2.7 2.7 0 0 0-2.7-2.7z"/><path d="M14.5 3.5v4.2a1.8 1.8 0 0 0 1.8 1.8h4.2"/><circle cx="9" cy="11" r="1" fill="currentColor" stroke="none"/><circle cx="13.5" cy="11" r="1" fill="currentColor" stroke="none"/><path d="M9.2 14.2c.9 1.1 2.7 1.1 3.6 0"/></svg>`
 }
 
 // Picker stiker/GIF via Tenor -- dipakai di komposer komentar (dan bisa
