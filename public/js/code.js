@@ -68,14 +68,18 @@ function renderUnlockedDetail(app, shortId, s) {
         ${s.tags && s.tags.length ? `<div class="tag-row">${s.tags.map(t => `<span class="tag-pill">#${escapeHtml(t)}</span>`).join('')}</div>` : ''}
         <div class="detail-divider"></div>
         <div class="action-toolbar">
-          <button class="action-item" id="copyBtn">${copyIconSvg()}<span>Copy</span></button>
-          <button class="action-item" onclick="window.open('/raw/${s.shortId}','_blank')">${rawIconSvg()}<span>Raw</span></button>
-          <a class="action-item" href="${profileUrl(s.ownerUsername)}">${userIconSvg()}<span>Profil</span></a>
-          <button class="action-item" id="shareBtn">${shareIconSvg()}<span>Share</span></button>
-          ${!me || me.username !== s.ownerUsername ? `<button class="action-item" id="forkBtn">${forkIconSvg()}<span>Fork</span></button>` : ''}
-          <button class="action-item" id="downloadBtn">${downloadIconSvg()}<span>Download</span></button>
-          <button class="action-item" id="qrBtn">${qrIconSvg()}<span>QR Code</span></button>
-          ${!me || me.username !== s.ownerUsername ? `<button class="action-item" id="reportBtn">${flagIconSvg()}<span>Laporkan</span></button>` : ''}
+          <div class="action-primary">
+            <button class="action-btn action-btn-main" id="copyBtn" type="button">${copyIconSvg()}<span>Copy</span></button>
+            <button class="action-btn action-btn-main" type="button" onclick="window.open('/raw/${s.shortId}','_blank')">${rawIconSvg()}<span>Raw</span></button>
+            <a class="action-btn action-btn-main" href="${profileUrl(s.ownerUsername)}">${userIconSvg()}<span>Profil</span></a>
+          </div>
+          <div class="action-secondary">
+            <button class="action-btn" id="shareBtn" type="button">${shareIconSvg()}<span>Share</span></button>
+            ${!me || me.username !== s.ownerUsername ? `<button class="action-btn" id="forkBtn" type="button">${forkIconSvg()}<span>Fork</span></button>` : ''}
+            <button class="action-btn" id="downloadBtn" type="button">${downloadIconSvg()}<span>Download</span></button>
+            <button class="action-btn" id="qrBtn" type="button">${qrIconSvg()}<span>QR</span></button>
+            ${!me || me.username !== s.ownerUsername ? `<button class="action-btn" id="reportBtn" type="button">${flagIconSvg()}<span>Lapor</span></button>` : ''}
+          </div>
         </div>
         <div class="detail-actions-row">
           <button type="button" class="like-btn like-btn-detail t-like ${s.likedByMe ? 'liked' : ''}" data-role="like" data-short="${s.shortId}" data-liked="${s.likedByMe ? 'true' : 'false'}">

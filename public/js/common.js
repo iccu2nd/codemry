@@ -587,53 +587,58 @@ function snippetCard(s) {
   while (previewStart < rawLines.length && rawLines[previewStart].trim() === '') previewStart++
   const trimmedPreview = rawLines.slice(previewStart).join('\n')
   const previewText = trimmedPreview ? escapeHtml(trimmedPreview) : ''
+  const viewsLabel = formatViews(s.views)
   return `
-  <div class="snippet-card">
-    <div class="snippet-head">
-      <div class="snippet-head-info">
-        <a href="${profileUrl(s.ownerUsername)}" aria-label="Lihat profil @${escapeHtml(s.ownerUsername)}">
-          ${avatarHtml(s.ownerAvatar, s.ownerNickname || s.ownerUsername, 'avatar-circle-sm', 'clickable')}
-        </a>
-        <div>
-          <div class="snippet-uploader">${escapeHtml(s.ownerNickname || s.ownerUsername)}${badgesHtml(s.ownerBadges)}${devBadgeHtml(s.ownerIsDeveloper)}${roleBadgeHtml(s.ownerRole)}</div>
-          <div class="snippet-meta"><a class="user-link" href="${profileUrl(s.ownerUsername)}">@${escapeHtml(s.ownerUsername)}</a> · ${timeAgo(s.createdAt)} · ${formatViews(s.views)}</div>
-        </div>
+  <article class="snippet-card">
+    <header class="sc-head">
+      <a class="sc-avatar" href="${profileUrl(s.ownerUsername)}" aria-label="@${escapeHtml(s.ownerUsername)}">
+        ${avatarHtml(s.ownerAvatar, s.ownerNickname || s.ownerUsername, 'avatar-circle-sm', 'clickable')}
+      </a>
+      <div class="sc-who">
+        <div class="sc-name">${escapeHtml(s.ownerNickname || s.ownerUsername)}${badgesHtml(s.ownerBadges)}${devBadgeHtml(s.ownerIsDeveloper)}${roleBadgeHtml(s.ownerRole)}</div>
+        <div class="sc-meta">@${escapeHtml(s.ownerUsername)} · ${timeAgo(s.createdAt)}</div>
       </div>
-      <div class="snippet-head-right">
+      <div class="sc-badges">
         ${langIconHtml(s.language)}
         ${s.isLocked ? `<span class="lock-badge" title="Dikunci PIN">${lockIconSvg()}</span>` : ''}
       </div>
-    </div>
-    <div class="snippet-title">${escapeHtml(s.title)}</div>
-    ${s.description ? `<div class="snippet-desc">${formatWaText(truncateText(s.description, 150))}</div>` : ''}
-    ${s.tags && s.tags.length ? `<div class="tag-row">${s.tags.map(t => `<span class="tag-pill">#${escapeHtml(t)}</span>`).join('')}</div>` : ''}
+    </header>
+
+    <a class="sc-body" href="${codeUrl(s.shortId)}">
+      <h3 class="sc-title">${escapeHtml(s.title)}</h3>
+      ${s.description ? `<p class="sc-desc">${formatWaText(truncateText(s.description, 120))}</p>` : ''}
+    </a>
+
+    ${s.tags && s.tags.length ? `<div class="sc-tags">${s.tags.map(t => `<span class="tag-pill">#${escapeHtml(t)}</span>`).join('')}</div>` : ''}
+
     ${s.isLocked
-      ? `<a class="code-preview-wrap code-preview-locked" href="${codeUrl(s.shortId)}">
-           <div class="lock-preview-body">${lockIconSvg()} <span>Kode ini dikunci PIN</span></div>
+      ? `<a class="sc-preview sc-preview-locked" href="${codeUrl(s.shortId)}">
+           <span class="sc-lock-msg">${lockIconSvg()} Dikunci PIN</span>
          </a>`
       : previewText ? `
-    <a class="code-preview-wrap" href="${codeUrl(s.shortId)}">
-      <div class="code-window-bar"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span><span class="code-window-filename">${escapeHtml(s.filename || '')}</span></div>
-      <div class="code-preview-body">
-        <pre class="code-preview"><code class="language-${hljsLang(s.language)}">${previewText}</code></pre>
-        <div class="code-preview-fade"></div>
+    <a class="sc-preview" href="${codeUrl(s.shortId)}">
+      <div class="sc-preview-bar">
+        <span class="sc-filename">${escapeHtml(s.filename || 'code')}</span>
+        <span class="sc-preview-hint">Lihat →</span>
       </div>
-      <div class="code-preview-footer">${expandIconSvg()} Lihat kode lengkap</div>
+      <pre class="sc-preview-code"><code class="language-${hljsLang(s.language)}">${previewText}</code></pre>
     </a>` : ''}
-    <div class="snippet-actions">
-      <a class="btn btn-primary btn-sm" href="${codeUrl(s.shortId)}">View</a>
-      <a class="btn btn-white btn-sm" href="/raw/${s.shortId}" target="_blank" rel="noopener">Raw</a>
-      <a class="btn btn-white btn-sm" href="${profileUrl(s.ownerUsername)}">Profil</a>
-      <button type="button" class="like-btn t-like ${s.likedByMe ? 'liked' : ''}" data-role="like" data-short="${s.shortId}" data-liked="${s.likedByMe ? 'true' : 'false'}" title="Suka">
-        <span class="t-like-icon">${heartIconSvg()}</span>
-        <span class="t-like-particles">${likeParticlesHtml()}</span>
-        <span class="like-count">${s.likes || 0}</span>
-      </button>
-      <button type="button" class="bookmark-btn ${s.savedByMe ? 'saved' : ''}" data-role="bookmark" data-short="${s.shortId}" data-saved="${s.savedByMe ? 'true' : 'false'}" title="Simpan">
-        ${bookmarkIconSvg()}
-      </button>
-    </div>
-  </div>`
+
+    <footer class="sc-foot">
+      <div class="sc-stats">
+        <button type="button" class="sc-stat like-btn t-like ${s.likedByMe ? 'liked' : ''}" data-role="like" data-short="${s.shortId}" data-liked="${s.likedByMe ? 'true' : 'false'}" title="Suka">
+          <span class="t-like-icon">${heartIconSvg()}</span>
+          <span class="t-like-particles">${likeParticlesHtml()}</span>
+          <span class="like-count">${s.likes || 0}</span>
+        </button>
+        <button type="button" class="sc-stat bookmark-btn ${s.savedByMe ? 'saved' : ''}" data-role="bookmark" data-short="${s.shortId}" data-saved="${s.savedByMe ? 'true' : 'false'}" title="Simpan">
+          ${bookmarkIconSvg()}
+        </button>
+        <span class="sc-stat sc-views" title="Views">${viewsLabel}</span>
+      </div>
+      <a class="sc-open btn btn-primary btn-sm" href="${codeUrl(s.shortId)}">Buka</a>
+    </footer>
+  </article>`
 }
 
 function lockIconSvg() {
