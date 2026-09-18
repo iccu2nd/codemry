@@ -46,73 +46,76 @@ function renderUnlockedDetail(app, shortId, s) {
     app.innerHTML = `
       <div class="card">
         <div id="detailInfo">
-        <div class="snippet-head">
-          <div class="snippet-head-info">
-            <a href="${profileUrl(s.ownerUsername)}" aria-label="Lihat profil @${escapeHtml(s.ownerUsername)}">
-              ${avatarHtml(s.ownerAvatar, s.ownerNickname || s.ownerUsername, 'avatar-circle-sm', 'clickable')}
-            </a>
-            <div>
-              <div class="snippet-uploader">${escapeHtml(s.ownerNickname || s.ownerUsername)}${badgesHtml(s.ownerBadges)}${devBadgeHtml(s.ownerIsDeveloper)}${roleBadgeHtml(s.ownerRole)}</div>
-              <div class="snippet-meta"><a class="user-link" href="${profileUrl(s.ownerUsername)}">@${escapeHtml(s.ownerUsername)}</a></div>
-            </div>
+        <header class="cd-head">
+          <a class="cd-avatar" href="${profileUrl(s.ownerUsername)}" aria-label="@${escapeHtml(s.ownerUsername)}">
+            ${avatarHtml(s.ownerAvatar, s.ownerNickname || s.ownerUsername, 'avatar-circle-md', 'clickable')}
+          </a>
+          <div class="cd-who">
+            <div class="cd-name">${escapeHtml(s.ownerNickname || s.ownerUsername)}${badgesHtml(s.ownerBadges)}${devBadgeHtml(s.ownerIsDeveloper)}${roleBadgeHtml(s.ownerRole)}</div>
+            <div class="cd-handle">@${escapeHtml(s.ownerUsername)}</div>
           </div>
-          <div class="snippet-head-right">
-            ${langIconHtml(s.language)}
-            ${s.locked ? `<span class="lock-badge" title="Dikunci PIN">${lockIconSvg()}</span>` : ''}
-          </div>
+          <div class="cd-lang">${langIconHtml(s.language)}${s.locked ? `<span class="lock-badge" title="PIN locked">${lockIconSvg()}</span>` : ''}</div>
+        </header>
+
+        <h1 class="cd-title">${escapeHtml(s.title)}</h1>
+        <div class="cd-meta">
+          <span>${escapeHtml(s.filename)}</span>
+          <span class="cd-dot">·</span>
+          <span>${timeAgo(s.createdAt)}</span>
+          <span class="cd-dot">·</span>
+          <span>${formatViews(s.views)}</span>
         </div>
-        <div class="snippet-title">${escapeHtml(s.title)}</div>
-        <div class="snippet-meta snippet-file-meta">${escapeHtml(s.filename)} · ${timeAgo(s.createdAt)} · ${formatViews(s.views)}</div>
-        ${s.forkedFrom ? `<a class="forked-from-badge" href="${codeUrl(s.forkedFrom.shortId)}">${forkIconSvg()} Fork dari kode <b>${escapeHtml(s.forkedFrom.ownerNickname)}</b></a>` : ''}
-        ${s.description ? `<div class="snippet-desc snippet-desc-detail">${formatWaText(s.description)}</div>` : ''}
-        ${s.tags && s.tags.length ? `<div class="tag-row">${s.tags.map(t => `<span class="tag-pill">#${escapeHtml(t)}</span>`).join('')}</div>` : ''}
-        <div class="detail-divider"></div>
-        <div class="action-toolbar">
-          <div class="action-primary">
-            <button class="action-btn action-btn-main" id="copyBtn" type="button">${copyIconSvg()}<span>Copy</span></button>
-            <button class="action-btn action-btn-main" type="button" onclick="window.open('/raw/${s.shortId}','_blank')">${rawIconSvg()}<span>Raw</span></button>
-            <a class="action-btn action-btn-main" href="${profileUrl(s.ownerUsername)}">${userIconSvg()}<span>Profil</span></a>
-          </div>
-          <div class="action-secondary">
-            <button class="action-btn" id="shareBtn" type="button">${shareIconSvg()}<span>Share</span></button>
-            ${!me || me.username !== s.ownerUsername ? `<button class="action-btn" id="forkBtn" type="button">${forkIconSvg()}<span>Fork</span></button>` : ''}
-            <button class="action-btn" id="downloadBtn" type="button">${downloadIconSvg()}<span>Download</span></button>
-            <button class="action-btn" id="qrBtn" type="button">${qrIconSvg()}<span>QR</span></button>
-            ${!me || me.username !== s.ownerUsername ? `<button class="action-btn" id="reportBtn" type="button">${flagIconSvg()}<span>Lapor</span></button>` : ''}
-          </div>
+        ${s.forkedFrom ? `<a class="forked-from-badge" href="${codeUrl(s.forkedFrom.shortId)}">${forkIconSvg()} Forked from <b>${escapeHtml(s.forkedFrom.ownerNickname)}</b></a>` : ''}
+        ${s.description ? `<p class="cd-desc">${formatWaText(s.description)}</p>` : ''}
+        ${s.tags && s.tags.length ? `<div class="cd-tags">${s.tags.map(t => `<span class="tag-pill">#${escapeHtml(t)}</span>`).join('')}</div>` : ''}
+
+        <div class="cd-actions">
+          <button class="cd-btn cd-btn-primary" id="copyBtn" type="button">${copyIconSvg()}<span>Copy</span></button>
+          <button class="cd-btn" type="button" onclick="window.open('/raw/${s.shortId}','_blank')">${rawIconSvg()}<span>Raw</span></button>
+          <a class="cd-btn" href="${profileUrl(s.ownerUsername)}">${userIconSvg()}<span>Profile</span></a>
         </div>
-        <div class="detail-actions-row">
+        <div class="cd-actions-more">
+          <button class="cd-btn-sm" id="shareBtn" type="button">${shareIconSvg()}<span>Share</span></button>
+          ${!me || me.username !== s.ownerUsername ? `<button class="cd-btn-sm" id="forkBtn" type="button">${forkIconSvg()}<span>Fork</span></button>` : ''}
+          <button class="cd-btn-sm" id="downloadBtn" type="button">${downloadIconSvg()}<span>Download</span></button>
+          <button class="cd-btn-sm" id="qrBtn" type="button">${qrIconSvg()}<span>QR</span></button>
+          ${!me || me.username !== s.ownerUsername ? `<button class="cd-btn-sm" id="reportBtn" type="button">${flagIconSvg()}<span>Report</span></button>` : ''}
+        </div>
+
+        <div class="cd-engage">
           <button type="button" class="like-btn like-btn-detail t-like ${s.likedByMe ? 'liked' : ''}" data-role="like" data-short="${s.shortId}" data-liked="${s.likedByMe ? 'true' : 'false'}">
             <span class="t-like-icon">${heartIconSvg()}</span>
             <span class="t-like-particles">${likeParticlesHtml()}</span>
-            <span id="likeLabel">${s.likedByMe ? 'Disuka' : 'Suka'}</span> · <span class="like-count">${s.likes || 0}</span>
+            <span id="likeLabel">${s.likedByMe ? 'Liked' : 'Like'}</span>
+            <span class="like-sep">·</span>
+            <span class="like-count">${s.likes || 0}</span>
           </button>
-          <button type="button" class="bookmark-btn bookmark-btn-detail ${s.savedByMe ? 'saved' : ''}" data-role="bookmark" data-short="${s.shortId}" data-saved="${s.savedByMe ? 'true' : 'false'}" title="Simpan">
+          <button type="button" class="bookmark-btn bookmark-btn-detail ${s.savedByMe ? 'saved' : ''}" data-role="bookmark" data-short="${s.shortId}" data-saved="${s.savedByMe ? 'true' : 'false'}" title="Save">
             ${bookmarkIconSvg()}
           </button>
         </div>
         ${me && me.username === s.ownerUsername ? `
-        <div class="btn-row" id="ownerActionsRow" style="margin-top:10px;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="cd-owner-row" id="ownerActionsRow">
           <button class="btn btn-white" id="editBtn">Edit</button>
-          <button class="btn btn-danger" id="delBtn">Hapus</button>
+          <button class="btn btn-danger" id="delBtn">Delete</button>
         </div>` : ''}
         </div>
         ${me && me.username !== s.ownerUsername ? `
         <div id="reportForm" style="display:none;margin-top:14px">
-          <div class="field"><label>Alasan laporan</label>
+          <div class="field"><label>Report reason</label>
             <select id="reportReason">
-              <option value="vulgar">Konten vulgar/tidak pantas</option>
-              <option value="spam">Spam/promosi</option>
+              <option value="vulgar">Inappropriate content</option>
+              <option value="spam">Spam / promo</option>
               <option value="plagiarism">Plagiat/klaim kode orang lain</option>
               <option value="malware">Malware/kode berbahaya</option>
               <option value="other">Lainnya</option>
             </select>
           </div>
           <div class="field"><label>Detail (opsional)</label><textarea id="reportDetail" class="textarea-autogrow" style="min-height:60px" maxlength="300" placeholder="Jelasin lebih lanjut kalau perlu..."></textarea></div>
-          <div class="snippet-meta" style="margin-bottom:12px">Laporan ini dikirim kepada pengelola Codery untuk ditinjau, bukan kepada pemilik kode.</div>
+          <div class="snippet-meta" style="margin-bottom:12px">This report is sent to Codery moderators for review, not to the code owner.</div>
           <div class="btn-row">
-            <button class="btn btn-white" id="cancelReportBtn">Batal</button>
-            <button class="btn btn-danger" id="sendReportBtn">Kirim Laporan</button>
+            <button class="btn btn-white" id="cancelReportBtn">Cancel</button>
+            <button class="btn btn-danger" id="sendReportBtn">Submit Report</button>
           </div>
         </div>` : ''}
         ${me && me.username === s.ownerUsername ? `
@@ -128,15 +131,15 @@ function renderUnlockedDetail(app, shortId, s) {
             </select>
           </div>
           <div class="field"><label>Kode</label><textarea id="editContent" style="min-height:160px;font-family:'JetBrains Mono',monospace;font-size:13px">${escapeHtml(s.content)}</textarea></div>
-          <div class="checkbox-row"><input type="checkbox" id="editIsPublic" ${s.isPublic ? 'checked' : ''}><label for="editIsPublic">Publik (tampil di feed)</label></div>
-          <div class="checkbox-row"><input type="checkbox" id="editUsePin" ${s.locked ? 'checked' : ''}><label for="editUsePin">Kunci pakai PIN</label></div>
+          <div class="checkbox-row"><input type="checkbox" id="editIsPublic" ${s.isPublic ? 'checked' : ''}><label for="editIsPublic">Public (show on feed)</label></div>
+          <div class="checkbox-row"><input type="checkbox" id="editUsePin" ${s.locked ? 'checked' : ''}><label for="editUsePin">Lock with PIN</label></div>
           <div class="field" id="editPinField" style="display:${s.locked ? 'block' : 'none'}">
             <label>PIN ${s.locked ? 'baru (opsional)' : ''} (4-8 digit angka)</label>
             <input type="tel" inputmode="numeric" pattern="[0-9]*" id="editPinInput" maxlength="8" placeholder="${s.locked ? 'Kosongkan jika tidak ingin mengganti PIN' : 'misal 1234'}">
           </div>
           <div class="btn-row">
-            <button class="btn btn-white" id="cancelEditBtn">Batal</button>
-            <button class="btn btn-primary" id="saveEditBtn">Simpan</button>
+            <button class="btn btn-white" id="cancelEditBtn">Cancel</button>
+            <button class="btn btn-primary" id="saveEditBtn">Save</button>
           </div>
         </div>` : ''}
         <div class="code-window" id="codeWindow">
@@ -144,17 +147,17 @@ function renderUnlockedDetail(app, shortId, s) {
             <span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>
             <span class="code-window-filename">${escapeHtml(s.filename)}</span>
             <div class="zoom-controls" id="zoomControls">
-              <button type="button" class="zoom-btn" id="zoomOutBtn" title="Perkecil">−</button>
+              <button type="button" class="zoom-btn" id="zoomOutBtn" title="Zoom out">−</button>
               <span class="zoom-level" id="zoomLevel">100%</span>
-              <button type="button" class="zoom-btn" id="zoomInBtn" title="Perbesar">+</button>
+              <button type="button" class="zoom-btn" id="zoomInBtn" title="Zoom in">+</button>
             </div>
-            <button type="button" class="code-expand-btn" id="codeFullscreenBtn" title="Perbesar kode">${expandIconSvg()}</button>
+            <button type="button" class="code-expand-btn" id="codeFullscreenBtn" title="Fullscreen">${expandIconSvg()}</button>
           </div>
           <pre class="code-view" id="codeViewPre"><code id="codeBlock" class="language-${hljsLang(s.language)}">${escapeHtml(s.content)}</code></pre>
         </div>
 
         <div class="comments-section" id="commentsSection">
-          <div class="comments-title">Komentar <span id="commentCount"></span></div>
+          <div class="comments-title">Comments <span id="commentCount"></span></div>
           <div id="commentForm"></div>
           <div id="commentList">${skelCommentList(2)}</div>
         </div>
@@ -163,8 +166,8 @@ function renderUnlockedDetail(app, shortId, s) {
     if (window.hljs) hljs.highlightElement(document.getElementById('codeBlock'))
     wireLikeButtons(app)
     wireBookmarkButtons(app)
-    document.getElementById('copyBtn').onclick = () => { navigator.clipboard.writeText(s.content); toast('Kode disalin!') }
-    document.getElementById('shareBtn').onclick = () => { navigator.clipboard.writeText(location.href); toast('Link disalin!') }
+    document.getElementById('copyBtn').onclick = () => { navigator.clipboard.writeText(s.content); toast('Copied!') }
+    document.getElementById('shareBtn').onclick = () => { navigator.clipboard.writeText(location.href); toast('Link copied!') }
 
     const downloadBtn = document.getElementById('downloadBtn')
     if (downloadBtn) downloadBtn.onclick = () => {
@@ -186,7 +189,7 @@ function renderUnlockedDetail(app, shortId, s) {
       const qrImgUrl = `https://api.qrserver.com/v1/create-qr-code/?size=320x320&margin=10&data=${encodeURIComponent(pageUrl)}`
       openModal(`
         <div class="modal-head">
-          <div class="modal-head-title">QR Code Kode Ini</div>
+          <div class="modal-head-title">QR Code</div>
           <button class="modal-close-btn" onclick="closeModal()">${closeIconSvg()}</button>
         </div>
         <div class="modal-body">
@@ -195,7 +198,7 @@ function renderUnlockedDetail(app, shortId, s) {
             <div class="qr-modal-link">${escapeHtml(pageUrl)}</div>
           </div>
           <div class="modal-actions" style="justify-content:center">
-            <a class="btn btn-primary" href="${qrImgUrl}" download="qr-${s.shortId}.png" target="_blank" rel="noopener">${downloadIconSvg()} Unduh</a>
+            <a class="btn btn-primary" href="${qrImgUrl}" download="qr-${s.shortId}.png" target="_blank" rel="noopener">${downloadIconSvg()} Download</a>
           </div>
         </div>
       `)
@@ -251,7 +254,7 @@ function renderUnlockedDetail(app, shortId, s) {
           const reason = document.getElementById('reportReason').value
           const detail = document.getElementById('reportDetail').value.trim()
           await api(`/codes/${shortId}/report`, { method: 'POST', body: JSON.stringify({ reason, detail }) })
-          toast('Laporan terkirim, terima kasih telah membantu menjaga Codery.')
+          toast('Report sent. Thanks for helping keep Codery safe.')
           document.getElementById('reportDetail').value = ''
           exitReportMode()
         } catch (e) { toast(e.message) }
@@ -397,7 +400,7 @@ function renderUnlockedDetail(app, shortId, s) {
 
     const delBtn = document.getElementById('delBtn')
     if (delBtn) delBtn.onclick = async () => {
-      if (!confirm('Hapus kode ini?')) return
+      if (!confirm('Delete this code?')) return
       try { await api(`/codes/${shortId}`, { method: 'DELETE' }); toast('Kode dihapus'); window.location.href = '/' }
       catch (e) { toast(e.message) }
     }
@@ -503,7 +506,7 @@ function replyItemHtml(r, commentId, isOwner, rootUsername) {
       ${commentBodyHtml(r, mentionHtml)}
       ${me ? `<button type="button" class="comment-action-btn reply-toggle-btn" data-id="${commentId}" data-target="${escapeHtml(r.username || '')}" data-target-nick="${escapeHtml(replyNick)}">${replyIconSvg()} Balas</button>` : ''}
     </div>
-    ${canDeleteReply ? `<button class="comment-del" data-role="delete-reply" data-comment-id="${commentId}" data-reply-id="${r.id}" title="Hapus balasan">${trashIconSvg()}</button>` : ''}
+    ${canDeleteReply ? `<button class="comment-del" data-role="delete-reply" data-comment-id="${commentId}" data-reply-id="${r.id}" title="Delete reply">${trashIconSvg()}</button>` : ''}
   </div>`
 }
 
@@ -536,7 +539,7 @@ function commentCardHtml(c, canDelete, isOwner) {
         ${replies.map(r => replyItemHtml(r, c.id, isOwner, c.username)).join('')}
       </div>` : ''}
     </div>
-    ${canDelete ? `<button class="comment-del" data-role="delete-comment" title="Hapus komentar">${trashIconSvg()}</button>` : ''}
+    ${canDelete ? `<button class="comment-del" data-role="delete-comment" title="Delete comment">${trashIconSvg()}</button>` : ''}
   </div>`
 }
 
@@ -671,7 +674,7 @@ async function setupComments(shortId, ownerUsername) {
       listEl.querySelectorAll('[data-role="delete-comment"]').forEach(btn => {
         btn.onclick = async () => {
           const id = btn.closest('.comment-item').dataset.id
-          if (!confirm('Hapus komentar ini?')) return
+          if (!confirm('Delete this comment?')) return
           try { await api(`/codes/${shortId}/comments/${id}`, { method: 'DELETE' }); loadComments() }
           catch (e) { toast(e.message) }
         }
@@ -715,7 +718,7 @@ async function setupComments(shortId, ownerUsername) {
         btn.onclick = async () => {
           const commentId = btn.dataset.commentId
           const replyId = btn.dataset.replyId
-          if (!confirm('Hapus balasan ini?')) return
+          if (!confirm('Delete this reply?')) return
           try { await api(`/codes/${shortId}/comments/${commentId}/reply/${replyId}`, { method: 'DELETE' }); loadComments() }
           catch (e) { toast(e.message) }
         }

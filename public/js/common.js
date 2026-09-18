@@ -613,13 +613,13 @@ function snippetCard(s) {
 
     ${s.isLocked
       ? `<a class="sc-preview sc-preview-locked" href="${codeUrl(s.shortId)}">
-           <span class="sc-lock-msg">${lockIconSvg()} Dikunci PIN</span>
+           <span class="sc-lock-msg">${lockIconSvg()} PIN locked</span>
          </a>`
       : previewText ? `
     <a class="sc-preview" href="${codeUrl(s.shortId)}">
       <div class="sc-preview-bar">
         <span class="sc-filename">${escapeHtml(s.filename || 'code')}</span>
-        <span class="sc-preview-hint">Lihat →</span>
+        <span class="sc-preview-hint">View →</span>
       </div>
       <pre class="sc-preview-code"><code class="language-${hljsLang(s.language)}">${previewText}</code></pre>
     </a>` : ''}
@@ -636,7 +636,7 @@ function snippetCard(s) {
         </button>
         <span class="sc-stat sc-views" title="Views">${viewsLabel}</span>
       </div>
-      <a class="sc-open btn btn-primary btn-sm" href="${codeUrl(s.shortId)}">Buka</a>
+      <a class="sc-open btn btn-primary btn-sm" href="${codeUrl(s.shortId)}">Open</a>
     </footer>
   </article>`
 }
@@ -692,7 +692,7 @@ function wireBookmarkButtons(root, opts = {}) {
         const { saved } = await api(`/codes/${shortId}/bookmark`, { method: 'POST' })
         btn.classList.toggle('saved', saved)
         btn.dataset.saved = saved ? 'true' : 'false'
-        toast(saved ? 'Kode disimpan' : 'Kode dihapus dari simpanan')
+        toast(saved ? 'Saved' : 'Removed from saves')
         if (!saved && opts.removeOnUnsave) {
           const card = btn.closest('.snippet-card')
           if (card) { card.style.transition = 'opacity .2s ease'; card.style.opacity = '0'; setTimeout(() => card.remove(), 200) }
@@ -748,7 +748,7 @@ function wireLikeButtons(root) {
       btn.classList.toggle('liked', nextLiked)
       btn.dataset.liked = nextLiked ? 'true' : 'false'
       countEl.textContent = prevCount + (nextLiked ? 1 : -1)
-      if (labelEl) labelEl.textContent = nextLiked ? 'Disuka' : 'Suka'
+      if (labelEl) labelEl.textContent = nextLiked ? 'Liked' : 'Like'
       if (nextLiked) burstLikeParticles(btn)
 
       try {
@@ -756,7 +756,7 @@ function wireLikeButtons(root) {
         btn.classList.toggle('liked', liked)
         btn.dataset.liked = liked ? 'true' : 'false'
         countEl.textContent = likes
-        if (labelEl) labelEl.textContent = liked ? 'Disuka' : 'Suka'
+        if (labelEl) labelEl.textContent = liked ? 'Liked' : 'Like'
       } catch (err) {
         btn.classList.toggle('liked', wasLiked)
         btn.dataset.liked = wasLiked ? 'true' : 'false'
