@@ -49,8 +49,8 @@ function removeUploadingSpinner(btn) {
 // ============================================================
 const ACCENT_THEME_KEY = 'codery-accent-theme'
 const ACCENT_THEMES = {
-  black: { label: 'Black', accent: '#111111', accentRgb: '17,17,17', dark: '#000000', darkRgb: '0,0,0', light: '#444444', bg: '#f0f0f0', bg2: '#f7f7f7', border: '#d4d4d4', bgHover: '#e8e8e8', glow: '#c0c0c0' },
-  gray:  { label: 'Gray',  accent: '#333333', accentRgb: '51,51,51',  dark: '#111111', darkRgb: '17,17,17', light: '#666666', bg: '#f2f2f2', bg2: '#fafafa', border: '#d8d8d8', bgHover: '#ebebeb', glow: '#c8c8c8' }
+  black: { label: 'Mono', accent: '#e8e8e8', accentRgb: '232,232,232', dark: '#ffffff', darkRgb: '255,255,255', light: '#a0a0a0', bg: '#1f1f1f', bg2: '#181818', border: '#333333', bgHover: '#2a2a2a', glow: '#555555' },
+  gray:  { label: 'Soft', accent: '#c8c8c8', accentRgb: '200,200,200', dark: '#f0f0f0', darkRgb: '240,240,240', light: '#888888', bg: '#1a1a1a', bg2: '#141414', border: '#2e2e2e', bgHover: '#242424', glow: '#4a4a4a' }
 }
 function getAccentThemeId() {
   try {
@@ -77,8 +77,11 @@ function setAccentTheme(id) {
   try { localStorage.setItem(ACCENT_THEME_KEY, id) } catch {}
   applyAccentTheme(id)
 }
-try { localStorage.setItem(ACCENT_THEME_KEY, 'black') } catch {}
-applyAccentTheme('black')
+// Accent swatches optional; base theme vars come from CSS :root / html.light
+try {
+  const saved = localStorage.getItem(ACCENT_THEME_KEY)
+  if (saved && ACCENT_THEMES[saved]) applyAccentTheme(saved)
+} catch {}
 
 function paletteIconSvg() {
   return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c-4.8 0-8.5 3.5-8.5 8.2 0 4.2 3.2 7.8 7.5 8.1.7 0 1.3-.5 1.3-1.2 0-.3-.1-.6-.3-.9-.2-.3-.3-.6-.3-1 0-.7.6-1.3 1.3-1.3h2.8c2.6 0 4.7-2 4.7-4.6C20.5 6.2 16.8 3 12 3z"/><circle cx="8" cy="9.2" r="1.15" fill="currentColor" stroke="none"/><circle cx="12" cy="7.2" r="1.15" fill="currentColor" stroke="none"/><circle cx="16" cy="9.2" r="1.15" fill="currentColor" stroke="none"/><circle cx="9.5" cy="13.2" r="1.15" fill="currentColor" stroke="none"/></svg>`
@@ -1178,15 +1181,25 @@ function trackRecentView(snippet) {
   } catch {}
 }
 
-const DARK_KEY = 'codery-dark-mode'
+const THEME_KEY = 'codery-theme' // 'dark' | 'light' — default dark
 function isDarkMode() {
-  try { return localStorage.getItem(DARK_KEY) === '1' } catch { return false }
+  try {
+    const v = localStorage.getItem(THEME_KEY)
+    if (v === 'light') return false
+    if (v === 'dark') return true
+    // migrate old key
+    const old = localStorage.getItem('codery-dark-mode')
+    if (old === '0') return false
+    return true // default dark
+  } catch { return true }
 }
-function applyDarkMode(on) {
-  document.documentElement.classList.toggle('dark', !!on)
-  try { localStorage.setItem(DARK_KEY, on ? '1' : '0') } catch {}
+function applyTheme(dark) {
+  document.documentElement.classList.toggle('light', !dark)
+  document.documentElement.classList.remove('dark')
+  try { localStorage.setItem(THEME_KEY, dark ? 'dark' : 'light') } catch {}
 }
+function applyDarkMode(on) { applyTheme(!!on) }
 function toggleDarkMode() {
-  applyDarkMode(!isDarkMode())
+  applyTheme(!isDarkMode())
 }
-applyDarkMode(isDarkMode())
+applyTheme(isDarkMode())

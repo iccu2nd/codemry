@@ -83,21 +83,25 @@ function renderUnlockedDetail(app, shortId, s) {
           <pre class="code-view" id="codeViewPre"><code id="codeBlock" class="language-${hljsLang(s.language)}">${escapeHtml(s.content)}</code></pre>
 
 
-        <div class="cd-actions">
+        <div class="cd-toolbar">
           <button class="cd-btn cd-btn-primary" id="copyBtn" type="button">${copyIconSvg()}<span>Copy</span></button>
           <button class="cd-btn" type="button" onclick="window.open('/raw/${s.shortId}','_blank')">${rawIconSvg()}<span>Raw</span></button>
-          <a class="cd-btn" href="${profileUrl(s.ownerUsername)}">${userIconSvg()}<span>Profile</span></a>
+          <button class="cd-btn" id="downloadBtn" type="button">${downloadIconSvg()}<span>Download</span></button>
+          <div class="cd-more-wrap">
+            <button type="button" class="cd-btn cd-more-btn" id="cdMoreBtn" aria-label="More" aria-expanded="false">${moreDotsSvg()}</button>
+            <div class="cd-more-menu" id="cdMoreMenu" hidden>
+              <button type="button" class="cd-more-item" id="shareBtn">${shareIconSvg()}<span>Share link</span></button>
+              <button type="button" class="cd-more-item" id="embedBtn">${embedIconSvg()}<span>Embed</span></button>
+              <button type="button" class="cd-more-item" id="qrBtn">${qrIconSvg()}<span>QR code</span></button>
+              ${!me || me.username !== s.ownerUsername ? `<button type="button" class="cd-more-item" id="forkBtn">${forkIconSvg()}<span>Fork</span></button>` : ''}
+              ${me && me.username === s.ownerUsername ? `<button type="button" class="cd-more-item" id="duplicateBtn">${copyIconSvg()}<span>Duplicate</span></button>` : ''}
+              <a class="cd-more-item" href="${profileUrl(s.ownerUsername)}">${userIconSvg()}<span>Profile</span></a>
+              ${!me || me.username !== s.ownerUsername ? `<button type="button" class="cd-more-item cd-more-danger" id="reportBtn">${flagIconSvg()}<span>Report</span></button>` : ''}
+              ${me && me.username === s.ownerUsername ? `<button type="button" class="cd-more-item" id="editBtn">${editIconSvg()}<span>Edit</span></button>` : ''}
+              ${me && me.username === s.ownerUsername ? `<button type="button" class="cd-more-item cd-more-danger" id="delBtn">${trashIconSvg()}<span>Delete</span></button>` : ''}
+            </div>
+          </div>
         </div>
-        <div class="cd-actions-more">
-          <button class="cd-btn-sm" id="shareBtn" type="button">${shareIconSvg()}<span>Share</span></button>
-          <button class="cd-btn-sm" id="embedBtn" type="button">${embedIconSvg()}<span>Embed</span></button>
-          ${!me || me.username !== s.ownerUsername ? `<button class="cd-btn-sm" id="forkBtn" type="button">${forkIconSvg()}<span>Fork</span></button>` : ''}
-          ${me && me.username === s.ownerUsername ? `<button class="cd-btn-sm" id="duplicateBtn" type="button">${copyIconSvg()}<span>Duplicate</span></button>` : ''}
-          <button class="cd-btn-sm" id="downloadBtn" type="button">${downloadIconSvg()}<span>Download</span></button>
-          <button class="cd-btn-sm" id="qrBtn" type="button">${qrIconSvg()}<span>QR</span></button>
-          ${!me || me.username !== s.ownerUsername ? `<button class="cd-btn-sm" id="reportBtn" type="button">${flagIconSvg()}<span>Report</span></button>` : ''}
-        </div>
-
 
         <div class="cd-engage">
           <button type="button" class="like-btn like-btn-detail t-like ${s.likedByMe ? 'liked' : ''}" data-role="like" data-short="${s.shortId}" data-liked="${s.likedByMe ? 'true' : 'false'}">
@@ -111,11 +115,6 @@ function renderUnlockedDetail(app, shortId, s) {
             ${bookmarkIconSvg()}
           </button>
         </div>
-        ${me && me.username === s.ownerUsername ? `
-        <div class="cd-owner-row" id="ownerActionsRow">
-          <button class="btn btn-white" id="editBtn">Edit</button>
-          <button class="btn btn-danger" id="delBtn">Delete</button>
-        </div>` : ''}
         </div>
         ${me && me.username !== s.ownerUsername ? `
         <div id="reportForm" style="display:none;margin-top:14px">
@@ -178,6 +177,24 @@ function renderUnlockedDetail(app, shortId, s) {
     wireLikeButtons(app)
     wireBookmarkButtons(app)
     document.getElementById('copyBtn').onclick = () => { navigator.clipboard.writeText(s.content); toast('Copied!') }
+
+    const moreBtn = document.getElementById('cdMoreBtn')
+    const moreMenu = document.getElementById('cdMoreMenu')
+    if (moreBtn && moreMenu) {
+      moreBtn.onclick = (e) => {
+        e.stopPropagation()
+        const open = moreMenu.hasAttribute('hidden')
+        if (open) moreMenu.removeAttribute('hidden')
+        else moreMenu.setAttribute('hidden', '')
+        moreBtn.setAttribute('aria-expanded', open ? 'true' : 'false')
+      }
+      document.addEventListener('click', (e) => {
+        if (!moreMenu.hasAttribute('hidden') && !moreMenu.contains(e.target) && e.target !== moreBtn) {
+          moreMenu.setAttribute('hidden', '')
+          moreBtn.setAttribute('aria-expanded', 'false')
+        }
+      })
+    }
 
     document.getElementById('shareBtn').onclick = () => { navigator.clipboard.writeText(location.href); toast('Link copied!') }
 
@@ -891,3 +908,12 @@ async function loadRelatedCodes(s) {
     `
   } catch {}
 }
+
+
+function moreDotsSvg() {
+  return `<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>`
+}
+function editIconSvg() {
+  return `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>`
+}
+
