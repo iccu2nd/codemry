@@ -278,7 +278,7 @@ function badgesHtml(badges) {
   if (!badges || !badges.length) return ''
   return BADGE_CATALOG
     .filter(b => badges.includes(b.id))
-    .map(b => `<span class="verified-icon" title="${b.label}"><svg viewBox="0 0 24 24">${b.icon}</svg></span>`)
+    .map(b => `<span class="verified-icon" title="${b.label}" aria-label="${b.label}"><svg viewBox="0 0 24 24" aria-hidden="true">${b.icon}</svg></span>`)
     .join('')
 }
 

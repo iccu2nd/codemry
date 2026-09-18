@@ -91,13 +91,17 @@ async function init() {
       </div>
       <form id="uploadForm" autocomplete="off">
         <div class="upload-panel" style="display:${step === 1 ? 'block' : 'none'}">
-          <div class="upload-panel-title">Add your code</div>
-          <div class="upload-panel-sub">Upload a file or paste code below</div>
+          <div class="upload-value">
+            <div class="upload-value-title">Share code in under a minute</div>
+            <div class="upload-value-sub">Get a public link, help others, and keep your snippets in one place. Drafts save automatically.</div>
+          </div>
+          <div class="upload-panel-title">Your code</div>
+          <div class="upload-panel-sub">Drop a file or paste — language is detected for you</div>
           <div class="upload-source-row">
             <button type="button" class="btn btn-white btn-block" id="pickFileBtn">${uploadIconSvg()} Choose file</button>
             <input type="file" id="fileInput" style="display:none" accept=".js,.jsx,.ts,.tsx,.py,.html,.htm,.css,.json,.java,.php,.sh,.md,.txt,.c,.cpp,.go,.rb,.rs,.kt,.swift,.xml,.yml,.yaml,.sql,.env">
           </div>
-          <div class="field-hint" style="margin-bottom:14px">Title, filename, and language fill automatically from the file.</div>
+          <div class="field-hint" style="margin-bottom:12px">File name → title, filename, and language auto-fill.</div>
           <div class="field"><label>Language</label>
             <select name="language">
               <option>javascript</option><option>typescript</option><option>python</option><option>html</option>
@@ -106,18 +110,18 @@ async function init() {
             </select>
           </div>
           <div class="field"><label>Code</label>
-            <textarea name="content" placeholder="Paste code here…" required rows="12"></textarea>
+            <textarea name="content" placeholder="Paste your code here…" required rows="12"></textarea>
           </div>
           <div class="upload-nav">
-            <span></span>
-            <button type="button" class="btn btn-primary" id="next1">Next</button>
+            <span class="upload-nav-hint">Step 1 of 3</span>
+            <button type="button" class="btn btn-primary" id="next1">Continue</button>
           </div>
         </div>
         <div class="upload-panel" style="display:${step === 2 ? 'block' : 'none'}">
           <div class="upload-panel-title">Details</div>
-          <div class="upload-panel-sub">Help others find this snippet</div>
+          <div class="upload-panel-sub">A clear title helps people find your code. Description and tags are optional.</div>
           <div class="field"><label>Title</label>
-            <input name="title" placeholder="e.g. Prime number checker" required>
+            <input name="title" placeholder="e.g. Search script for MLBB" required>
           </div>
           <div class="field">
             <label>Description <span class="label-opt">(optional)</span></label>
@@ -138,25 +142,26 @@ async function init() {
           </div>
           <div class="upload-nav">
             <button type="button" class="btn btn-white" id="back2">Back</button>
-            <button type="button" class="btn btn-primary" id="next2">Next</button>
+            <button type="button" class="btn btn-primary" id="next2">Continue</button>
           </div>
         </div>
         <div class="upload-panel" style="display:${step === 3 ? 'block' : 'none'}">
-          <div class="upload-panel-title">Publish</div>
-          <div class="upload-panel-sub">Choose visibility, then share</div>
+          <div class="upload-panel-title">Review & publish</div>
+          <div class="upload-panel-sub">Check the preview, then choose who can see it</div>
+          <div class="upload-preview-box" id="uploadPreviewBox"></div>
           <div class="upload-options">
             <label class="upload-option">
               <input type="checkbox" name="isPublic" id="isPublic" checked>
               <div>
-                <div class="upload-option-title">Public</div>
-                <div class="upload-option-desc">Visible on the feed and searchable</div>
+                <div class="upload-option-title">Public on feed</div>
+                <div class="upload-option-desc">Anyone can find it. Uncheck for link-only access.</div>
               </div>
             </label>
             <label class="upload-option">
               <input type="checkbox" id="usePin">
               <div>
-                <div class="upload-option-title">Lock with PIN</div>
-                <div class="upload-option-desc">Only people with the PIN can view the code</div>
+                <div class="upload-option-title">PIN lock</div>
+                <div class="upload-option-desc">Viewers must enter a 4–8 digit PIN first</div>
               </div>
             </label>
           </div>
@@ -165,14 +170,37 @@ async function init() {
             <input type="tel" inputmode="numeric" pattern="[0-9]*" id="pinInput" maxlength="8" placeholder="e.g. 1234">
           </div>
           <div class="upload-summary" id="uploadSummary"></div>
+          <div class="upload-progress" id="uploadProgress" hidden>
+            <div class="up-prog-track"><div class="up-prog-bar"></div></div>
+            <div class="up-prog-label">Publishing your code…</div>
+          </div>
+          <div class="upload-privacy-note">You can edit or delete anytime. PIN protects the code body; the title stays visible.</div>
           <div class="upload-nav">
             <button type="button" class="btn btn-white" id="back3">Back</button>
-            <button class="btn btn-primary" type="submit" id="submitBtn">Share</button>
+            <button class="btn btn-primary" type="submit" id="submitBtn">Publish code</button>
           </div>
         </div>
       </form>
     </div>`
     restore()
+
+    function updatePreview() {
+      const box = document.getElementById('uploadPreviewBox')
+      if (!box) return
+      const title = (document.querySelector('[name=title]')?.value || saved.title || 'Untitled').trim()
+      const lang = document.querySelector('[name=language]')?.value || saved.language || 'text'
+      const content = document.querySelector('[name=content]')?.value || saved.content || ''
+      const lines = content.split('\n').filter(Boolean).slice(0, 6).join('\n')
+      const desc = (document.querySelector('[name=description]')?.value || saved.description || '').trim()
+      box.innerHTML = `
+        <div class="up-prev-label">Preview</div>
+        <div class="up-prev-title">${escapeHtml(title)}</div>
+        <div class="up-prev-meta">${escapeHtml(lang)}${desc ? ' · ' + escapeHtml(desc.slice(0, 80)) : ''}</div>
+        <pre class="up-prev-code"><code>${escapeHtml(lines || '(empty)')}</code></pre>
+      `
+    }
+    updatePreview()
+
     wire()
     if (step === 3) {
       const sum = document.getElementById('uploadSummary')
@@ -275,7 +303,10 @@ async function init() {
       if (usePinCb?.checked && !/^\d{4,8}$/.test(pin)) { toast('PIN must be 4–8 digits'); return }
       const f = new FormData(form)
       setBtnLoading(submitBtn, true)
+      const progress = document.getElementById('uploadProgress')
+      if (progress) { progress.hidden = false; progress.querySelector('.up-prog-bar').style.width = '35%' }
       try {
+        if (progress) progress.querySelector('.up-prog-bar').style.width = '70%'
         const s = await api('/codes', {
           method: 'POST',
           body: JSON.stringify({
@@ -289,11 +320,13 @@ async function init() {
             pin
           })
         })
-        clearDraft(); toast('Uploaded!')
+        clearDraft()
+        toast('Published! Opening your code…')
         window.location.href = codeUrl(s.shortId)
       } catch (err) {
         toast(err.message)
         setBtnLoading(submitBtn, false)
+        if (progress) progress.hidden = true
       }
     }
   }

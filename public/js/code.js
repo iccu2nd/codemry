@@ -891,7 +891,7 @@ async function loadRelatedCodes(s) {
       })
       .filter(r => r.score > 0)
       .sort((a, b) => b.score - a.score || b.x.createdAt - a.x.createdAt)
-      .slice(0, 8)
+      .slice(0, 4)
       .map(r => r.x)
     if (!related.length) return
     box.style.display = 'block'
@@ -906,6 +906,7 @@ async function loadRelatedCodes(s) {
               ${langIconHtml(r.language)}
             </div>
             <div class="related-card-title">${escapeHtml(r.title)}</div>
+            ${r.description ? `<div class="related-card-desc">${escapeHtml(r.description)}</div>` : ''}
           </a>
         `).join('')}
       </div>

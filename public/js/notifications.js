@@ -15,13 +15,26 @@ function notifTargetUrl(n) {
   return '#'
 }
 
+function notifActionText(n) {
+  const map = {
+    like: 'liked your code',
+    comment: 'commented on your code',
+    reply: 'replied to your comment',
+    follow: 'started following you',
+    fork: 'forked your code',
+    report: 'reported a code',
+    upload: 'uploaded new code'
+  }
+  return map[n.type] || n.text || 'interacted with you'
+}
+
 function notifItemHtml(n) {
   return `
   <a class="notif-item ${n.read ? '' : 'unread'}" href="${notifTargetUrl(n)}" data-id="${n.id}">
     ${avatarHtml(n.fromAvatar, n.fromNickname || n.fromUsername, 'avatar-circle-sm')}
     <span class="notif-icon notif-icon-${n.type}">${notifIconSvg(n.type)}</span>
     <div class="notif-body">
-      <div class="notif-text"><b>${escapeHtml(n.fromNickname || n.fromUsername)}</b> ${escapeHtml(n.text)}${n.snippetTitle ? ` <span class="notif-target">"${escapeHtml(n.snippetTitle)}"</span>` : ''}</div>
+      <div class="notif-text"><b>${escapeHtml(n.fromNickname || n.fromUsername)}</b> ${escapeHtml(notifActionText(n))}${n.snippetTitle ? ` <span class="notif-target">"${escapeHtml(n.snippetTitle)}"</span>` : ''}</div>
       <div class="notif-time">${timeAgo(n.createdAt)}</div>
     </div>
     ${n.read ? '' : '<span class="notif-unread-dot"></span>'}
@@ -37,7 +50,7 @@ async function init() {
     const list = await api('/notifications')
     container.innerHTML = list.length
       ? `<div id="notifList">${list.map(notifItemHtml).join('')}</div>`
-      : `<div class="card"><div class="empty-state">Belum ada notifikasi. Kalau ada yang suka, komentar, balas, follow, atau upload kode baru, bakal muncul di sini.</div></div>`
+      : `<div class="card"><div class="empty-state">No notifications yet.</div></div>`
 
     container.querySelectorAll('.notif-item[data-id]').forEach(el => {
       el.addEventListener('click', () => {

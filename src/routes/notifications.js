@@ -4,18 +4,18 @@ import { Notifications, Users, Snippets, avatarUrl } from '../db.js'
 const router = Router()
 
 function requireAuth(req, res, next) {
-    if (!req.username) return res.status(401).json({ error: 'login dulu' })
+    if (!req.username) return res.status(401).json({ error: 'Please sign in' })
     next()
 }
 
 const TEXT_BY_TYPE = {
-    like: 'menyukai kode kamu',
-    comment: 'mengomentari kode kamu',
-    reply: 'membalas komentar kamu',
-    follow: 'mulai mengikuti kamu',
-    fork: 'nge-fork kode kamu',
-    report: 'melaporkan sebuah kode',
-    upload: 'mengupload kode baru'
+    like: 'liked your code',
+    comment: 'commented on your code',
+    reply: 'replied to your comment',
+    follow: 'started following you',
+    fork: 'forked your code',
+    report: 'reported a code',
+    upload: 'uploaded new code'
 }
 
 router.get('/', requireAuth, async (req, res) => {
@@ -35,7 +35,7 @@ router.get('/', requireAuth, async (req, res) => {
                 type: n.type,
                 read: !!n.read,
                 createdAt: n.createdAt,
-                text: TEXT_BY_TYPE[n.type] || 'berinteraksi dengan kamu',
+                text: TEXT_BY_TYPE[n.type] || 'interacted with you',
                 fromUsername: n.fromUsername,
                 fromNickname: fromUser?.nickname || n.fromUsername,
                 fromAvatar: fromUser ? avatarUrl(fromUser) : null,
