@@ -5,7 +5,7 @@ import { createGist, getGist, editGist, deleteGist, listGists } from '../github.
 import { createRateLimiter } from '../rate-limit.js'
 
 const router = Router()
-const PIN_RE = /^\d{4,8}$/
+const PIN_RE = /^[a-zA-Z0-9]{4,8}$/
 const tooManyAttempts = createRateLimiter(8)
 const tooManyReports = createRateLimiter(5)
 
@@ -106,7 +106,7 @@ export async function createSnippetForUser(username, body) {
     const { title, filename, content, language, isPublic, description, tags, pin } = body
     if (!content || !filename) { const e = new Error('filename & content wajib'); e.status = 400; throw e }
     const trimmedPin = typeof pin === 'string' ? pin.trim() : ''
-    if (trimmedPin && !PIN_RE.test(trimmedPin)) { const e = new Error('Password must be 4-8 digits'); e.status = 400; throw e }
+    if (trimmedPin && !PIN_RE.test(trimmedPin)) { const e = new Error('Password must be 4-8 characters (letters/numbers)'); e.status = 400; throw e }
     const gist = await createGist({ [filename]: { content } }, title || filename, !!isPublic)
     const file = gist.files[filename]
     const snippet = {
@@ -351,7 +351,7 @@ router.patch('/:shortId', requireAuth, async (req, res) => {
     const filenameChanged = newFilename !== snippet.filename
 
     const trimmedPin = typeof pin === 'string' ? pin.trim() : ''
-    if (trimmedPin && !PIN_RE.test(trimmedPin)) return res.status(400).json({ error: 'Password must be 4-8 digits' })
+    if (trimmedPin && !PIN_RE.test(trimmedPin)) return res.status(400).json({ error: 'Password must be 4-8 characters (letters/numbers)' })
 
     try {
         let rawUrl = snippet.rawUrl

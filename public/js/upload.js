@@ -166,8 +166,8 @@ async function init() {
             </label>
           </div>
           <div class="field" id="pinField" style="display:none">
-            <label>Password (4–8 digits)</label>
-            <input type="tel" inputmode="numeric" pattern="[0-9]*" id="pinInput" maxlength="8" placeholder="e.g. 1234">
+            <label>Password (4–8 characters, letters/numbers)</label>
+            <input type="password" id="pinInput" maxlength="8" placeholder="e.g. r4hasia">
           </div>
           <div class="upload-summary" id="uploadSummary"></div>
           <div class="upload-progress" id="uploadProgress" hidden>
@@ -320,7 +320,7 @@ async function init() {
       if (submitBtn?.disabled) return
       applyAutoExtension()
       const pin = usePinCb?.checked ? (pinInput?.value.trim() || '') : ''
-      if (usePinCb?.checked && !/^\d{4,8}$/.test(pin)) { toast('Password must be 4–8 digits'); return }
+      if (usePinCb?.checked && !/^[a-zA-Z0-9]{4,8}$/.test(pin)) { toast('Password must be 4–8 characters (letters/numbers)'); return }
       const f = new FormData(form)
       setBtnLoading(submitBtn, true)
       const progress = document.getElementById('uploadProgress')

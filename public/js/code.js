@@ -22,7 +22,7 @@ function renderLockedCard(app, shortId, s) {
         ${lockIconSvg()}
         <div class="lock-title">This code is locked</div>
         <div class="lock-sub">Uploaded by ${escapeHtml(s.ownerNickname || s.ownerUsername)}. Enter the password to view the code.</div>
-        <div class="field"><input type="password" inputmode="numeric" pattern="[0-9]*" id="unlockPin" maxlength="8" placeholder="Password" autocomplete="off"></div>
+        <div class="field"><input type="password" id="unlockPin" maxlength="8" placeholder="Password" autocomplete="off"></div>
         <button class="btn btn-primary btn-block" id="unlockBtn">Unlock</button>
       </div>
     </div>`
@@ -150,8 +150,8 @@ function renderUnlockedDetail(app, shortId, s) {
           <div class="checkbox-row"><input type="checkbox" id="editIsPublic" ${s.isPublic ? 'checked' : ''}><label for="editIsPublic">Public (show on feed)</label></div>
           <div class="checkbox-row"><input type="checkbox" id="editUsePin" ${s.locked ? 'checked' : ''}><label for="editUsePin">Lock with Password</label></div>
           <div class="field" id="editPinField" style="display:${s.locked ? 'block' : 'none'}">
-            <label>Password ${s.locked ? 'baru (opsional)' : ''} (4-8 digit angka)</label>
-            <input type="tel" inputmode="numeric" pattern="[0-9]*" id="editPinInput" maxlength="8" placeholder="${s.locked ? 'Kosongkan jika tidak ingin mengganti Password' : 'misal 1234'}">
+            <label>Password ${s.locked ? 'baru (opsional)' : ''} (4-8 karakter, huruf/angka)</label>
+            <input type="password" id="editPinInput" maxlength="8" placeholder="${s.locked ? 'Kosongkan jika tidak ingin mengganti Password' : 'misal r4hasia'}">
           </div>
           <div class="btn-row">
             <button class="btn btn-white" id="cancelEditBtn">Cancel</button>
@@ -525,7 +525,7 @@ function renderUnlockedDetail(app, shortId, s) {
 
       const nowWantsPin = editUsePin.checked
       const pinVal = editPinInput.value.trim()
-      if (nowWantsPin && pinVal && !/^\d{4,8}$/.test(pinVal)) { toast('Password harus 4-8 digit angka'); return }
+      if (nowWantsPin && pinVal && !/^[a-zA-Z0-9]{4,8}$/.test(pinVal)) { toast('Password harus 4-8 karakter huruf/angka'); return }
       if (nowWantsPin && !s.locked && !pinVal) { toast('Isi Password terlebih dahulu untuk mengunci kode ini.'); return }
 
       const body = {

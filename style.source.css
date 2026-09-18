@@ -198,18 +198,18 @@ body[data-floating-back] .app { padding-top: calc(74px + env(safe-area-inset-top
   height: 100vh;
   width: min(300px, 84vw);
   background: var(--bg-card);
-  box-shadow: 20px 0 50px rgba(var(--accent-dark-rgb),.18);
+  box-shadow: none;
   padding: 18px 14px;
   display: flex;
   flex-direction: column;
   gap: 4px;
   transform: translateX(-100%);
   pointer-events: none;
-  transition: transform .22s ease;
+  transition: transform .22s ease, box-shadow .22s ease;
   z-index: 30;
   overflow-y: auto;
 }
-.topnav.open { transform: translateX(0); pointer-events: auto; }
+.topnav.open { transform: translateX(0); pointer-events: auto; box-shadow: 20px 0 50px rgba(var(--accent-dark-rgb),.18); }
 
 .nav-header {
   display: flex; align-items: center; justify-content: space-between;
