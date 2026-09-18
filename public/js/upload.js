@@ -214,10 +214,11 @@ async function init() {
           ${tags.length ? `<div class="up-prev-tags">${tags.map(t => `<span class="tag-pill">#${escapeHtml(t)}</span>`).join('')}</div>` : ''}
           <div class="up-prev-code-wrap">
             <div class="up-prev-file">${escapeHtml(filename || 'file')}</div>
-            <pre class="up-prev-code"><code>${escapeHtml(lines || '// empty')}</code></pre>
+            <pre class="up-prev-code"><code class="language-${hljsLang(lang)}">${escapeHtml(lines || '// empty')}</code></pre>
           </div>
         </div>
       `
+      if (window.hljs) hljs.highlightElement(box.querySelector('.up-prev-code code'))
     }
     updatePreview()
 
