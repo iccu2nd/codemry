@@ -238,9 +238,9 @@ function followUrl(username, type) { return `/follow?u=${encodeURIComponent(user
 
 function formatViews(n) {
   n = n || 0
-  if (n < 1000) return `${n} views`
-  if (n < 1000000) return `${(n / 1000).toFixed(n % 1000 >= 100 ? 1 : 0)}K views`
-  return `${(n / 1000000).toFixed(1)}M views`
+  if (n < 1000) return String(n)
+  if (n < 1000000) return `${(n / 1000).toFixed(n % 1000 >= 100 ? 1 : 0)}rb`
+  return `${(n / 1000000).toFixed(1)}jt`
 }
 
 async function refreshAuth() {
@@ -327,12 +327,22 @@ function levelFromXp(xp) {
 }
 
 function levelTitle(level) {
-  if (level >= 30) return 'Legend'
+  if (level >= 30) return 'Legenda'
   if (level >= 20) return 'Master'
   if (level >= 12) return 'Pro'
-  if (level >= 7) return 'Contributor'
-  if (level >= 3) return 'Coder'
-  return 'Newbie'
+  if (level >= 7) return 'Kontributor'
+  if (level >= 3) return 'Koder'
+  return 'Pemula'
+}
+
+/** Tier visual: semakin tinggi level, semakin "kasta" beda. */
+function levelTier(level) {
+  if (level >= 30) return 'legend'
+  if (level >= 20) return 'master'
+  if (level >= 12) return 'pro'
+  if (level >= 7) return 'contrib'
+  if (level >= 3) return 'coder'
+  return 'newbie'
 }
 
 function levelInfo(stats) {
@@ -347,6 +357,7 @@ function levelInfo(stats) {
     xp,
     level,
     title: levelTitle(level),
+    tier: levelTier(level),
     nextXp: nextFloor,
     need: Math.max(0, nextFloor - xp),
     pct,
@@ -358,34 +369,44 @@ function levelInfo(stats) {
 function levelBadgeHtml(level, { compact = false } = {}) {
   if (!level || level < 1) return ''
   const title = levelTitle(level)
-  if (compact) {
-    return `<span class="lvl-badge lvl-badge-sm" title="Level ${level} · ${title}">Lv.${level}</span>`
-  }
-  return `<span class="lvl-badge" title="${title}">Lv.${level}</span>`
+  const tier = levelTier(level)
+  const cls = `lvl-badge lvl-tier-${tier}${compact ? ' lvl-badge-sm' : ''}`
+  return `<span class="${cls}" title="Level ${level} · ${title}">Lv.${level}</span>`
 }
 
 function levelProgressHtml(info) {
   if (!info) return ''
+  const tier = info.tier || levelTier(info.level)
   return `
-  <div class="lvl-card">
-    <div class="lvl-card-top">
-      <div class="lvl-card-left">
-        <span class="lvl-badge lvl-badge-lg">Lv.${info.level}</span>
+  <div class="lvl-card lvl-tier-${tier}">
+    <div class="lvl-card-row">
+      <div class="lvl-card-identity">
+        <span class="lvl-badge lvl-badge-lg lvl-tier-${tier}">Lv.${info.level}</span>
         <div class="lvl-card-meta">
           <div class="lvl-card-title">${escapeHtml(info.title)}</div>
           <div class="lvl-card-xp">${info.xp.toLocaleString('id')} XP</div>
         </div>
       </div>
-      <div class="lvl-card-next">
-        <span class="lvl-card-next-label">Next</span>
-        <span class="lvl-card-next-val">Lv.${info.level + 1}</span>
+      <div class="lvl-card-goal" title="Level berikutnya">
+        <span class="lvl-card-goal-lbl">Menuju</span>
+        <span class="lvl-card-goal-val">Lv.${info.level + 1}</span>
       </div>
     </div>
-    <div class="lvl-bar" role="progressbar" aria-valuenow="${info.pct}" aria-valuemin="0" aria-valuemax="100">
+    <div class="lvl-bar" role="progressbar" aria-valuenow="${info.pct}" aria-valuemin="0" aria-valuemax="100" aria-label="Progres level">
       <div class="lvl-bar-fill" style="width:${info.pct}%"></div>
     </div>
-    <div class="lvl-card-hint">${info.need.toLocaleString('id')} XP lagi · upload +${XP_PER_CODE} XP · like +${XP_PER_LIKE} XP</div>
+    <div class="lvl-card-hint">
+      <span class="lvl-card-hint-need">${info.need.toLocaleString('id')} XP lagi</span>
+      <span class="lvl-card-hint-sep">·</span>
+      <span>Upload <b>+${XP_PER_CODE}</b></span>
+      <span class="lvl-card-hint-sep">·</span>
+      <span>Suka <b>+${XP_PER_LIKE}</b></span>
+    </div>
   </div>`
+}
+
+function eyeIconSvg() {
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>`
 }
 
 function renderAuthArea() {
@@ -737,10 +758,16 @@ function snippetCard(s) {
       </a>
       <div class="sc-who">
         <div class="sc-name">${escapeHtml(s.ownerNickname || s.ownerUsername)}${badgesHtml(s.ownerBadges)}${devBadgeHtml(s.ownerIsDeveloper)}${roleBadgeHtml(s.ownerRole)}</div>
-        <div class="sc-meta">@${escapeHtml(s.ownerUsername)} · ${timeAgo(s.createdAt)}</div>
+        <div class="sc-meta">
+          <span>@${escapeHtml(s.ownerUsername)}</span>
+          <span class="sc-meta-dot">·</span>
+          <span>${timeAgo(s.createdAt)}</span>
+          <span class="sc-meta-dot">·</span>
+          <span class="sc-views-inline" title="${s.views || 0} dilihat">${eyeIconSvg()} ${viewsLabel}</span>
+        </div>
       </div>
       <div class="sc-badges">
-        ${s.isLocked ? `<span class="lock-badge" title="Password locked">${lockIconSvg()}</span>` : ''}
+        ${s.isLocked ? `<span class="lock-badge" title="Terkunci password">${lockIconSvg()}</span>` : ''}
       </div>
     </header>
 
@@ -753,13 +780,13 @@ function snippetCard(s) {
 
     ${s.isLocked
       ? `<a class="sc-preview sc-preview-locked" href="${codeUrl(s.shortId)}">
-           <span class="sc-lock-msg">${lockIconSvg()} Password locked</span>
+           <span class="sc-lock-msg">${lockIconSvg()} Terkunci password</span>
          </a>`
       : previewText ? `
     <a class="sc-preview" href="${codeUrl(s.shortId)}">
       <div class="sc-preview-bar">
         <span class="sc-filename">${escapeHtml(s.filename || 'code')}</span>
-        <span class="sc-preview-hint">View →</span>
+        <span class="sc-preview-hint">Lihat →</span>
       </div>
       <pre class="sc-preview-code"><code class="language-${hljsLang(s.language)}">${previewText}</code></pre>
     </a>` : ''}
@@ -774,9 +801,8 @@ function snippetCard(s) {
         <button type="button" class="sc-stat bookmark-btn ${s.savedByMe ? 'saved' : ''}" data-role="bookmark" data-short="${s.shortId}" data-saved="${s.savedByMe ? 'true' : 'false'}" title="Simpan">
           ${bookmarkIconSvg()}
         </button>
-        <span class="sc-stat sc-views" title="Views">${viewsLabel}</span>
       </div>
-      <a class="sc-open btn btn-primary btn-sm" href="${codeUrl(s.shortId)}">Open</a>
+      <a class="sc-open btn btn-primary btn-sm" href="${codeUrl(s.shortId)}">Buka</a>
     </footer>
   </article>`
 }

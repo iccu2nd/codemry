@@ -92,13 +92,13 @@ async function init() {
       <form id="uploadForm" autocomplete="off">
         <div class="upload-panel" style="display:${step === 1 ? 'block' : 'none'}">
           <div class="upload-value">
-            <div class="upload-value-title">Share code · naik level</div>
-            <div class="upload-value-sub">Tiap upload publik = <b>+${XP_PER_CODE} XP</b>. Like & view ikut nambah XP. Draft otomatis tersimpan.</div>
+            <div class="upload-value-title">Bagikan kode · naik level</div>
+            <div class="upload-value-sub">Tiap upload publik = <b>+${XP_PER_CODE} XP</b>. Suka & dilihat ikut menambah XP. Draf tersimpan otomatis.</div>
           </div>
-          <div class="upload-panel-title">Your code</div>
-          <div class="upload-panel-sub">Drop a file or paste — language is detected for you</div>
+          <div class="upload-panel-title">Kode kamu</div>
+          <div class="upload-panel-sub">Pilih file atau tempel — bahasa terdeteksi otomatis</div>
           <div class="upload-source-row">
-            <button type="button" class="btn btn-white btn-block" id="pickFileBtn">${uploadIconSvg()} Choose file</button>
+            <button type="button" class="btn btn-white btn-block" id="pickFileBtn">${uploadIconSvg()} Pilih file</button>
             <input type="file" id="fileInput" style="display:none" accept=".js,.jsx,.ts,.tsx,.py,.html,.htm,.css,.json,.java,.php,.sh,.md,.txt,.c,.cpp,.go,.rb,.rs,.kt,.swift,.xml,.yml,.yaml,.sql,.env">
           </div>
           <div class="field-hint" style="margin-bottom:12px">File name → title, filename, and language auto-fill.</div>
@@ -342,7 +342,7 @@ async function init() {
           })
         })
         clearDraft()
-        toast(`Published! +${XP_PER_CODE} XP · membuka kode…`)
+        toast(`Berhasil dipublikasikan! +${XP_PER_CODE} XP`)
         window.location.href = codeUrl(s.shortId)
       } catch (err) {
         toast(err.message)

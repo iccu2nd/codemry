@@ -6,7 +6,13 @@ async function renderProfile() {
   app.innerHTML = skelProfileHeader()
   try {
     const p = await api(`/users/${username}`)
-    const totalViews = p.snippets.reduce((sum, s) => sum + (s.views || 0), 0)
+    const totalViews = p.totalViews ?? p.snippets.reduce((sum, s) => sum + (s.views || 0), 0)
+    const lvl = levelInfo({
+      codes: p.snippets.length,
+      likes: p.totalLikes ?? 0,
+      views: totalViews,
+      followers: p.followersCount || 0
+    })
     app.innerHTML = `
       <div class="card profile-card">
         <div class="profile-banner-wrap${p.banner ? '' : ' no-banner'}">
@@ -22,25 +28,24 @@ async function renderProfile() {
             <input type="file" id="avatarInput" accept="image/*" style="display:none">
           </div>
           <div class="profile-names">
-            <div class="profile-nickname">${escapeHtml(p.nickname || p.username)}${badgesHtml(p.badges)}${devBadgeHtml(p.isDeveloper)}${roleBadgeHtml(p.role)}${levelBadgeHtml(levelInfo({ codes: p.snippets.length, likes: p.totalLikes ?? 0, views: p.totalViews ?? totalViews, followers: p.followersCount || 0 }).level)}</div>
-            <div class="profile-username">@${escapeHtml(p.username)}</div>
+            <div class="profile-nickname">${escapeHtml(p.nickname || p.username)}${badgesHtml(p.badges)}${devBadgeHtml(p.isDeveloper)}${roleBadgeHtml(p.role)}</div>
+            <div class="profile-username-row">
+              <span class="profile-username">@${escapeHtml(p.username)}</span>
+              ${levelBadgeHtml(lvl.level)}
+              <span class="profile-rank-label lvl-tier-${lvl.tier}">${escapeHtml(lvl.title)}</span>
+            </div>
           </div>
         </div>
+        ${levelProgressHtml(lvl)}
         <div class="stat-row">
-          <div class="stat"><b>${p.snippets.length}</b><span>Codes</span></div>
-          <div class="stat"><b>${p.totalViews ?? totalViews}</b><span>Views</span></div>
-          <div class="stat"><b>${p.totalLikes ?? 0}</b><span>Likes</span></div>
-          <a class="stat" href="${followUrl(p.username, 'followers')}"><b>${p.followersCount}</b><span>Followers</span></a>
-          <a class="stat" href="${followUrl(p.username, 'following')}"><b>${p.followingCount}</b><span>Following</span></a>
+          <div class="stat"><b>${p.snippets.length}</b><span>Kode</span></div>
+          <div class="stat"><b>${formatViews(totalViews)}</b><span>Dilihat</span></div>
+          <div class="stat"><b>${p.totalLikes ?? 0}</b><span>Suka</span></div>
+          <a class="stat" href="${followUrl(p.username, 'followers')}"><b>${p.followersCount}</b><span>Pengikut</span></a>
+          <a class="stat" href="${followUrl(p.username, 'following')}"><b>${p.followingCount}</b><span>Mengikuti</span></a>
         </div>
-        ${levelProgressHtml(levelInfo({
-          codes: p.snippets.length,
-          likes: p.totalLikes ?? 0,
-          views: p.totalViews ?? totalViews,
-          followers: p.followersCount || 0
-        }))}
         <div class="profile-below-stats">
-          <div class="profile-bio" id="bioText">${p.bio ? formatWaText(p.bio) : 'No bio yet'}</div>
+          <div class="profile-bio" id="bioText">${p.bio ? formatWaText(p.bio) : 'Belum ada bio'}</div>
           ${p.profileMusic ? `
           <div class="profile-music" id="profileMusicBar">
             <div class="pm-circle-wrap">
@@ -49,10 +54,10 @@ async function renderProfile() {
                 <circle class="pm-ring-fg" id="pmRingFg" cx="18" cy="18" r="15.5" fill="none"
                   stroke-dasharray="97.4" stroke-dashoffset="97.4"/>
               </svg>
-              <button type="button" class="pm-btn" id="pmToggle" aria-label="Play or pause music">${playIconMini()}</button>
+              <button type="button" class="pm-btn" id="pmToggle" aria-label="Putar atau jeda musik">${playIconMini()}</button>
             </div>
             <div class="pm-meta">
-              <span class="pm-label">${escapeHtml(p.nickname || p.username)} · Music</span>
+              <span class="pm-label">${escapeHtml(p.nickname || p.username)} · Musik</span>
               <span class="pm-hint" id="pmTrackName">${escapeHtml(musicTitleFromUrl(p.profileMusic))}</span>
             </div>
             <span class="pm-time" id="pmTime">0:00</span>
@@ -60,12 +65,12 @@ async function renderProfile() {
           </div>` : ''}
         </div>
         ${p.isMe
-          ? `<div class="btn-row" style="margin-top:14px">
-               <button class="btn btn-white" id="editProfileBtn">Edit profile</button>
-               <button class="btn btn-white" id="signOutBtn">Sign out</button>
+          ? `<div class="btn-row profile-actions">
+               <button class="btn btn-white" id="editProfileBtn">Edit profil</button>
+               <button class="btn btn-white" id="signOutBtn">Keluar</button>
              </div>
              <div id="editProfileForm" style="display:none;margin-top:14px">
-               <div class="field"><label>Nickname</label><input id="nicknameInput" value="${escapeHtml(p.nickname || '')}" maxlength="32"></div>
+               <div class="field"><label>Nama panggilan</label><input id="nicknameInput" value="${escapeHtml(p.nickname || '')}" maxlength="32"></div>
                <div class="field">
                  <label>Username</label>
                  <input id="usernameInput" value="${escapeHtml(p.username)}" maxlength="20">
@@ -73,19 +78,19 @@ async function renderProfile() {
                </div>
                <div class="field"><label>Bio</label><textarea id="bioInput" style="min-height:80px">${escapeHtml(p.bio || '')}</textarea></div>
                <div class="field">
-                 <label>Profile music URL <span class="label-opt">(optional)</span></label>
+                 <label>URL musik profil <span class="label-opt">(opsional)</span></label>
                  <input id="musicInput" type="url" placeholder="https://…/audio.mp3" value="${escapeHtml(p.profileMusic || '')}">
-                 <div class="field-hint">Direct link to an audio file (mp3, ogg, wav). Plays softly when someone opens your profile.</div>
+                 <div class="field-hint">Link langsung ke file audio (mp3, ogg, wav). Diputar pelan saat orang membuka profilmu.</div>
                </div>
                <label class="checkbox-row">
                  <input type="checkbox" id="hideBadgesInput" ${p.hideBadges ? 'checked' : ''}>
-                 Hide badges (including Developer tag)
+                 Sembunyikan lencana (termasuk tag Developer)
                </label>
-               <button class="btn btn-primary btn-block" id="saveBioBtn">Save</button>
+               <button class="btn btn-primary btn-block" id="saveBioBtn">Simpan</button>
              </div>`
-          : `<button class="btn ${p.isFollowing ? 'btn-white' : 'btn-primary'} btn-block" id="followBtn" style="margin-top:14px">${p.isFollowing ? 'Following' : 'Follow'}</button>`}
+          : `<button class="btn ${p.isFollowing ? 'btn-white' : 'btn-primary'} btn-block profile-actions" id="followBtn">${p.isFollowing ? 'Mengikuti' : 'Ikuti'}</button>`}
       </div>
-      <div class="section-label">Shared Code</div>
+      <div class="section-label">Kode dibagikan</div>
       <div id="profileSnippets"></div>
     `
 
@@ -94,11 +99,11 @@ async function renderProfile() {
       ? p.snippets.map(snippetCard).join('')
       : (p.isMe
           ? `<div class="empty-state empty-cta">
-               <div class="empty-cta-title">No code yet</div>
-               <div class="empty-cta-sub">Upload kode pertama kamu dan dapatkan +${XP_PER_CODE} XP untuk naik level.</div>
-               <a class="btn btn-primary" href="/upload">Upload code · +${XP_PER_CODE} XP</a>
+               <div class="empty-cta-title">Belum ada kode</div>
+               <div class="empty-cta-sub">Upload kode pertamamu dan dapatkan +${XP_PER_CODE} XP untuk naik level.</div>
+               <a class="btn btn-primary" href="/upload">Upload kode · +${XP_PER_CODE} XP</a>
              </div>`
-          : `<div class="empty-state">No code shared yet.</div>`)
+          : `<div class="empty-state">Belum ada kode yang dibagikan.</div>`)
     highlightAllIn('#profileSnippets pre code')
     wireLikeButtons(list)
     wireBookmarkButtons(list)
