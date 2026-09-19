@@ -69,7 +69,13 @@ html.light {
   -webkit-tap-highlight-color: transparent;
 }
 
-html { scroll-behavior: smooth; }
+html {
+  scroll-behavior: smooth;
+  /* Cegah double-tap / pinch zoom halaman. Zoom teks kode hanya di
+     mode fullscreen lewat handler di code.js (bukan page zoom). */
+  touch-action: manipulation;
+  -ms-touch-action: manipulation;
+}
 
 /* Entrance animation dipakai di card/snippet-card/topbar biar halaman kerasa
    hidup pas dimuat / pas konten baru masuk (feed di-render ulang lewat
@@ -95,6 +101,8 @@ body {
   line-height: 1.55;
   letter-spacing: -0.01em;
   font-size: 16px;
+  touch-action: manipulation;
+  -ms-touch-action: manipulation;
 }
 h1, h2, h3, .hero-title, .snippet-title, .brand, .modal-head-title {
   letter-spacing: -0.02em;

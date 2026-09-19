@@ -367,21 +367,23 @@ function renderUnlockedDetail(app, shortId, s) {
       const [a, b] = touches
       return Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY)
     }
-    // Pinch-to-zoom: bekerja di mode fullscreen (dan tetap aman di mode biasa).
-    // Listener dipasang di codeWindow + codeViewPre supaya gesture tidak
-    // "hilang" kalau jari agak keluar dari <pre>.
+    // Pinch-to-zoom HANYA di mode fullscreen: ubah ukuran font kode,
+    // BUKAN zoom halaman web. Di luar fullscreen gesture diabaikan
+    // (viewport sudah user-scalable=no).
+    function isCodeFullscreen() {
+      return codeWindow.classList.contains('fullscreen')
+    }
     function onPinchStart(e) {
-      if (e.touches.length === 2) {
+      if (e.touches.length === 2 && isCodeFullscreen()) {
         pinchStartDist = touchDist(e.touches)
         pinchStartZoom = zoom
       }
     }
     function onPinchMove(e) {
+      if (!isCodeFullscreen()) return
       // pinchStartDist > 5: hindari pembagian dengan angka mendekati nol
-      // (dua jari nempel pas mulai pinch) yang bisa bikin scale melonjak.
       if (e.touches.length === 2 && pinchStartDist > 5) {
-        // Hanya cegah native page-zoom saat kita benar-benar handle pinch
-        if (codeWindow.classList.contains('fullscreen')) e.preventDefault()
+        e.preventDefault() // cegah page-zoom native
         const scale = touchDist(e.touches) / pinchStartDist
         zoom = pinchStartZoom * scale
         applyZoom()
@@ -397,15 +399,16 @@ function renderUnlockedDetail(app, shortId, s) {
       el.addEventListener('touchcancel', onPinchEnd, { passive: true })
     })
 
-    // Kalau browser sempat men-zoom halaman (misalnya dari gesture pinch
-    // yang lolos sebelum touch-action diterapkan), ini memaksa browser
-    // reset zoom halaman ke 1x dengan cara "menggoyang" meta viewport.
+    // Viewport sudah di-set maximum-scale=1 / user-scalable=no di HTML.
+    // Fungsi ini cuma memastikan meta tetap terkunci kalau ada yang
+    // mengubahnya saat masuk/keluar fullscreen.
     function resetPageZoom() {
       const vp = document.querySelector('meta[name="viewport"]')
       if (!vp) return
-      const original = vp.getAttribute('content')
-      vp.setAttribute('content', original + ', maximum-scale=1.0')
-      requestAnimationFrame(() => { vp.setAttribute('content', original) })
+      vp.setAttribute(
+        'content',
+        'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover'
+      )
     }
 
     // --- Fullscreen: dipaksa total lewat JS, gak nyandar ke CSS eksternal sama sekali ---
