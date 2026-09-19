@@ -2,7 +2,7 @@
 async function renderCodeDetail(authReady) {
   const app = document.getElementById('app')
   const shortId = qs('id')
-  if (!shortId) { app.innerHTML = `<div class="card"><div class="empty-state">Code not found.</div></div>`; return }
+  if (!shortId) { app.innerHTML = `<div class="card"><div class="empty-state">Kode tidak ditemukan.</div></div>`; return }
   try {
     const [s] = await Promise.all([api(`/codes/${shortId}`), authReady])
     if (s.locked && s.content == null && !(me && me.username === s.ownerUsername)) {
@@ -63,7 +63,7 @@ function renderUnlockedDetail(app, shortId, s) {
           <span class="cd-dot">·</span>
           <span>${timeAgo(s.createdAt)}</span>
           <span class="cd-dot">·</span>
-          <span class="sc-views-inline" title="${s.views || 0} views">${eyeIconSvg()}<span>${formatViews(s.views)}</span></span>
+          <span class="sc-views-inline" title="${s.views || 0} ${t('viewsTitle')}">${eyeIconSvg()}<span>${formatViews(s.views)}</span></span>
         </div>
         ${s.forkedFrom ? `<a class="forked-from-badge" href="${codeUrl(s.forkedFrom.shortId)}">${forkIconSvg()} Forked from <b>${escapeHtml(s.forkedFrom.ownerNickname)}</b></a>` : ''}
         ${s.description ? `<p class="cd-desc">${formatWaText(s.description)}</p>` : ''}
@@ -93,19 +93,14 @@ function renderUnlockedDetail(app, shortId, s) {
           <div class="code-window-bar">
             <span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>
             <span class="code-window-filename">${escapeHtml(s.filename)}</span>
-            <span class="code-window-meta">${(s.lineCount || (s.content || '').split('\n').length)} lines</span>
             <div class="zoom-controls" id="zoomControls">
-              <button type="button" class="zoom-btn" id="wrapToggleBtn" title="Toggle word wrap">Wrap</button>
               <button type="button" class="zoom-btn" id="zoomOutBtn" title="Zoom out">−</button>
               <span class="zoom-level" id="zoomLevel">100%</span>
               <button type="button" class="zoom-btn" id="zoomInBtn" title="Zoom in">+</button>
             </div>
             <button type="button" class="code-expand-btn" id="codeFullscreenBtn" title="Fullscreen">${expandIconSvg()}</button>
           </div>
-          <div class="code-view-row" id="codeViewRow">
-            <pre class="code-gutter" id="codeGutter" aria-hidden="true"></pre>
-            <pre class="code-view" id="codeViewPre"><code id="codeBlock" class="language-${hljsLang(s.language)}">${escapeHtml(s.content)}</code></pre>
-          </div>
+          <pre class="code-view" id="codeViewPre"><code id="codeBlock" class="language-${hljsLang(s.language)}">${escapeHtml(s.content)}</code></pre>
         </div>
 
         <div class="cd-engage">
@@ -141,22 +136,22 @@ function renderUnlockedDetail(app, shortId, s) {
         </div>` : ''}
         ${me && me.username === s.ownerUsername ? `
         <div id="editForm" style="display:none;margin-top:14px">
-          <div class="field"><label>Title</label><input id="editTitle" value="${escapeHtml(s.title)}" maxlength="120"></div>
-          <div class="field"><label>Description (optional)</label><textarea id="editDescription" class="textarea-autogrow" style="min-height:70px">${escapeHtml(s.description || '')}</textarea></div>
-          <div class="field"><label>Tags (comma-separated, max 5)</label><input id="editTags" value="${escapeHtml((s.tags || []).join(', '))}" placeholder="algorithm, tutorial, bugfix"></div>
-          <div class="field"><label>Filename</label><input id="editFilename" value="${escapeHtml(s.filename)}" maxlength="80"></div>
-          <div class="field"><label>Language</label>
+          <div class="field"><label>Judul</label><input id="editTitle" value="${escapeHtml(s.title)}" maxlength="120"></div>
+          <div class="field"><label>Deskripsi (opsional)</label><textarea id="editDescription" class="textarea-autogrow" style="min-height:70px">${escapeHtml(s.description || '')}</textarea></div>
+          <div class="field"><label>Tag (pisah koma, maks 5)</label><input id="editTags" value="${escapeHtml((s.tags || []).join(', '))}" placeholder="algoritma, tutorial, bug-fix"></div>
+          <div class="field"><label>Nama File</label><input id="editFilename" value="${escapeHtml(s.filename)}" maxlength="80"></div>
+          <div class="field"><label>Bahasa</label>
             <select id="editLanguage">
               ${['javascript', 'typescript', 'python', 'html', 'css', 'json', 'java', 'php', 'bash', 'markdown', 'text']
                 .map(l => `<option value="${l}" ${s.language === l ? 'selected' : ''}>${l}</option>`).join('')}
             </select>
           </div>
-          <div class="field"><label>Code</label><textarea id="editContent" style="min-height:160px;font-family:'JetBrains Mono',monospace;font-size:13px">${escapeHtml(s.content)}</textarea></div>
+          <div class="field"><label>Kode</label><textarea id="editContent" style="min-height:160px;font-family:'JetBrains Mono',monospace;font-size:13px">${escapeHtml(s.content)}</textarea></div>
           <div class="checkbox-row"><input type="checkbox" id="editIsPublic" ${s.isPublic ? 'checked' : ''}><label for="editIsPublic">Public (show on feed)</label></div>
-          <div class="checkbox-row"><input type="checkbox" id="editUsePin" ${s.locked ? 'checked' : ''}><label for="editUsePin">Lock with password</label></div>
+          <div class="checkbox-row"><input type="checkbox" id="editUsePin" ${s.locked ? 'checked' : ''}><label for="editUsePin">Lock with Password</label></div>
           <div class="field" id="editPinField" style="display:${s.locked ? 'block' : 'none'}">
-            <label>Password ${s.locked ? '(optional new)' : ''} (4–8 letters/numbers)</label>
-            <input type="password" id="editPinInput" maxlength="8" placeholder="${s.locked ? 'Leave blank to keep current' : 'e.g. secret1'}">
+            <label>Password ${s.locked ? 'baru (opsional)' : ''} (4-8 karakter, huruf/angka)</label>
+            <input type="password" id="editPinInput" maxlength="8" placeholder="${s.locked ? 'Kosongkan jika tidak ingin mengganti Password' : 'misal r4hasia'}">
           </div>
           <div class="btn-row">
             <button class="btn btn-white" id="cancelEditBtn">Cancel</button>
@@ -166,7 +161,7 @@ function renderUnlockedDetail(app, shortId, s) {
         </div>
 
         <div class="comments-section" id="commentsSection">
-          <div class="comments-title">Comments <span id="commentCount"></span></div>
+          <div class="comments-title">${t('comments')} <span id="commentCount"></span></div>
           <div id="commentForm"></div>
           <div id="commentList">${skelCommentList(2)}</div>
         </div>
@@ -175,49 +170,13 @@ function renderUnlockedDetail(app, shortId, s) {
       </div>
     `
     if (window.hljs) hljs.highlightElement(document.getElementById('codeBlock'))
-    // Line numbers
-    ;(function fillGutter() {
-      const gutter = document.getElementById('codeGutter')
-      if (!gutter) return
-      const n = (s.content || '').split('\n').length
-      gutter.textContent = Array.from({ length: n }, (_, i) => String(i + 1)).join('\n')
-    })()
     try { trackRecentView(s) } catch {}
     highlightLinesFromHash()
     wireCodeKeyboard(s)
     loadRelatedCodes(s)
     wireLikeButtons(app)
     wireBookmarkButtons(app)
-    // Copy with temporary "Copied" feedback
-    document.getElementById('copyBtn').onclick = async () => {
-      const btn = document.getElementById('copyBtn')
-      try {
-        await navigator.clipboard.writeText(s.content || '')
-        const prev = btn.innerHTML
-        btn.innerHTML = `${copyIconSvg()}<span>Copied</span>`
-        btn.classList.add('cd-btn-copied')
-        toast('Copied!')
-        setTimeout(() => {
-          btn.innerHTML = prev
-          btn.classList.remove('cd-btn-copied')
-        }, 1600)
-      } catch { toast('Could not copy') }
-    }
-    // Word wrap toggle
-    document.getElementById('wrapToggleBtn')?.addEventListener('click', () => {
-      const row = document.getElementById('codeViewRow')
-      const btn = document.getElementById('wrapToggleBtn')
-      if (!row || !btn) return
-      const on = row.classList.toggle('is-wrap')
-      btn.classList.toggle('active', on)
-      btn.title = on ? 'Disable word wrap' : 'Enable word wrap'
-    })
-    // Sync gutter scroll with code view
-    const codePre = document.getElementById('codeViewPre')
-    const gutterEl = document.getElementById('codeGutter')
-    if (codePre && gutterEl) {
-      codePre.addEventListener('scroll', () => { gutterEl.scrollTop = codePre.scrollTop }, { passive: true })
-    }
+    document.getElementById('copyBtn').onclick = () => { navigator.clipboard.writeText(s.content); toast('Copied!') }
 
     const moreBtn = document.getElementById('cdMoreBtn')
     const moreMenu = document.getElementById('cdMoreMenu')
@@ -750,7 +709,7 @@ async function setupComments(shortId, ownerUsername) {
            <button class="send-icon-btn" id="commentSendBtn" title="Kirim">${sendIconSvg()}</button>
          </div>
        </div>`
-    : `<div class="comment-form-locked">Sign in to comment. <a href="/auth">Sign in</a></div>`
+    : `<div class="comment-form-locked">${t('signInToComment')} <a href="/auth">${t('signIn')}</a></div>`
 
   function autoGrow(el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px' }
 
@@ -807,7 +766,7 @@ async function setupComments(shortId, ownerUsername) {
       countEl.textContent = comments.length ? `(${comments.length})` : ''
       listEl.innerHTML = comments.length
         ? comments.slice().reverse().map(c => commentCardHtml(c, me && (me.username === c.username || isOwner), isOwner)).join('')
-        : `<div class="empty-state-sm">No comments yet. Be the first!</div>`
+        : `<div class="empty-state-sm">${t('noComments')}</div>`
 
       listEl.querySelectorAll('[data-role="delete-comment"]').forEach(btn => {
         btn.onclick = async () => {
@@ -956,7 +915,7 @@ async function loadRelatedCodes(s) {
     if (!related.length) return
     box.style.display = 'block'
     box.innerHTML = `
-      <div class="related-title">Related code</div>
+      <div class="related-title">${t('relatedCode')}</div>
       <div class="related-scroll" role="list">
         ${related.map(r => `
           <a class="related-card" href="${codeUrl(r.shortId)}" role="listitem">

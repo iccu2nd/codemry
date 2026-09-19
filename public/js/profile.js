@@ -27,14 +27,14 @@ async function renderProfile() {
           </div>
         </div>
         <div class="stat-row">
-          <div class="stat"><b>${p.snippets.length}</b><span>Codes</span></div>
-          <div class="stat"><b>${formatViews(totalViews)}</b><span>Views</span></div>
-          <div class="stat"><b>${p.totalLikes ?? 0}</b><span>Likes</span></div>
-          <a class="stat" href="${followUrl(p.username, 'followers')}"><b>${p.followersCount}</b><span>Followers</span></a>
-          <a class="stat" href="${followUrl(p.username, 'following')}"><b>${p.followingCount}</b><span>Following</span></a>
+          <div class="stat"><b>${p.snippets.length}</b><span>${t('codes')}</span></div>
+          <div class="stat"><b>${formatViews(totalViews)}</b><span>${t('views')}</span></div>
+          <div class="stat"><b>${p.totalLikes ?? 0}</b><span>${t('likes')}</span></div>
+          <a class="stat" href="${followUrl(p.username, 'followers')}"><b>${p.followersCount}</b><span>${t('followers')}</span></a>
+          <a class="stat" href="${followUrl(p.username, 'following')}"><b>${p.followingCount}</b><span>${t('followingStat')}</span></a>
         </div>
         <div class="profile-below-stats">
-          <div class="profile-bio" id="bioText">${p.bio ? formatWaText(p.bio) : "No bio yet"}</div>
+          <div class="profile-bio" id="bioText">${p.bio ? formatWaText(p.bio) : t('noBio')}</div>
           ${p.profileMusic ? `
           <div class="profile-music" id="profileMusicBar">
             <div class="pm-circle-wrap">
@@ -43,10 +43,10 @@ async function renderProfile() {
                 <circle class="pm-ring-fg" id="pmRingFg" cx="18" cy="18" r="15.5" fill="none"
                   stroke-dasharray="97.4" stroke-dashoffset="97.4"/>
               </svg>
-              <button type="button" class="pm-btn" id="pmToggle" aria-label="Play or pause music">${playIconMini()}</button>
+              <button type="button" class="pm-btn" id="pmToggle" aria-label="${t('playPause')}">${playIconMini()}</button>
             </div>
             <div class="pm-meta">
-              <span class="pm-label">${escapeHtml(p.nickname || p.username)} · Music</span>
+              <span class="pm-label">${escapeHtml(p.nickname || p.username)} · ${t('music')}</span>
               <span class="pm-hint" id="pmTrackName">${escapeHtml(musicTitleFromUrl(p.profileMusic))}</span>
             </div>
             <span class="pm-time" id="pmTime">0:00</span>
@@ -55,76 +55,48 @@ async function renderProfile() {
         </div>
         ${p.isMe
           ? `<div class="btn-row profile-actions">
-               <button class="btn btn-white" id="editProfileBtn">Edit profile</button>
-               <button class="btn btn-white" id="signOutBtn">Sign out</button>
+               <button class="btn btn-white" id="editProfileBtn">${t('editProfile')}</button>
+               <button class="btn btn-white" id="signOutBtn">${t('signOut')}</button>
              </div>
              <div id="editProfileForm" style="display:none;margin-top:14px">
-               <div class="field"><label>Nickname</label><input id="nicknameInput" value="${escapeHtml(p.nickname || '')}" maxlength="32"></div>
+               <div class="field"><label>${t('nickname')}</label><input id="nicknameInput" value="${escapeHtml(p.nickname || '')}" maxlength="32"></div>
                <div class="field">
-                 <label>Username</label>
+                 <label>${t('username')}</label>
                  <input id="usernameInput" value="${escapeHtml(p.username)}" maxlength="20">
                  <div class="field-hint">${usernameCooldownHint(p.usernameChangedAt)}</div>
                </div>
-               <div class="field"><label>Bio</label><textarea id="bioInput" style="min-height:80px">${escapeHtml(p.bio || '')}</textarea></div>
+               <div class="field"><label>${t('bio')}</label><textarea id="bioInput" style="min-height:80px">${escapeHtml(p.bio || '')}</textarea></div>
                <div class="field">
-                 <label>Profile music URL <span class="label-opt">(optional)</span></label>
+                 <label>${t('musicUrl')} <span class="label-opt">(${t('optional')})</span></label>
                  <input id="musicInput" type="url" placeholder="https://…/audio.mp3" value="${escapeHtml(p.profileMusic || '')}">
-                 <div class="field-hint">Direct link to an audio file (mp3, ogg, wav). Plays softly when someone opens your profile.</div>
+                 <div class="field-hint">${t('musicHint')}</div>
                </div>
                <label class="checkbox-row">
                  <input type="checkbox" id="hideBadgesInput" ${p.hideBadges ? 'checked' : ''}>
-                 Hide badges (including Developer tag)
+                 ${t('hideBadges')}
                </label>
-               <button class="btn btn-primary btn-block" id="saveBioBtn">Save</button>
+               <button class="btn btn-primary btn-block" id="saveBioBtn">${t('save')}</button>
              </div>`
-          : `<button class="btn ${p.isFollowing ? 'btn-white' : 'btn-primary'} btn-block profile-actions" id="followBtn">${p.isFollowing ? "Following" : "Follow"}</button>`}
+          : `<button class="btn ${p.isFollowing ? 'btn-white' : 'btn-primary'} btn-block profile-actions" id="followBtn">${p.isFollowing ? t('following') : t('follow')}</button>`}
       </div>
-      <div class="section-label-row">
-        <div class="section-label">Shared code</div>
-        ${p.snippets.length ? `
-        <div class="profile-sort" role="group" aria-label="Sort codes">
-          <button type="button" class="profile-sort-btn active" data-sort="new">Newest</button>
-          <button type="button" class="profile-sort-btn" data-sort="views">Most viewed</button>
-          <button type="button" class="profile-sort-btn" data-sort="likes">Most liked</button>
-        </div>` : ''}
-      </div>
+      <div class="section-label">${t('sharedCode')}</div>
       <div id="profileSnippets"></div>
     `
 
     const list = document.getElementById('profileSnippets')
-    let profileSort = 'new'
-    function sortedSnippets() {
-      const arr = [...(p.snippets || [])]
-      if (profileSort === 'views') arr.sort((a, b) => (b.views || 0) - (a.views || 0))
-      else if (profileSort === 'likes') arr.sort((a, b) => (b.likes || 0) - (a.likes || 0))
-      else arr.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
-      return arr
-    }
-    function renderSnippetList() {
-      if (!p.snippets.length) {
-        list.innerHTML = p.isMe
+    list.innerHTML = p.snippets.length
+      ? p.snippets.map(snippetCard).join('')
+      : (p.isMe
           ? `<div class="empty-state empty-cta">
-               <div class="empty-cta-title">No code yet</div>
-               <div class="empty-cta-sub">Share your first snippet with the community.</div>
-               <a class="btn btn-primary" href="/upload">Upload code</a>
+               <div class="empty-cta-title">${t('noCodeYet')}</div>
+               <div class="empty-cta-sub">${t('noCodeYetSub')}</div>
+               <a class="btn btn-primary" href="/upload">${t('uploadCode')}</a>
              </div>`
-          : `<div class="empty-state">No code shared yet.</div>`
-        return
-      }
-      list.innerHTML = sortedSnippets().map(snippetCard).join('')
-      highlightAllIn('#profileSnippets pre code')
-      wireLikeButtons(list)
-      wireBookmarkButtons(list)
-      wireCopyLinkButtons(list)
-    }
-    renderSnippetList()
-    document.querySelectorAll('.profile-sort-btn').forEach(btn => {
-      btn.onclick = () => {
-        profileSort = btn.dataset.sort
-        document.querySelectorAll('.profile-sort-btn').forEach(b => b.classList.toggle('active', b === btn))
-        renderSnippetList()
-      }
-    })
+          : `<div class="empty-state">${t('noCodeShared')}</div>`)
+    highlightAllIn('#profileSnippets pre code')
+    wireLikeButtons(list)
+    wireBookmarkButtons(list)
+    wireCopyLinkButtons(list)
 
 
     // Profile music — circular progress + duration next to play button

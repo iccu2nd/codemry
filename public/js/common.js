@@ -2,6 +2,175 @@
 let me = null
 
 // ============================================================
+// i18n — English (default) / Indonesian
+// Stored in localStorage key: codery-lang  ("en" | "id")
+// ============================================================
+const LANG_KEY = 'codery-lang'
+function getLang() {
+  try {
+    const v = localStorage.getItem(LANG_KEY)
+    return v === 'id' ? 'id' : 'en'
+  } catch { return 'en' }
+}
+function setLang(lang) {
+  const next = lang === 'id' ? 'id' : 'en'
+  try { localStorage.setItem(LANG_KEY, next) } catch {}
+  location.reload()
+}
+const I18N = {
+  en: {
+    menu: 'Menu',
+    closeMenu: 'Close menu',
+    language: 'Language',
+    feed: 'Feed',
+    leaderboard: 'Leaderboard',
+    notif: 'Notif',
+    profile: 'Profile',
+    upload: 'Upload',
+    search: 'Search',
+    requestScrape: 'Request Scrape',
+    guide: 'Guide',
+    likedCodes: 'Liked codes',
+    savedCodes: 'Saved codes',
+    scrapeList: 'Scrape list',
+    apiDocs: 'API Documentation',
+    open: 'Open',
+    copyLink: 'Copy link',
+    linkCopied: 'Link copied',
+    copyFailed: 'Could not copy link',
+    passwordLocked: 'Password locked',
+    lines: 'lines',
+    viewsTitle: 'views',
+    noBio: 'No bio yet',
+    editProfile: 'Edit profile',
+    signOut: 'Sign out',
+    nickname: 'Nickname',
+    username: 'Username',
+    bio: 'Bio',
+    musicUrl: 'Profile music URL',
+    optional: 'optional',
+    musicHint: 'Direct link to an audio file (mp3, ogg, wav). Plays softly when someone opens your profile.',
+    hideBadges: 'Hide badges (including Developer tag)',
+    save: 'Save',
+    follow: 'Follow',
+    following: 'Following',
+    sharedCode: 'Shared code',
+    noCodeYet: 'No code yet',
+    noCodeYetSub: 'Share your first snippet with the community.',
+    uploadCode: 'Upload code',
+    noCodeShared: 'No code shared yet.',
+    codes: 'Codes',
+    views: 'Views',
+    likes: 'Likes',
+    followers: 'Followers',
+    followingStat: 'Following',
+    comments: 'Comments',
+    signInToComment: 'Sign in to comment.',
+    signIn: 'Sign in',
+    signUp: 'Sign up',
+    noAccount: 'No account yet?',
+    hasAccount: 'Already have an account?',
+    loginSuccess: 'Signed in!',
+    registerSuccess: 'Account created!',
+    noComments: 'No comments yet. Be the first!',
+    relatedCode: 'Related code',
+    uploadValueTitle: 'Share code in minutes',
+    uploadValueSub: 'Get a public link, help other developers, and keep snippets in one place. Drafts save automatically.',
+    yourCode: 'Your code',
+    yourCodeSub: 'Pick a file or paste — language is detected for you',
+    chooseFile: 'Choose file',
+    published: 'Published!',
+    music: 'Music',
+    playPause: 'Play or pause music',
+    backToTop: 'Back to top',
+    like: 'Like',
+    saveBookmark: 'Save',
+    justNow: 'just now',
+    minAgo: 'm ago',
+    hourAgo: 'h ago',
+    dayAgo: 'd ago',
+    secAgo: 's ago',
+  },
+  id: {
+    menu: 'Menu',
+    closeMenu: 'Tutup menu',
+    language: 'Bahasa',
+    feed: 'Feed',
+    leaderboard: 'Leaderboard',
+    notif: 'Notif',
+    profile: 'Profil',
+    upload: 'Upload',
+    search: 'Cari',
+    requestScrape: 'Request Scrape',
+    guide: 'Panduan',
+    likedCodes: 'Kode disukai',
+    savedCodes: 'Kode tersimpan',
+    scrapeList: 'List scraping',
+    apiDocs: 'Dokumentasi API',
+    open: 'Buka',
+    copyLink: 'Salin tautan',
+    linkCopied: 'Tautan disalin',
+    copyFailed: 'Gagal menyalin tautan',
+    passwordLocked: 'Terkunci password',
+    lines: 'baris',
+    viewsTitle: 'dilihat',
+    noBio: 'Belum ada bio',
+    editProfile: 'Edit profil',
+    signOut: 'Keluar',
+    nickname: 'Nama panggilan',
+    username: 'Username',
+    bio: 'Bio',
+    musicUrl: 'URL musik profil',
+    optional: 'opsional',
+    musicHint: 'Link langsung ke file audio (mp3, ogg, wav). Diputar pelan saat orang membuka profilmu.',
+    hideBadges: 'Sembunyikan lencana (termasuk tag Developer)',
+    save: 'Simpan',
+    follow: 'Ikuti',
+    following: 'Mengikuti',
+    sharedCode: 'Kode dibagikan',
+    noCodeYet: 'Belum ada kode',
+    noCodeYetSub: 'Bagikan cuplikan kode pertamamu ke komunitas.',
+    uploadCode: 'Upload kode',
+    noCodeShared: 'Belum ada kode yang dibagikan.',
+    codes: 'Kode',
+    views: 'Dilihat',
+    likes: 'Suka',
+    followers: 'Pengikut',
+    followingStat: 'Mengikuti',
+    comments: 'Komentar',
+    signInToComment: 'Masuk dulu untuk berkomentar.',
+    signIn: 'Masuk',
+    signUp: 'Daftar',
+    noAccount: 'Belum punya akun?',
+    hasAccount: 'Sudah punya akun?',
+    loginSuccess: 'Berhasil masuk!',
+    registerSuccess: 'Akun dibuat!',
+    noComments: 'Belum ada komentar. Jadilah yang pertama!',
+    relatedCode: 'Kode terkait',
+    uploadValueTitle: 'Bagikan kode dalam hitungan menit',
+    uploadValueSub: 'Dapatkan tautan publik, bantu developer lain, dan simpan cuplikan di satu tempat. Draf tersimpan otomatis.',
+    yourCode: 'Kode kamu',
+    yourCodeSub: 'Pilih file atau tempel — bahasa terdeteksi otomatis',
+    chooseFile: 'Pilih file',
+    published: 'Berhasil dipublikasikan!',
+    music: 'Musik',
+    playPause: 'Putar atau jeda musik',
+    backToTop: 'Ke atas',
+    like: 'Suka',
+    saveBookmark: 'Simpan',
+    justNow: 'baru saja',
+    minAgo: 'm lalu',
+    hourAgo: 'j lalu',
+    dayAgo: 'h lalu',
+    secAgo: 'd lalu',
+  }
+}
+function t(key) {
+  const lang = getLang()
+  return (I18N[lang] && I18N[lang][key]) || (I18N.en[key]) || key
+}
+
+// ============================================================
 // Efek loading global (spinner "blades") -- dipakai buat tombol yang
 // lagi proses (btn-loading) dan tombol upload avatar/banner bulat.
 // Markupnya emang butuh 12 elemen anak, makanya disuntik lewat JS,
@@ -151,10 +320,10 @@ function toast(msg) {
 
 function timeAgo(ts) {
   const s = Math.floor((Date.now() - ts) / 1000)
-  if (s < 60) return `${s}s ago`
-  if (s < 3600) return `${Math.floor(s / 60)}m ago`
-  if (s < 86400) return `${Math.floor(s / 3600)}h ago`
-  return `${Math.floor(s / 86400)}d ago`
+  if (s < 60) return getLang() === 'id' ? `${s}${t('secAgo')}` : `${s}${t('secAgo')}`
+  if (s < 3600) return `${Math.floor(s / 60)}${t('minAgo')}`
+  if (s < 86400) return `${Math.floor(s / 3600)}${t('hourAgo')}`
+  return `${Math.floor(s / 86400)}${t('dayAgo')}`
 }
 
 
@@ -305,8 +474,8 @@ function initScrollTop() {
   btn.type = 'button'
   btn.id = 'scrollTopBtn'
   btn.className = 'scroll-top-btn'
-  btn.setAttribute('aria-label', "Back to top")
-  btn.title = "Back to top"
+  btn.setAttribute('aria-label', t('backToTop'))
+  btn.title = t('backToTop')
   btn.innerHTML = `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="M6 11l6-6 6 6"/></svg>`
   btn.hidden = true
   document.body.appendChild(btn)
@@ -330,9 +499,9 @@ function wireCopyLinkButtons(root) {
       const url = location.origin + codeUrl(id)
       try {
         await navigator.clipboard.writeText(url)
-        toast("Link copied")
+        toast(t('linkCopied'))
       } catch {
-        toast("Could not copy link")
+        toast(t('copyFailed'))
       }
     }
   })
@@ -346,8 +515,8 @@ function renderAuthArea() {
     ? `${onProfilePage ? '' : `<a class="link-btn link-btn-avatar" href="${profileUrl(me.username)}">
          ${avatarHtml(me.avatar, me.nickname || me.username, 'avatar-circle-xs')} ${escapeHtml(me.nickname || me.username)}${badgesHtml(me.badges)}${devBadgeHtml(me.isDeveloper)}${roleBadgeHtml(me.role)}
        </a>`}
-       <button class="link-btn" id="logoutBtn">Sign out</button>`
-    : `<a class="link-btn" href="/auth">Sign in</a>`
+       <button class="link-btn" id="logoutBtn">${t('signOut')}</button>`
+    : `<a class="link-btn" href="/auth">${t('signIn')}</a>`
   const logoutBtn = document.getElementById('logoutBtn')
   if (logoutBtn) {
     logoutBtn.onclick = async () => {
@@ -410,12 +579,40 @@ function injectMenuHeader(topnav, closeMenu) {
   const header = document.createElement('div')
   header.id = 'navMenuHeader'
   header.className = 'nav-header'
-  header.innerHTML = `<span>Menu</span>
-    <button type="button" class="nav-close-btn" id="navCloseBtn" aria-label="Close menu">
+  header.innerHTML = `<span>${t('menu')}</span>
+    <button type="button" class="nav-close-btn" id="navCloseBtn" aria-label="${t('closeMenu')}">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
     </button>`
   topnav.insertBefore(header, topnav.firstChild)
   document.getElementById('navCloseBtn').addEventListener('click', closeMenu)
+}
+
+/** Language switcher inside hamburger menu — plain row, same style as menu links */
+function injectLanguageControl(topnav) {
+  if (document.getElementById('langControl')) return
+  const authArea = document.getElementById('authArea')
+  const row = document.createElement('div')
+  row.id = 'langControl'
+  row.className = 'lang-control'
+  const cur = getLang()
+  row.innerHTML = `
+    <span class="lang-control-label">${t('language')}</span>
+    <div class="lang-control-btns" role="group" aria-label="${t('language')}">
+      <button type="button" class="lang-btn${cur === 'en' ? ' active' : ''}" data-lang="en">EN</button>
+      <button type="button" class="lang-btn${cur === 'id' ? ' active' : ''}" data-lang="id">ID</button>
+    </div>
+  `
+  // Place above auth/sign-in so it sits with other menu items
+  if (authArea) topnav.insertBefore(row, authArea)
+  else topnav.appendChild(row)
+  row.querySelectorAll('.lang-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault()
+      e.stopPropagation()
+      const next = btn.dataset.lang
+      if (next && next !== getLang()) setLang(next)
+    })
+  })
 }
 
 function injectAccountLinks() {
@@ -440,7 +637,7 @@ function injectAccountLinks() {
     likedLink.id = 'likedMenuLink'
     likedLink.className = 'link-btn'
     likedLink.href = '/liked'
-    likedLink.textContent = "Liked codes"
+    likedLink.textContent = t('likedCodes')
     topnav.insertBefore(likedLink, authArea)
   }
   if (!savedLink) {
@@ -448,7 +645,7 @@ function injectAccountLinks() {
     savedLink.id = 'savedMenuLink'
     savedLink.className = 'link-btn'
     savedLink.href = '/bookmarks'
-    savedLink.textContent = "Saved codes"
+    savedLink.textContent = t('savedCodes')
     topnav.insertBefore(savedLink, authArea)
   }
   if (!apiDocsLink) {
@@ -456,7 +653,7 @@ function injectAccountLinks() {
     apiDocsLink.id = 'apiDocsMenuLink'
     apiDocsLink.className = 'link-btn'
     apiDocsLink.href = '/api-docs'
-    apiDocsLink.textContent = "API Documentation"
+    apiDocsLink.textContent = t('apiDocs')
     topnav.insertBefore(apiDocsLink, authArea)
   }
 }
@@ -478,14 +675,14 @@ function injectStaticMenuLinks(topnav) {
   searchLink.id = 'searchMenuLink'
   searchLink.className = 'link-btn'
   searchLink.href = '/search'
-  searchLink.textContent = "Search"
+  searchLink.textContent = t('search')
   topnav.insertBefore(searchLink, authArea)
 
   const panduanLink = document.createElement('a')
   panduanLink.id = 'panduanMenuLink'
   panduanLink.className = 'link-btn'
   panduanLink.href = '/panduan'
-  panduanLink.textContent = "Guide"
+  panduanLink.textContent = t('guide')
   topnav.insertBefore(panduanLink, authArea)
 }
 
@@ -552,10 +749,12 @@ function initHamburger() {
 
   injectMenuHeader(topnav, closeMenu)
   injectStaticMenuLinks(topnav)
+  injectLanguageControl(topnav)
   hamburgerBtn.addEventListener('click', toggleMenu)
   navBackdrop.addEventListener('click', closeMenu)
   topnav.querySelectorAll('a, button').forEach(el => el.addEventListener('click', () => {
     if (el.id === 'logoutBtn') return
+    if (el.closest('#langControl')) return
     closeMenu()
   }))
 }
@@ -577,14 +776,14 @@ function initBottomNav() {
   nav.className = 'bottom-nav'
   nav.id = 'bottomNav'
   nav.innerHTML = `
-    <a class="bnav-item ${isActive('/') ? 'active' : ''}" href="/">${houseIconSvg()}<span>Feed</span></a>
-    <a class="bnav-item ${isActive('/leaderboard') ? 'active' : ''}" href="/leaderboard">${trophyIconSvg()}<span>Leaderboard</span></a>
-    <a class="bnav-fab" href="/upload" aria-label="Upload"><span class="bnav-fab-circle">${plusIconSvg()}</span></a>
+    <a class="bnav-item ${isActive('/') ? 'active' : ''}" href="/">${houseIconSvg()}<span>${t('feed')}</span></a>
+    <a class="bnav-item ${isActive('/leaderboard') ? 'active' : ''}" href="/leaderboard">${trophyIconSvg()}<span>${t('leaderboard')}</span></a>
+    <a class="bnav-fab" href="/upload" aria-label="${t('upload')}"><span class="bnav-fab-circle">${plusIconSvg()}</span></a>
     <a class="bnav-item ${isActive('/notifications') ? 'active' : ''}" id="bnavNotif" href="/notifications">
       <span class="bnav-icon-wrap">${bellIconSvg()}<span class="bnav-badge" id="notifDot" style="display:none"></span></span>
-      <span>Notif</span>
+      <span>${t('notif')}</span>
     </a>
-    <a class="bnav-item" id="bnavProfile" href="/auth">${userIconSvg()}<span>Profile</span></a>
+    <a class="bnav-item" id="bnavProfile" href="/auth">${userIconSvg()}<span>${t('profile')}</span></a>
   `
   document.body.appendChild(nav)
 
@@ -687,11 +886,11 @@ function snippetCard(s) {
           <span class="sc-meta-dot">·</span>
           <span>${timeAgo(s.createdAt)}</span>
           <span class="sc-meta-dot">·</span>
-          <span class="sc-views-inline" title="${s.views || 0} views">${eyeIconSvg()}<span>${viewsLabel}</span></span>
+          <span class="sc-views-inline" title="${s.views || 0} ${t('viewsTitle')}">${eyeIconSvg()}<span>${viewsLabel}</span></span>
         </div>
       </div>
       <div class="sc-badges">
-        ${s.isLocked ? `<span class="lock-badge" title="Password locked">${lockIconSvg()}</span>` : ''}
+        ${s.isLocked ? `<span class="lock-badge" title="${t('passwordLocked')}">${lockIconSvg()}</span>` : ''}
       </div>
     </header>
 
@@ -704,7 +903,7 @@ function snippetCard(s) {
 
     ${s.isLocked
       ? `<a class="sc-preview sc-preview-locked" href="${codeUrl(s.shortId)}">
-           <span class="sc-lock-msg">${lockIconSvg()} Password locked</span>
+           <span class="sc-lock-msg">${lockIconSvg()} ${t('passwordLocked')}</span>
          </a>`
       : previewText ? `
     <a class="sc-preview" href="${codeUrl(s.shortId)}">
@@ -712,7 +911,7 @@ function snippetCard(s) {
         <span class="sc-filename">${escapeHtml(s.filename || 'code')}</span>
         <span class="sc-preview-meta">
           <span class="sc-lang-tag">${escapeHtml(lang)}</span>
-          <span class="sc-lines">${lineCount} lines</span>
+          <span class="sc-lines">${lineCount} ${t('lines')}</span>
         </span>
       </div>
       <pre class="sc-preview-code"><code class="language-${hljsLang(s.language)}">${previewText}</code></pre>
@@ -720,19 +919,19 @@ function snippetCard(s) {
 
     <footer class="sc-foot">
       <div class="sc-stats">
-        <button type="button" class="sc-stat like-btn t-like ${s.likedByMe ? 'liked' : ''}" data-role="like" data-short="${s.shortId}" data-liked="${s.likedByMe ? 'true' : 'false'}" title="Like">
+        <button type="button" class="sc-stat like-btn t-like ${s.likedByMe ? 'liked' : ''}" data-role="like" data-short="${s.shortId}" data-liked="${s.likedByMe ? 'true' : 'false'}" title="${t('like')}">
           <span class="t-like-icon">${heartIconSvg()}</span>
           <span class="t-like-particles">${likeParticlesHtml()}</span>
           <span class="like-count">${s.likes || 0}</span>
         </button>
-        <button type="button" class="sc-stat bookmark-btn ${s.savedByMe ? 'saved' : ''}" data-role="bookmark" data-short="${s.shortId}" data-saved="${s.savedByMe ? 'true' : 'false'}" title="Save">
+        <button type="button" class="sc-stat bookmark-btn ${s.savedByMe ? 'saved' : ''}" data-role="bookmark" data-short="${s.shortId}" data-saved="${s.savedByMe ? 'true' : 'false'}" title="${t('saveBookmark')}">
           ${bookmarkIconSvg()}
         </button>
-        <button type="button" class="sc-stat" data-role="copy-link" data-short="${s.shortId}" title="Copy link">
+        <button type="button" class="sc-stat" data-role="copy-link" data-short="${s.shortId}" title="${t('copyLink')}">
           ${linkIconSvg()}
         </button>
       </div>
-      <a class="sc-open btn btn-primary btn-sm" href="${codeUrl(s.shortId)}">Open</a>
+      <a class="sc-open btn btn-primary btn-sm" href="${codeUrl(s.shortId)}">${t('open')}</a>
     </footer>
   </article>`
 }
@@ -1084,36 +1283,14 @@ function highlightAllIn(selector) {
   document.querySelectorAll(selector).forEach(el => hljs.highlightElement(el))
 }
 
+// Apply html lang attribute ASAP
+try { document.documentElement.lang = getLang() === 'id' ? 'id' : 'en' } catch {}
+
 document.addEventListener('DOMContentLoaded', initHamburger)
 document.addEventListener('DOMContentLoaded', initBottomNav)
 document.addEventListener('DOMContentLoaded', initBackButton)
 document.addEventListener('DOMContentLoaded', initScrollTop)
-document.addEventListener('DOMContentLoaded', initKeyboardShortcuts)
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal() })
-
-/** Global shortcuts: Ctrl/Cmd+K → Search, Ctrl/Cmd+U → Upload */
-function initKeyboardShortcuts() {
-  document.addEventListener('keydown', (e) => {
-    const mod = e.metaKey || e.ctrlKey
-    if (!mod) return
-    const tag = (e.target && e.target.tagName) || ''
-    if (tag === 'INPUT' || tag === 'TEXTAREA' || e.target?.isContentEditable) return
-    const key = (e.key || '').toLowerCase()
-    if (key === 'k') {
-      e.preventDefault()
-      const feedSearch = document.getElementById('feedSearch')
-      if (feedSearch) {
-        feedSearch.focus()
-        feedSearch.select?.()
-      } else {
-        location.href = '/search'
-      }
-    } else if (key === 'u') {
-      e.preventDefault()
-      location.href = '/upload'
-    }
-  })
-}
 
 // --- Micro-interactions: click sound + ripple, dipasang global di semua elemen interaktif ---
 ;(function initClickFx() {

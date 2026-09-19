@@ -19,19 +19,19 @@ async function init() {
   document.getElementById('toggleAuth').onclick = (e) => {
     e.preventDefault()
     mode = mode === 'login' ? 'register' : 'login'
-    document.getElementById('authTitle').textContent = mode === 'login' ? "Sign in" : "Sign up"
-    document.getElementById('authSubmit').textContent = mode === 'login' ? "Sign in" : "Sign up"
+    document.getElementById('authTitle').textContent = mode === 'login' ? t('signIn') : t('signUp')
+    document.getElementById('authSubmit').textContent = mode === 'login' ? t('signIn') : t('signUp')
     document.getElementById('captchaField').style.display = mode === 'register' ? 'block' : 'none'
-    document.getElementById('toggleAuthText').textContent = mode === 'login' ? "No account yet?" : "Already have an account?"
-    document.getElementById('toggleAuth').textContent = mode === 'login' ? "Sign up" : "Sign in"
+    document.getElementById('toggleAuthText').textContent = mode === 'login' ? t('noAccount') : t('hasAccount')
+    document.getElementById('toggleAuth').textContent = mode === 'login' ? t('signUp') : t('signIn')
     if (mode === 'register') { newCaptcha() }
   }
 
   // Initial labels follow current language
-  document.getElementById('authTitle').textContent = "Sign in"
-  document.getElementById('authSubmit').textContent = "Sign in"
-  document.getElementById('toggleAuthText').textContent = "No account yet?"
-  document.getElementById('toggleAuth').textContent = "Sign up"
+  document.getElementById('authTitle').textContent = t('signIn')
+  document.getElementById('authSubmit').textContent = t('signIn')
+  document.getElementById('toggleAuthText').textContent = t('noAccount')
+  document.getElementById('toggleAuth').textContent = t('signUp')
 
   document.getElementById('togglePassword').onclick = () => {
     const input = document.getElementById('passwordInput')
@@ -51,7 +51,7 @@ async function init() {
         body.captchaAnswer = Number(f.get('captchaAnswer'))
       }
       await api(`/auth/${mode}`, { method: 'POST', body: JSON.stringify(body) })
-      toast(mode === 'login' ? "Signed in!" : "Account created!")
+      toast(mode === 'login' ? t('loginSuccess') : t('registerSuccess'))
       window.location.href = '/'
     } catch (err) {
       toast(err.message)

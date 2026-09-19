@@ -53,10 +53,10 @@ function renderSearchHistory() {
 
   section.style.display = 'block'
   list.innerHTML = items.map(term => `
-    <div class="search-history-row" data-term="${escapeHtml(term)}" role="button" tabindex="0" aria-label="Search again: ${escapeHtml(term)}">
+    <div class="search-history-row" data-term="${escapeHtml(term)}" role="button" tabindex="0" aria-label="Cari lagi: ${escapeHtml(term)}">
       <span class="search-history-icon">${historyClockIconSvg()}</span>
       <span class="search-history-text">${escapeHtml(term)}</span>
-      <button type="button" class="search-history-remove" data-term="${escapeHtml(term)}" aria-label="Remove '${escapeHtml(term)}' from history">
+      <button type="button" class="search-history-remove" data-term="${escapeHtml(term)}" aria-label="Hapus '${escapeHtml(term)}' dari riwayat">
         ${closeIconSvg()}
       </button>
     </div>`).join('')
@@ -104,16 +104,16 @@ async function loadTrendingSearch() {
     const ranked = [...scoreByTag.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10)
 
     if (!ranked.length) {
-      wrap.innerHTML = `<div class="empty-state-sm">No trends yet. Upload code with tags to appear here.</div>`
+      wrap.innerHTML = `<div class="empty-state-sm">Belum ada tren. Unggah kode dan gunakan tag agar muncul di sini.</div>`
       return
     }
 
     wrap.innerHTML = ranked.map(([tag, _score], i) => `
-      <button type="button" class="search-trend-row" data-term="${escapeHtml(tag)}" aria-label="Search tag ${escapeHtml(tag)}">
+      <button type="button" class="search-trend-row" data-term="${escapeHtml(tag)}" aria-label="Cari tag ${escapeHtml(tag)}">
         <span class="search-trend-rank">#${i + 1}</span>
         <span class="search-trend-body">
           <span class="search-trend-tag">#${escapeHtml(tag)}</span>
-          <span class="search-trend-sub">${countByTag.get(tag)} codes</span>
+          <span class="search-trend-sub">${countByTag.get(tag)} kode</span>
         </span>
         <span class="search-trend-arrow">${chevronRightSvg()}</span>
       </button>`).join('')
