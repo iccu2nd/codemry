@@ -703,24 +703,38 @@ img.clickable:hover { outline: 2px solid rgba(var(--accent-rgb),.4); outline-off
 .sc-preview:hover { border-color: #444; }
 .sc-preview-bar {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 8px 12px; background: #222;
+  gap: 8px;
+  padding: 6px 10px; background: #222;
   border-bottom: 1px solid #2e2e2e;
 }
 .sc-filename {
+  display: inline-flex; align-items: center; gap: 6px;
+  min-width: 0; flex: 1;
   font-family: 'JetBrains Mono', monospace;
   font-size: 11.5px; color: #a0a0a0;
+  overflow: hidden;
+}
+.sc-filename-text {
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  min-width: 0;
+}
+.sc-file-icon {
+  width: 13px; height: 13px;
+  flex-shrink: 0;
+  color: #8b8b8b;
+  opacity: .95;
 }
 .sc-preview-hint {
   font-size: 11.5px; font-weight: 600; color: var(--accent-light);
   flex-shrink: 0; margin-left: 8px;
 }
 .sc-preview-code {
-  margin: 0; padding: 12px 14px;
+  margin: 0; padding: 6px 8px 10px;
   max-height: 120px; overflow: hidden;
   font-family: 'JetBrains Mono', monospace; font-size: 12px;
   line-height: 1.55; color: #d4d4d4;
   white-space: pre;
+  text-align: left;
 }
 .sc-preview-code code { background: transparent !important; color: inherit; font-family: inherit; font-size: inherit; }
 .sc-preview-locked {
@@ -2478,13 +2492,6 @@ html:not(.light) .theme-switch input:checked ~ .theme-switch-text-dark {
   .search-field-input, .search-field-input::placeholder { font-size: 14.5px; }
 }
 
-.scrape-req-card { display: flex; flex-direction: column; gap: 8px; }
-.scrape-req-url a { font-weight: 700; color: var(--text); word-break: break-all; }
-.scrape-req-desc { color: #4b5563; font-size: 14.5px; line-height: 1.5; }
-.scrape-req-img { width: 100%; border-radius: 12px; max-height: 260px; object-fit: cover; }
-.scrape-req-meta { display: flex; justify-content: space-between; align-items: center; font-size: 12.5px; color: var(--text-muted); flex-wrap: wrap; gap: 6px; }
-.scrape-req-status { font-weight: 700; color: #f59e0b; }
-.scrape-req-status.claimed { color: #16a34a; }
 
 /* === Micro-interactions: ripple + smoother press feedback (menyeluruh, non-polos) === */
 .ui-ripple-host { position: relative; overflow: hidden; }

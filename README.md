@@ -41,7 +41,6 @@ Codery udah bisa langsung di-deploy ke Vercel sebagai serverless function - gak 
    - `TENOR_API_KEY` - kalau fitur stiker GIF komentar dipakai
    - `CRON_SECRET` - opsional tapi disarankan; Vercel otomatis kirim header ini ke endpoint cron pruning kalau di-set, biar endpoint-nya gak bisa dipicu sembarang orang dari luar
 3. **Deploy**. Vercel bakal jalanin `npm install` terus deploy `api/index.js` sebagai satu serverless function; `vercel.json` udah ngatur semua request (halaman, `/api/*`, static asset di `public/`) supaya lewat function itu.
-4. Cron pembersih scrape-request expired (>7 hari) udah kedaftar otomatis lewat `vercel.json` (`crons`), jalan sekali sehari. **Catatan plan Hobby**: cron di Hobby dibatasi maksimal 1x/hari (yang udah dipakai di sini) dan waktu triggernya bisa meleset dalam rentang 1 jam dari jadwal - itu wajar, bukan bug.
 
 **Kenapa ini bisa langsung jalan di serverless** (gak kayak app Express kebanyakan yang butuh refactor besar): Codery dari awal udah nyimpen semua data (users, snippets, sesi) lewat GitHub API, bukan file/DB lokal di disk - jadi gak ada state yang "hilang" tiap kali serverless function-nya di-spin down. Satu-satunya penyesuaian yang dibutuhin cuma: `server.js` sekarang nge-export Express app-nya (dipakai `api/index.js`) alih-alih langsung manggil `app.listen()`, build CSS dilayani dari memori (bukan nulis ke disk yang read-only di serverless), dan job bersih-bersih terjadwal pindah dari `setInterval` ke Vercel Cron Jobs.
 

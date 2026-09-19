@@ -13,11 +13,9 @@ const I18N = {
   profile: 'Profile',
   upload: 'Upload',
   search: 'Search',
-  requestScrape: 'Request Scrape',
   guide: 'Guide',
   likedCodes: 'Liked codes',
   savedCodes: 'Saved codes',
-  scrapeList: 'Scrape list',
   apiDocs: 'API Documentation',
   open: 'Open',
   copyLink: 'Copy link',
@@ -505,9 +503,6 @@ function injectAccountLinks() {
   let likedLink = document.getElementById('likedMenuLink')
   let savedLink = document.getElementById('savedMenuLink')
   let apiDocsLink = document.getElementById('apiDocsMenuLink')
-  // Remove deprecated scrape menu if still present
-  document.getElementById('scrapeMenuLink')?.remove()
-  document.getElementById('requestScrapeMenuLink')?.remove()
   if (!me || !onProfilePage) {
     if (likedLink) likedLink.remove()
     if (savedLink) savedLink.remove()
@@ -541,9 +536,6 @@ function injectAccountLinks() {
 }
 
 function injectStaticMenuLinks(topnav) {
-  // Always remove scrape links (deprecated)
-  document.getElementById('requestScrapeMenuLink')?.remove()
-  document.getElementById('scrapeMenuLink')?.remove()
 
   if (location.pathname !== '/') {
     document.getElementById('searchMenuLink')?.remove()
@@ -725,6 +717,9 @@ function langIconHtml(lang) {
   const conf = LANG_ICON[key] || LANG_ICON.text
   return `<span class="lang-icon" title="${escapeHtml(lang || '')}" aria-label="${escapeHtml(lang || '')}">${langBadgeSvg(conf.label, conf.color, conf.text || '#fff')}</span>`
 }
+function fileIconSvg() {
+  return `<svg class="sc-file-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3.5H7.5A2 2 0 0 0 5.5 5.5v13A2 2 0 0 0 7.5 20.5h9a2 2 0 0 0 2-2V9.5z"/><path d="M14 3.5V8a1.5 1.5 0 0 0 1.5 1.5H20"/><path d="M9 13h6M9 16.5h4"/></svg>`
+}
 function houseIconSvg() { return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5 12 3.5l8 7"/><path d="M6.5 9.5V19a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1V9.5"/><path d="M10 20v-5.5a1.5 1.5 0 0 1 1.5-1.5h1A1.5 1.5 0 0 1 14 14.5V20"/><path d="M16 4.5v2.2"/></svg>` }
 function plusIconSvg() { return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><path d="M12 8v8M8 12h8"/></svg>` }
 function userIconSvg() { return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7.5" r="3.8"/><path d="M5 19.5c1.2-3.4 3.8-5 7-5s5.8 1.6 7 5"/><path d="M12 11.2v1.2"/></svg>` }
@@ -788,7 +783,7 @@ function snippetCard(s) {
       : previewText ? `
     <a class="sc-preview" href="${codeUrl(s.shortId)}">
       <div class="sc-preview-bar">
-        <span class="sc-filename">${escapeHtml(s.filename || 'code')}</span>
+        <span class="sc-filename">${fileIconSvg()}<span class="sc-filename-text">${escapeHtml(s.filename || 'code')}</span></span>
         <span class="sc-preview-meta">
           <span class="sc-lang-tag">${escapeHtml(lang)}</span>
           <span class="sc-lines">${lineCount} ${t('lines')}</span>

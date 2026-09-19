@@ -173,26 +173,6 @@ export async function deleteUserAccount(username, deleteGistFn) {
     await Users.remove(username)
 }
 
-export const SCRAPE_REQUEST_TTL_MS = 7 * 24 * 60 * 60 * 1000
-
-export const ScrapeRequests = {
-    async all() { return (await readDbFile('scrape-requests.json')).data },
-    async create(reqData) { return update('scrape-requests.json', d => [...d, reqData], `scrape request by ${reqData.username}`) },
-    async claim(id, username) {
-        const updated = await update('scrape-requests.json', d => d.map(r =>
-            r.id === id && r.status === 'pending' ? { ...r, status: 'claimed', claimedBy: username, claimedAt: Date.now() } : r
-        ), `claim scrape request ${id} by ${username}`)
-        return updated.find(r => r.id === id)
-    },
-    async pruneExpired() {
-        const cutoff = Date.now() - SCRAPE_REQUEST_TTL_MS
-        const { data } = await readDbFile('scrape-requests.json')
-        const expired = data.filter(r => r.createdAt < cutoff)
-        if (!expired.length) return { removed: 0 }
-        await update('scrape-requests.json', d => d.filter(r => r.createdAt >= cutoff), `auto-prune ${expired.length} scrape request(s) older than 7 hari`)
-        return { removed: expired.length }
-    }
-}
 
 export const Follows = {
     async all() { return (await readDbFile('follows.json')).data },

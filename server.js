@@ -10,12 +10,11 @@ import authRoutes from './src/routes/auth.js'
 import codeRoutes from './src/routes/codes.js'
 import userRoutes from './src/routes/users.js'
 import devRoutes from './src/routes/dev.js'
-import scrapeRoutes from './src/routes/scrape-requests.js'
 import notificationRoutes from './src/routes/notifications.js'
 import tenorRoutes from './src/routes/tenor.js'
 import publicApiRoutes from './src/routes/public-api.js'
 import { initGithub, getAssetContent } from './src/github.js'
-import { Snippets, Users, Views, Likes, Follows, ScrapeRequests, ensureSessionSecret, isDeveloperUsername, isModeratorUser, ensureNickname, readBadges, badgeDisplay } from './src/db.js'
+import { Snippets, Users, Views, Likes, Follows, ensureSessionSecret, isDeveloperUsername, isModeratorUser, ensureNickname, readBadges, badgeDisplay } from './src/db.js'
 import { verifyToken, parseCookies, COOKIE_NAME, MAX_AGE, createToken, setSecret } from './src/token.js'
 import { renderCodeOgImage, renderProfileOgImage, renderFeedOgImage } from './src/og.js'
 import fs from 'fs'
@@ -95,29 +94,10 @@ app.use('/api/auth', authRoutes)
 app.use('/api/codes', codeRoutes)
 app.use('/api/users', userRoutes)
 app.use('/api/dev', devRoutes)
-app.use('/api/scrape-requests', scrapeRoutes)
 app.use('/api/notifications', notificationRoutes)
 app.use('/api/tenor', tenorRoutes)
 app.use('/api/public', publicApiRoutes)
 
-// Endpoint cron buat bersihin scrape request yang udah expired (>7 hari).
-// Di server tradisional ini jalan lewat setInterval (lihat schedulePruneExpiredScrapeRequests
-// di bawah). Di Vercel gak ada proses long-running buat setInterval, jadi endpoint
-// ini yang dipanggil terjadwal lewat Vercel Cron Jobs (lihat vercel.json). Dilindungi
-// pakai CRON_SECRET -- Vercel otomatis nyisipin header "Authorization: Bearer <CRON_SECRET>"
-// tiap manggil cron kalau env var itu di-set, jadi endpoint ini gak bisa dipicu sembarang orang.
-app.get('/api/cron/prune-scrape-requests', async (req, res) => {
-    if (process.env.CRON_SECRET && req.headers.authorization !== `Bearer ${process.env.CRON_SECRET}`) {
-        return res.status(401).json({ error: 'Unauthorized' })
-    }
-    try {
-        const { removed } = await ScrapeRequests.pruneExpired()
-        res.json({ ok: true, removed })
-    } catch (e) {
-        console.error('Gagal prune scrape requests (cron):', e.response?.data?.message || e.message)
-        res.status(500).json({ error: 'Gagal prune scrape requests' })
-    }
-})
 
 app.get('/avatar/:username', async (req, res) => {
     try {
@@ -327,7 +307,6 @@ Disallow: /upload
 Disallow: /notifications
 Disallow: /liked
 Disallow: /bookmarks
-Disallow: /scrape-requests
 Disallow: /devpanel
 Disallow: /moderasi
 Disallow: /follow
@@ -425,11 +404,9 @@ const PAGES = {
 const devpanelHtmlTemplate = versionAssets(fs.readFileSync(path.join(__dirname, 'public', 'devpanel.html'), 'utf-8'))
 const moderasiHtmlTemplate = versionAssets(fs.readFileSync(path.join(__dirname, 'public', 'moderasi.html'), 'utf-8'))
 const uploadHtmlTemplate = versionAssets(fs.readFileSync(path.join(__dirname, 'public', 'upload.html'), 'utf-8'))
-const requestScrapeHtmlTemplate = versionAssets(fs.readFileSync(path.join(__dirname, 'public', 'request-scrape.html'), 'utf-8'))
 const likedHtmlTemplate = versionAssets(fs.readFileSync(path.join(__dirname, 'public', 'liked.html'), 'utf-8'))
 const bookmarksHtmlTemplate = versionAssets(fs.readFileSync(path.join(__dirname, 'public', 'bookmarks.html'), 'utf-8'))
 const notificationsHtmlTemplate = versionAssets(fs.readFileSync(path.join(__dirname, 'public', 'notifications.html'), 'utf-8'))
-const scrapeRequestsHtmlTemplate = versionAssets(fs.readFileSync(path.join(__dirname, 'public', 'scrape-requests.html'), 'utf-8'))
 const apiDocsHtmlTemplate = versionAssets(fs.readFileSync(path.join(__dirname, 'public', 'api-docs.html'), 'utf-8'))
 const pagesHtmlTemplates = {}
 for (const file of Object.values(PAGES)) {
@@ -456,9 +433,6 @@ app.get('/upload', (req, res) => {
     if (!req.username) return res.redirect('/auth')
     sendHtml(res, uploadHtmlTemplate)
 })
-app.get('/request-scrape', (req, res) => {
-    sendHtml(res, requestScrapeHtmlTemplate)
-})
 app.get('/liked', (req, res) => {
     if (!req.username) return res.redirect('/auth')
     sendHtml(res, likedHtmlTemplate)
@@ -470,10 +444,6 @@ app.get('/bookmarks', (req, res) => {
 app.get('/notifications', (req, res) => {
     if (!req.username) return res.redirect('/auth')
     sendHtml(res, notificationsHtmlTemplate)
-})
-app.get('/scrape-requests', (req, res) => {
-    if (!req.username) return res.redirect('/auth')
-    sendHtml(res, scrapeRequestsHtmlTemplate)
 })
 app.get('/api-docs', (req, res) => {
     if (!req.username) return res.redirect('/auth')
@@ -521,21 +491,6 @@ app.use(express.static(path.join(__dirname, 'public'), {
 app.use((req, res) => { res.status(404); sendHtml(res, indexHtmlTemplate) })
 
 const PORT = process.env.PORT || 3000
-const SCRAPE_PRUNE_INTERVAL_MS = 6 * 60 * 60 * 1000
-
-// Cuma dipakai di server tradisional (non-Vercel): setInterval yang jalan terus
-// selama proses hidup. Serverless (Vercel) gak punya proses long-running kayak
-// gini -- di sana pruning dijadwalkan lewat endpoint /api/cron/prune-scrape-requests
-// (lihat di atas) + Vercel Cron Jobs di vercel.json.
-function schedulePruneExpiredScrapeRequests() {
-    const run = () => {
-        ScrapeRequests.pruneExpired()
-            .then(({ removed }) => { if (removed) console.log(`Auto-prune: hapus ${removed} scrape request > 7 hari`) })
-            .catch(err => console.error('Gagal auto-prune scrape requests:', err.response?.data?.message || err.message))
-    }
-    run()
-    setInterval(run, SCRAPE_PRUNE_INTERVAL_MS)
-}
 
 // `ready` nyimpen proses setup async (init GitHub repo, ambil/isi session secret)
 // yang HARUS beres sebelum request pertama dilayani. Di server tradisional ini
@@ -562,7 +517,6 @@ export const ready = initGithub()
 if (!process.env.VERCEL) {
     ready
         .then(() => {
-            schedulePruneExpiredScrapeRequests()
             app.listen(PORT, () => console.log(`Codery jalan di port ${PORT}`))
         })
         .catch(() => process.exit(1))
