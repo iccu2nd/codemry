@@ -699,16 +699,19 @@ img.clickable:hover { outline: 2px solid rgba(var(--accent-rgb),.4); outline-off
   background: #1a1a1a; border: 1px solid #2a2a2a;
   text-decoration: none; color: inherit;
   transition: border-color .15s ease;
+  position: relative;
 }
 .sc-preview:hover { border-color: #444; }
 .sc-preview-bar {
   display: flex; align-items: center; justify-content: space-between;
   gap: 8px;
-  padding: 6px 10px; background: #222;
+  padding: 5px 8px; background: #222;
   border-bottom: 1px solid #2e2e2e;
+  position: relative;
+  z-index: 1;
 }
 .sc-filename {
-  display: inline-flex; align-items: center; gap: 6px;
+  display: inline-flex; align-items: center; gap: 5px;
   min-width: 0; flex: 1;
   font-family: 'JetBrains Mono', monospace;
   font-size: 11.5px; color: #a0a0a0;
@@ -719,7 +722,7 @@ img.clickable:hover { outline: 2px solid rgba(var(--accent-rgb),.4); outline-off
   min-width: 0;
 }
 .sc-file-icon {
-  width: 13px; height: 13px;
+  width: 12px; height: 12px;
   flex-shrink: 0;
   color: #8b8b8b;
   opacity: .95;
@@ -729,14 +732,24 @@ img.clickable:hover { outline: 2px solid rgba(var(--accent-rgb),.4); outline-off
   flex-shrink: 0; margin-left: 8px;
 }
 .sc-preview-code {
-  margin: 0; padding: 6px 8px 10px;
-  max-height: 120px; overflow: hidden;
+  margin: 0; padding: 4px 6px 14px;
+  max-height: 118px; overflow: hidden;
   font-family: 'JetBrains Mono', monospace; font-size: 12px;
   line-height: 1.55; color: #d4d4d4;
   white-space: pre;
   text-align: left;
 }
 .sc-preview-code code { background: transparent !important; color: inherit; font-family: inherit; font-size: inherit; }
+/* Soft fade at bottom of code preview */
+.sc-preview:not(.sc-preview-locked)::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 28px;
+  background: linear-gradient(to bottom, rgba(26,26,26,0), #1a1a1a 88%);
+  pointer-events: none;
+  z-index: 1;
+}
 .sc-preview-locked {
   display: flex; align-items: center; justify-content: center;
   min-height: 72px; background: #1a1a1a;
