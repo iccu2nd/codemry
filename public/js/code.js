@@ -63,7 +63,7 @@ function renderUnlockedDetail(app, shortId, s) {
           <span class="cd-dot">·</span>
           <span>${timeAgo(s.createdAt)}</span>
           <span class="cd-dot">·</span>
-          <span>${formatViews(s.views)}</span>
+          <span class="sc-views-inline" title="${s.views || 0} dilihat">${eyeIconSvg()}<span>${formatViews(s.views)}</span></span>
         </div>
         ${s.forkedFrom ? `<a class="forked-from-badge" href="${codeUrl(s.forkedFrom.shortId)}">${forkIconSvg()} Forked from <b>${escapeHtml(s.forkedFrom.ownerNickname)}</b></a>` : ''}
         ${s.description ? `<p class="cd-desc">${formatWaText(s.description)}</p>` : ''}
@@ -161,7 +161,7 @@ function renderUnlockedDetail(app, shortId, s) {
         </div>
 
         <div class="comments-section" id="commentsSection">
-          <div class="comments-title">Comments <span id="commentCount"></span></div>
+          <div class="comments-title">Komentar <span id="commentCount"></span></div>
           <div id="commentForm"></div>
           <div id="commentList">${skelCommentList(2)}</div>
         </div>
@@ -709,7 +709,7 @@ async function setupComments(shortId, ownerUsername) {
            <button class="send-icon-btn" id="commentSendBtn" title="Kirim">${sendIconSvg()}</button>
          </div>
        </div>`
-    : `<div class="comment-form-locked">Sign in to comment. <a href="/auth">Sign in</a></div>`
+    : `<div class="comment-form-locked">Masuk dulu untuk berkomentar. <a href="/auth">Masuk</a></div>`
 
   function autoGrow(el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px' }
 
@@ -766,7 +766,7 @@ async function setupComments(shortId, ownerUsername) {
       countEl.textContent = comments.length ? `(${comments.length})` : ''
       listEl.innerHTML = comments.length
         ? comments.slice().reverse().map(c => commentCardHtml(c, me && (me.username === c.username || isOwner), isOwner)).join('')
-        : `<div class="empty-state-sm">No comments yet. Be the first!</div>`
+        : `<div class="empty-state-sm">Belum ada komentar. Jadilah yang pertama!</div>`
 
       listEl.querySelectorAll('[data-role="delete-comment"]').forEach(btn => {
         btn.onclick = async () => {
@@ -915,7 +915,7 @@ async function loadRelatedCodes(s) {
     if (!related.length) return
     box.style.display = 'block'
     box.innerHTML = `
-      <div class="related-title">Related Code</div>
+      <div class="related-title">Kode terkait</div>
       <div class="related-scroll" role="list">
         ${related.map(r => `
           <a class="related-card" href="${codeUrl(r.shortId)}" role="listitem">
