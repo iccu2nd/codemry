@@ -290,123 +290,52 @@ function devBadgeHtml(isDeveloper) {
   </span>`
 }
 
-// ============================================================
-// Level system — XP dihitung dari aktivitas publik user
-// (upload, likes diterima, views, followers). Tidak perlu
-// field baru di DB; pure computed supaya ringan.
-// ============================================================
-const XP_PER_CODE = 50
-const XP_PER_LIKE = 8
-const XP_PER_VIEW = 1
-const XP_PER_FOLLOWER = 20
-
-function calcXp({ codes = 0, likes = 0, views = 0, followers = 0 } = {}) {
-  return Math.max(0,
-    (Number(codes) || 0) * XP_PER_CODE +
-    (Number(likes) || 0) * XP_PER_LIKE +
-    (Number(views) || 0) * XP_PER_VIEW +
-    (Number(followers) || 0) * XP_PER_FOLLOWER
-  )
-}
-
-// XP kumulatif yang dibutuhkan untuk mencapai level L (L mulai dari 1).
-// Kurva: 0, 80, 180, 300, 450, … naik pelan di awal biar motivatif.
-function xpToReachLevel(level) {
-  if (level <= 1) return 0
-  let total = 0
-  for (let l = 2; l <= level; l++) {
-    total += 40 + (l - 1) * 30 // L2=70, L3+=100, L4+=130, …
-  }
-  return total
-}
-
-function levelFromXp(xp) {
-  let level = 1
-  while (level < 99 && xp >= xpToReachLevel(level + 1)) level++
-  return level
-}
-
-function levelTitle(level) {
-  if (level >= 30) return 'Legenda'
-  if (level >= 20) return 'Master'
-  if (level >= 12) return 'Pro'
-  if (level >= 7) return 'Kontributor'
-  if (level >= 3) return 'Koder'
-  return 'Pemula'
-}
-
-/** Tier visual: semakin tinggi level, semakin "kasta" beda. */
-function levelTier(level) {
-  if (level >= 30) return 'legend'
-  if (level >= 20) return 'master'
-  if (level >= 12) return 'pro'
-  if (level >= 7) return 'contrib'
-  if (level >= 3) return 'coder'
-  return 'newbie'
-}
-
-function levelInfo(stats) {
-  const xp = calcXp(stats)
-  const level = levelFromXp(xp)
-  const curFloor = xpToReachLevel(level)
-  const nextFloor = xpToReachLevel(level + 1)
-  const span = Math.max(1, nextFloor - curFloor)
-  const into = Math.max(0, xp - curFloor)
-  const pct = Math.min(100, Math.round((into / span) * 100))
-  return {
-    xp,
-    level,
-    title: levelTitle(level),
-    tier: levelTier(level),
-    nextXp: nextFloor,
-    need: Math.max(0, nextFloor - xp),
-    pct,
-    into,
-    span
-  }
-}
-
-function levelBadgeHtml(level, { compact = false } = {}) {
-  if (!level || level < 1) return ''
-  const title = levelTitle(level)
-  const tier = levelTier(level)
-  const cls = `lvl-badge lvl-tier-${tier}${compact ? ' lvl-badge-sm' : ''}`
-  return `<span class="${cls}" title="Level ${level} · ${title}">Lv.${level}</span>`
-}
-
-function levelProgressHtml(info) {
-  if (!info) return ''
-  const tier = info.tier || levelTier(info.level)
-  return `
-  <div class="lvl-card lvl-tier-${tier}">
-    <div class="lvl-card-row">
-      <div class="lvl-card-identity">
-        <span class="lvl-badge lvl-badge-lg lvl-tier-${tier}">Lv.${info.level}</span>
-        <div class="lvl-card-meta">
-          <div class="lvl-card-title">${escapeHtml(info.title)}</div>
-          <div class="lvl-card-xp">${info.xp.toLocaleString('id')} XP</div>
-        </div>
-      </div>
-      <div class="lvl-card-goal" title="Level berikutnya">
-        <span class="lvl-card-goal-lbl">Menuju</span>
-        <span class="lvl-card-goal-val">Lv.${info.level + 1}</span>
-      </div>
-    </div>
-    <div class="lvl-bar" role="progressbar" aria-valuenow="${info.pct}" aria-valuemin="0" aria-valuemax="100" aria-label="Progres level">
-      <div class="lvl-bar-fill" style="width:${info.pct}%"></div>
-    </div>
-    <div class="lvl-card-hint">
-      <span class="lvl-card-hint-need">${info.need.toLocaleString('id')} XP lagi</span>
-      <span class="lvl-card-hint-sep">·</span>
-      <span>Upload <b>+${XP_PER_CODE}</b></span>
-      <span class="lvl-card-hint-sep">·</span>
-      <span>Suka <b>+${XP_PER_LIKE}</b></span>
-    </div>
-  </div>`
-}
-
 function eyeIconSvg() {
-  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>`
+  return `<svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>`
+}
+
+function linkIconSvg() {
+  return `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.07 0l1.41-1.41a5 5 0 0 0-7.07-7.07L10 5.93"/><path d="M14 11a5 5 0 0 0-7.07 0L5.5 12.43a5 5 0 0 0 7.07 7.07L14 18.07"/></svg>`
+}
+
+/** Tombol kembali ke atas — muncul setelah user scroll. */
+function initScrollTop() {
+  if (document.getElementById('scrollTopBtn')) return
+  const btn = document.createElement('button')
+  btn.type = 'button'
+  btn.id = 'scrollTopBtn'
+  btn.className = 'scroll-top-btn'
+  btn.setAttribute('aria-label', 'Kembali ke atas')
+  btn.title = 'Ke atas'
+  btn.innerHTML = `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="M6 11l6-6 6 6"/></svg>`
+  btn.hidden = true
+  document.body.appendChild(btn)
+  const toggle = () => {
+    btn.hidden = window.scrollY < 320
+  }
+  window.addEventListener('scroll', toggle, { passive: true })
+  toggle()
+  btn.onclick = () => window.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
+function wireCopyLinkButtons(root) {
+  ;(root || document).querySelectorAll('[data-role="copy-link"]').forEach(btn => {
+    if (btn.dataset.wired === '1') return
+    btn.dataset.wired = '1'
+    btn.onclick = async (e) => {
+      e.preventDefault()
+      e.stopPropagation()
+      const id = btn.dataset.short
+      if (!id) return
+      const url = location.origin + codeUrl(id)
+      try {
+        await navigator.clipboard.writeText(url)
+        toast('Tautan disalin')
+      } catch {
+        toast('Gagal menyalin tautan')
+      }
+    }
+  })
 }
 
 function renderAuthArea() {
@@ -749,7 +678,9 @@ function snippetCard(s) {
   while (previewStart < rawLines.length && rawLines[previewStart].trim() === '') previewStart++
   const trimmedPreview = rawLines.slice(previewStart).join('\n')
   const previewText = trimmedPreview ? escapeHtml(trimmedPreview) : ''
+  const lineCount = Math.max(1, rawLines.filter((l, i) => i >= previewStart || l.trim() !== '').length)
   const viewsLabel = formatViews(s.views)
+  const lang = (s.language || 'text').toLowerCase()
   return `
   <article class="snippet-card">
     <header class="sc-head">
@@ -763,7 +694,7 @@ function snippetCard(s) {
           <span class="sc-meta-dot">·</span>
           <span>${timeAgo(s.createdAt)}</span>
           <span class="sc-meta-dot">·</span>
-          <span class="sc-views-inline" title="${s.views || 0} dilihat">${eyeIconSvg()} ${viewsLabel}</span>
+          <span class="sc-views-inline" title="${s.views || 0} dilihat">${eyeIconSvg()}<span>${viewsLabel}</span></span>
         </div>
       </div>
       <div class="sc-badges">
@@ -786,7 +717,10 @@ function snippetCard(s) {
     <a class="sc-preview" href="${codeUrl(s.shortId)}">
       <div class="sc-preview-bar">
         <span class="sc-filename">${escapeHtml(s.filename || 'code')}</span>
-        <span class="sc-preview-hint">Lihat →</span>
+        <span class="sc-preview-meta">
+          <span class="sc-lang-tag">${escapeHtml(lang)}</span>
+          <span class="sc-lines">${lineCount}+ baris</span>
+        </span>
       </div>
       <pre class="sc-preview-code"><code class="language-${hljsLang(s.language)}">${previewText}</code></pre>
     </a>` : ''}
@@ -800,6 +734,9 @@ function snippetCard(s) {
         </button>
         <button type="button" class="sc-stat bookmark-btn ${s.savedByMe ? 'saved' : ''}" data-role="bookmark" data-short="${s.shortId}" data-saved="${s.savedByMe ? 'true' : 'false'}" title="Simpan">
           ${bookmarkIconSvg()}
+        </button>
+        <button type="button" class="sc-stat" data-role="copy-link" data-short="${s.shortId}" title="Salin tautan">
+          ${linkIconSvg()}
         </button>
       </div>
       <a class="sc-open btn btn-primary btn-sm" href="${codeUrl(s.shortId)}">Buka</a>
@@ -1157,6 +1094,7 @@ function highlightAllIn(selector) {
 document.addEventListener('DOMContentLoaded', initHamburger)
 document.addEventListener('DOMContentLoaded', initBottomNav)
 document.addEventListener('DOMContentLoaded', initBackButton)
+document.addEventListener('DOMContentLoaded', initScrollTop)
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal() })
 
 // --- Micro-interactions: click sound + ripple, dipasang global di semua elemen interaktif ---

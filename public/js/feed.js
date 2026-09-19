@@ -232,6 +232,7 @@ function renderFeed(opts = {}) {
   highlightAllIn('#feedList pre code')
   wireLikeButtons(list)
   wireBookmarkButtons(list)
+  wireCopyLinkButtons(list)
   renderPagination(items.length, totalPages)
 
   if (opts.scroll) {

@@ -92,8 +92,8 @@ async function init() {
       <form id="uploadForm" autocomplete="off">
         <div class="upload-panel" style="display:${step === 1 ? 'block' : 'none'}">
           <div class="upload-value">
-            <div class="upload-value-title">Bagikan kode · naik level</div>
-            <div class="upload-value-sub">Tiap upload publik = <b>+${XP_PER_CODE} XP</b>. Suka & dilihat ikut menambah XP. Draf tersimpan otomatis.</div>
+            <div class="upload-value-title">Bagikan kode dalam hitungan menit</div>
+            <div class="upload-value-sub">Dapatkan tautan publik, bantu developer lain, dan simpan cuplikan di satu tempat. Draf tersimpan otomatis.</div>
           </div>
           <div class="upload-panel-title">Kode kamu</div>
           <div class="upload-panel-sub">Pilih file atau tempel — bahasa terdeteksi otomatis</div>
@@ -342,7 +342,7 @@ async function init() {
           })
         })
         clearDraft()
-        toast(`Berhasil dipublikasikan! +${XP_PER_CODE} XP`)
+        toast('Berhasil dipublikasikan!')
         window.location.href = codeUrl(s.shortId)
       } catch (err) {
         toast(err.message)

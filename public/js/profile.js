@@ -7,12 +7,6 @@ async function renderProfile() {
   try {
     const p = await api(`/users/${username}`)
     const totalViews = p.totalViews ?? p.snippets.reduce((sum, s) => sum + (s.views || 0), 0)
-    const lvl = levelInfo({
-      codes: p.snippets.length,
-      likes: p.totalLikes ?? 0,
-      views: totalViews,
-      followers: p.followersCount || 0
-    })
     app.innerHTML = `
       <div class="card profile-card">
         <div class="profile-banner-wrap${p.banner ? '' : ' no-banner'}">
@@ -29,14 +23,9 @@ async function renderProfile() {
           </div>
           <div class="profile-names">
             <div class="profile-nickname">${escapeHtml(p.nickname || p.username)}${badgesHtml(p.badges)}${devBadgeHtml(p.isDeveloper)}${roleBadgeHtml(p.role)}</div>
-            <div class="profile-username-row">
-              <span class="profile-username">@${escapeHtml(p.username)}</span>
-              ${levelBadgeHtml(lvl.level)}
-              <span class="profile-rank-label lvl-tier-${lvl.tier}">${escapeHtml(lvl.title)}</span>
-            </div>
+            <div class="profile-username">@${escapeHtml(p.username)}</div>
           </div>
         </div>
-        ${levelProgressHtml(lvl)}
         <div class="stat-row">
           <div class="stat"><b>${p.snippets.length}</b><span>Kode</span></div>
           <div class="stat"><b>${formatViews(totalViews)}</b><span>Dilihat</span></div>
@@ -100,13 +89,14 @@ async function renderProfile() {
       : (p.isMe
           ? `<div class="empty-state empty-cta">
                <div class="empty-cta-title">Belum ada kode</div>
-               <div class="empty-cta-sub">Upload kode pertamamu dan dapatkan +${XP_PER_CODE} XP untuk naik level.</div>
-               <a class="btn btn-primary" href="/upload">Upload kode · +${XP_PER_CODE} XP</a>
+               <div class="empty-cta-sub">Bagikan cuplikan kode pertamamu ke komunitas.</div>
+               <a class="btn btn-primary" href="/upload">Upload kode</a>
              </div>`
           : `<div class="empty-state">Belum ada kode yang dibagikan.</div>`)
     highlightAllIn('#profileSnippets pre code')
     wireLikeButtons(list)
     wireBookmarkButtons(list)
+    wireCopyLinkButtons(list)
 
 
     // Profile music — circular progress + duration next to play button

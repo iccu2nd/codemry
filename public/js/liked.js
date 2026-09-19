@@ -13,6 +13,7 @@ async function init() {
     highlightAllIn('#likedList pre code')
     wireLikeButtons(document.getElementById('likedList'))
     wireBookmarkButtons(document.getElementById('likedList'))
+    wireCopyLinkButtons(document.getElementById('likedList'))
   } catch (e) {
     container.innerHTML = `<div class="card"><div class="empty-state">${escapeHtml(e.message)}</div></div>`
   }
