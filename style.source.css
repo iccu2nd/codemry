@@ -230,6 +230,52 @@ body[data-floating-back] .app { padding-top: calc(74px + env(safe-area-inset-top
   cursor: pointer; color: var(--text); flex-shrink: 0;
 }
 
+/* Language switcher in hamburger menu */
+.lang-control {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  margin: 4px 0 8px;
+  border-radius: 12px;
+  background: var(--bg-muted);
+  border: 1px solid var(--border);
+}
+.lang-control-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+.lang-control-btns {
+  display: inline-flex;
+  gap: 4px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 3px;
+}
+.lang-btn {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  padding: 5px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background .12s ease, color .12s ease;
+}
+.lang-btn.active {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.lang-btn:not(.active):hover {
+  color: var(--text);
+}
+
 .nav-backdrop {
   position: fixed; inset: 0; z-index: 15;
   display: none;
