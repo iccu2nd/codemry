@@ -1014,19 +1014,15 @@ img.clickable:hover { outline: 2px solid rgba(var(--accent-rgb),.4); outline-off
   width: 100vw; height: 100vh; height: 100dvh;
   margin: 0; border-radius: 0; border: none;
   display: flex; flex-direction: column;
-  /* Only allow single-finger panning inside the fullscreen viewer so a
-     two-finger pinch never gets picked up by the browser as a native
-     page-zoom gesture. That native zoom is what made the "fullscreen"
-     box look like it wasn't covering the full screen: the box itself
-     was full-size, but the whole page had been zoomed/panned by the
-     browser, so fixed elements (back button, bottom nav) peeked in
-     around the edges. Our own pinch handler in code.js takes over
-     zooming the code text instead. */
+  /* pan-x pan-y: single-finger pan ok, native double-finger page-zoom
+     dicegah. Pinch di-handle sendiri di code.js (ubah font-size kode). */
   touch-action: pan-x pan-y;
 }
 html:has(.code-window.fullscreen) { overflow: hidden; touch-action: pan-x pan-y; }
 body:has(.code-window.fullscreen) { touch-action: pan-x pan-y; }
 .code-window.fullscreen .code-view { flex: 1; overflow: auto; touch-action: pan-x pan-y; }
+/* Font-size default di fullscreen; nilai aktual di-set lewat JS (applyZoom)
+   jadi inline style selalu menang dari rule ini. */
 .code-window.fullscreen .code-view code { font-size: 16px; }
 .code-window.fullscreen::after { top: 49px; }
 
@@ -1043,10 +1039,12 @@ body:has(.code-window.fullscreen) { touch-action: pan-x pan-y; }
 
 .profile-banner-wrap {
   position: relative;
-  margin: -24px -24px 16px;
-  border-radius: 28px 28px 0 0;
+  /* Margin negatif = padding kartu (18px) supaya banner flush ke tepi kartu,
+     radius sama dengan --radius-lg biar kotak background sinkron dengan kartu. */
+  margin: -18px -18px 14px;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   overflow: hidden;
-  height: 150px;
+  height: 172px; /* sedikit lebih tinggi dari sebelumnya, proporsi lebih pas */
 }
 .profile-banner-img {
   width: 100%; height: 100%;
@@ -1060,7 +1058,7 @@ body:has(.code-window.fullscreen) { touch-action: pan-x pan-y; }
   background-image: linear-gradient(135deg, var(--accent-light), var(--accent));
 }
 .profile-banner-fade {
-  position: absolute; left: 0; right: 0; bottom: 0; height: 55%;
+  position: absolute; left: 0; right: 0; bottom: 0; height: 50%;
   background: linear-gradient(180deg, transparent 0%, var(--bg-card) 100%);
   pointer-events: none;
 }
@@ -1769,6 +1767,78 @@ body:not([data-no-bottom-nav]) .app { padding-bottom: 116px; }
 .theme-icon-btn:active { transform: scale(0.96); }
 .theme-icon-btn svg { width: 22px; height: 22px; }
 .topbar-right-icons { display: flex; align-items: center; gap: 10px; }
+
+/* Dark/Light toggle switch di sebelah kiri hamburger.
+   checked (on) = dark mode, unchecked (off) = light mode. */
+.theme-switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  user-select: none;
+}
+.theme-switch input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+.theme-switch-track {
+  position: relative;
+  width: 52px;
+  height: 30px;
+  border-radius: 999px;
+  background: var(--bg-muted);
+  border: 1px solid var(--border-strong);
+  transition: background .2s ease, border-color .2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 6px;
+  box-sizing: border-box;
+}
+.theme-switch input:checked + .theme-switch-track {
+  background: var(--accent-bg);
+  border-color: var(--accent-border);
+}
+.theme-switch-thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0,0,0,.25);
+  transition: transform .22s cubic-bezier(.22,.9,.32,1.2);
+  z-index: 1;
+}
+.theme-switch input:checked + .theme-switch-track .theme-switch-thumb {
+  transform: translateX(22px);
+  background: var(--accent);
+}
+html.light .theme-switch-thumb {
+  background: #fff;
+}
+html.light .theme-switch input:checked + .theme-switch-track .theme-switch-thumb {
+  background: var(--accent);
+}
+.theme-switch-icon {
+  font-size: 11px;
+  line-height: 1;
+  z-index: 0;
+  opacity: 0.45;
+  color: var(--text-muted);
+  transition: opacity .2s ease;
+  pointer-events: none;
+}
+.theme-switch-sun { order: 1; }
+.theme-switch-moon { order: 0; }
+.theme-switch input:checked + .theme-switch-track .theme-switch-moon { opacity: 0.95; color: var(--text); }
+.theme-switch input:not(:checked) + .theme-switch-track .theme-switch-sun { opacity: 0.95; color: var(--text); }
+.theme-switch:active .theme-switch-track { transform: scale(0.96); }
 .theme-swatch-grid {
   display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
   margin-top: 4px;

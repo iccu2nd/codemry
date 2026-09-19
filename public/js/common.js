@@ -453,18 +453,46 @@ function injectStaticMenuLinks(topnav) {
 }
 
 function injectDarkModeToggle() {
-  const topnav = document.getElementById('topnav')
-  if (!topnav || document.getElementById('darkModeToggle')) return
-  const btn = document.createElement('button')
-  btn.type = 'button'
-  btn.id = 'darkModeToggle'
-  btn.className = 'menu-link menu-btn'
-  btn.textContent = isDarkMode() ? 'Light mode' : 'Dark mode'
-  btn.onclick = () => {
-    toggleDarkMode()
-    btn.textContent = isDarkMode() ? 'Light mode' : 'Dark mode'
+  // Toggle switch di sebelah kiri hamburger (bukan di dalam menu).
+  // on = dark, off = light.
+  if (document.getElementById('darkModeSwitch')) return
+
+  const hamburgerBtn = document.getElementById('hamburgerBtn')
+  if (!hamburgerBtn) return
+
+  let iconsWrap = document.querySelector('.topbar-right-icons')
+  if (!iconsWrap) {
+    iconsWrap = document.createElement('div')
+    iconsWrap.className = 'topbar-right-icons'
+    hamburgerBtn.parentNode.insertBefore(iconsWrap, hamburgerBtn)
+    iconsWrap.appendChild(hamburgerBtn)
   }
-  topnav.appendChild(btn)
+
+  // Pastikan hamburger ada di dalam wrap, dan switch di sebelah kirinya
+  if (hamburgerBtn.parentNode !== iconsWrap) {
+    iconsWrap.appendChild(hamburgerBtn)
+  }
+
+  const label = document.createElement('label')
+  label.className = 'theme-switch'
+  label.id = 'darkModeSwitch'
+  label.title = 'Dark / Light mode'
+  label.setAttribute('aria-label', 'Toggle dark mode')
+  label.innerHTML = `
+    <input type="checkbox" id="darkModeCheckbox" ${isDarkMode() ? 'checked' : ''}>
+    <span class="theme-switch-track">
+      <span class="theme-switch-thumb"></span>
+      <span class="theme-switch-icon theme-switch-sun" aria-hidden="true">☀</span>
+      <span class="theme-switch-icon theme-switch-moon" aria-hidden="true">☾</span>
+    </span>
+  `
+  // Sisipkan sebelum hamburger (kiri hamburger)
+  iconsWrap.insertBefore(label, hamburgerBtn)
+
+  const checkbox = label.querySelector('#darkModeCheckbox')
+  checkbox.addEventListener('change', () => {
+    applyTheme(checkbox.checked)
+  })
 }
 
 function initHamburger() {
@@ -1197,6 +1225,8 @@ function applyTheme(dark) {
   document.documentElement.classList.toggle('light', !dark)
   document.documentElement.classList.remove('dark')
   try { localStorage.setItem(THEME_KEY, dark ? 'dark' : 'light') } catch {}
+  const cb = document.getElementById('darkModeCheckbox')
+  if (cb) cb.checked = !!dark
 }
 function applyDarkMode(on) { applyTheme(!!on) }
 function toggleDarkMode() {

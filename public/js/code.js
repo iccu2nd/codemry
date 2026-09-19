@@ -345,18 +345,18 @@ function renderUnlockedDetail(app, shortId, s) {
     const codeViewPre = document.getElementById('codeViewPre')
     const zoomLevelEl = document.getElementById('zoomLevel')
     const BASE_FONT = 16
-    const MIN_ZOOM = 60, MAX_ZOOM = 250, ZOOM_STEP = 10, DEFAULT_ZOOM = 60
+    const MIN_ZOOM = 50, MAX_ZOOM = 300, ZOOM_STEP = 10, DEFAULT_ZOOM = 100
     let zoom = DEFAULT_ZOOM
 
     function applyZoom() {
       zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom))
       codeBlock.style.fontSize = (BASE_FONT * zoom / 100) + 'px'
-      zoomLevelEl.textContent = Math.round(zoom) + '%'
+      if (zoomLevelEl) zoomLevelEl.textContent = Math.round(zoom) + '%'
     }
     function resetZoom() {
       zoom = DEFAULT_ZOOM
       codeBlock.style.fontSize = ''
-      zoomLevelEl.textContent = DEFAULT_ZOOM + '%'
+      if (zoomLevelEl) zoomLevelEl.textContent = DEFAULT_ZOOM + '%'
     }
 
     document.getElementById('zoomInBtn').onclick = () => { zoom += ZOOM_STEP; applyZoom() }
@@ -367,24 +367,34 @@ function renderUnlockedDetail(app, shortId, s) {
       const [a, b] = touches
       return Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY)
     }
-    codeViewPre.addEventListener('touchstart', e => {
-      if (e.touches.length === 2 && codeWindow.classList.contains('fullscreen')) {
+    // Pinch-to-zoom: bekerja di mode fullscreen (dan tetap aman di mode biasa).
+    // Listener dipasang di codeWindow + codeViewPre supaya gesture tidak
+    // "hilang" kalau jari agak keluar dari <pre>.
+    function onPinchStart(e) {
+      if (e.touches.length === 2) {
         pinchStartDist = touchDist(e.touches)
         pinchStartZoom = zoom
       }
-    }, { passive: true })
-    codeViewPre.addEventListener('touchmove', e => {
+    }
+    function onPinchMove(e) {
       // pinchStartDist > 5: hindari pembagian dengan angka mendekati nol
       // (dua jari nempel pas mulai pinch) yang bisa bikin scale melonjak.
-      if (e.touches.length === 2 && pinchStartDist > 5 && codeWindow.classList.contains('fullscreen')) {
-        e.preventDefault()
+      if (e.touches.length === 2 && pinchStartDist > 5) {
+        // Hanya cegah native page-zoom saat kita benar-benar handle pinch
+        if (codeWindow.classList.contains('fullscreen')) e.preventDefault()
         const scale = touchDist(e.touches) / pinchStartDist
         zoom = pinchStartZoom * scale
         applyZoom()
       }
-    }, { passive: false })
-    codeViewPre.addEventListener('touchend', e => {
+    }
+    function onPinchEnd(e) {
       if (e.touches.length < 2) pinchStartDist = 0
+    }
+    ;[codeViewPre, codeWindow].forEach(el => {
+      el.addEventListener('touchstart', onPinchStart, { passive: true })
+      el.addEventListener('touchmove', onPinchMove, { passive: false })
+      el.addEventListener('touchend', onPinchEnd, { passive: true })
+      el.addEventListener('touchcancel', onPinchEnd, { passive: true })
     })
 
     // Kalau browser sempat men-zoom halaman (misalnya dari gesture pinch
