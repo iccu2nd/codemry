@@ -260,20 +260,56 @@ app.get('/og/feed.png', async (req, res) => {
 })
 
 function injectMeta(template, titleTag, { title, desc, imgUrl, pageUrl }) {
+    // Absolute origin for structured data & logo (Google requires absolute logo URL)
+    let origin = 'https://codery.my.id'
+    try {
+        const u = new URL(pageUrl)
+        origin = u.origin
+    } catch {}
+    const logoUrl = `${origin}/logo.png`
+    const jsonLd = {
+        '@context': 'https://schema.org',
+        '@graph': [
+            {
+                '@type': 'Organization',
+                '@id': `${origin}/#organization`,
+                name: 'Codery',
+                url: origin,
+                logo: {
+                    '@type': 'ImageObject',
+                    url: logoUrl,
+                    width: 512,
+                    height: 512
+                }
+            },
+            {
+                '@type': 'WebSite',
+                '@id': `${origin}/#website`,
+                name: 'Codery',
+                url: origin,
+                description: 'Upload, bagikan, dan temukan potongan kode dari developer lain.',
+                publisher: { '@id': `${origin}/#organization` },
+                inLanguage: 'id'
+            }
+        ]
+    }
     const meta = `<meta name="description" content="${escapeHtml(desc)}">
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="${pageUrl}">
 <meta property="og:type" content="website">
+<meta property="og:site_name" content="Codery">
 <meta property="og:title" content="${escapeHtml(title)}">
 <meta property="og:description" content="${escapeHtml(desc)}">
 <meta property="og:image" content="${imgUrl}">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="${escapeHtml(title)}">
 <meta property="og:url" content="${pageUrl}">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="${escapeHtml(title)}">
 <meta name="twitter:description" content="${escapeHtml(desc)}">
 <meta name="twitter:image" content="${imgUrl}">
+<script type="application/ld+json">${JSON.stringify(jsonLd)}</script>
 </head>`
     return template
         .replace(titleTag, `<title>${escapeHtml(title)}</title>`)
@@ -472,6 +508,10 @@ app.use(express.static(path.join(__dirname, 'public'), {
             // deploy baru, versi berubah -> URL beda -> otomatis diambil ulang.
             // Gak ada lagi skenario browser nyangkut ke file lama.
             res.set('Cache-Control', 'public, max-age=31536000, immutable')
+        } else if (/\.(png|svg|ico|webmanifest)$/.test(filePath) || /\/(logo|icon-|favicon|apple-touch|og-image)/.test(filePath)) {
+            // Brand assets (logo, favicon, OG default): cache panjang, tetap bisa
+            // di-revalidate lewat ETag kalau file diganti di deploy berikutnya.
+            res.set('Cache-Control', 'public, max-age=604800, stale-while-revalidate=86400')
         } else {
             res.set('Cache-Control', 'public, max-age=600')
         }
