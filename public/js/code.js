@@ -350,12 +350,18 @@ function renderUnlockedDetail(app, shortId, s) {
 
     function applyZoom() {
       zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom))
-      codeBlock.style.fontSize = (BASE_FONT * zoom / 100) + 'px'
+      // WAJIB pakai !important: stylesheet punya
+      // `.code-view code { font-size: 13.5px !important }` yang mengalahkan
+      // inline style biasa — ini penyebab pinch/tombol zoom "tidak kerja".
+      const px = (BASE_FONT * zoom / 100) + 'px'
+      codeBlock.style.setProperty('font-size', px, 'important')
+      if (codeViewPre) codeViewPre.style.setProperty('font-size', px, 'important')
       if (zoomLevelEl) zoomLevelEl.textContent = Math.round(zoom) + '%'
     }
     function resetZoom() {
       zoom = DEFAULT_ZOOM
-      codeBlock.style.fontSize = ''
+      codeBlock.style.removeProperty('font-size')
+      if (codeViewPre) codeViewPre.style.removeProperty('font-size')
       if (zoomLevelEl) zoomLevelEl.textContent = DEFAULT_ZOOM + '%'
     }
 
@@ -368,8 +374,7 @@ function renderUnlockedDetail(app, shortId, s) {
       return Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY)
     }
     // Pinch-to-zoom HANYA di mode fullscreen: ubah ukuran font kode,
-    // BUKAN zoom halaman web. Di luar fullscreen gesture diabaikan
-    // (viewport sudah user-scalable=no).
+    // BUKAN zoom halaman web.
     function isCodeFullscreen() {
       return codeWindow.classList.contains('fullscreen')
     }
@@ -381,9 +386,9 @@ function renderUnlockedDetail(app, shortId, s) {
     }
     function onPinchMove(e) {
       if (!isCodeFullscreen()) return
-      // pinchStartDist > 5: hindari pembagian dengan angka mendekati nol
       if (e.touches.length === 2 && pinchStartDist > 5) {
-        e.preventDefault() // cegah page-zoom native
+        e.preventDefault()
+        e.stopPropagation()
         const scale = touchDist(e.touches) / pinchStartDist
         zoom = pinchStartZoom * scale
         applyZoom()
@@ -392,7 +397,8 @@ function renderUnlockedDetail(app, shortId, s) {
     function onPinchEnd(e) {
       if (e.touches.length < 2) pinchStartDist = 0
     }
-    ;[codeViewPre, codeWindow].forEach(el => {
+    ;[codeViewPre, codeWindow, codeBlock].forEach(el => {
+      if (!el) return
       el.addEventListener('touchstart', onPinchStart, { passive: true })
       el.addEventListener('touchmove', onPinchMove, { passive: false })
       el.addEventListener('touchend', onPinchEnd, { passive: true })

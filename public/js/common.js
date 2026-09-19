@@ -290,6 +290,104 @@ function devBadgeHtml(isDeveloper) {
   </span>`
 }
 
+// ============================================================
+// Level system — XP dihitung dari aktivitas publik user
+// (upload, likes diterima, views, followers). Tidak perlu
+// field baru di DB; pure computed supaya ringan.
+// ============================================================
+const XP_PER_CODE = 50
+const XP_PER_LIKE = 8
+const XP_PER_VIEW = 1
+const XP_PER_FOLLOWER = 20
+
+function calcXp({ codes = 0, likes = 0, views = 0, followers = 0 } = {}) {
+  return Math.max(0,
+    (Number(codes) || 0) * XP_PER_CODE +
+    (Number(likes) || 0) * XP_PER_LIKE +
+    (Number(views) || 0) * XP_PER_VIEW +
+    (Number(followers) || 0) * XP_PER_FOLLOWER
+  )
+}
+
+// XP kumulatif yang dibutuhkan untuk mencapai level L (L mulai dari 1).
+// Kurva: 0, 80, 180, 300, 450, … naik pelan di awal biar motivatif.
+function xpToReachLevel(level) {
+  if (level <= 1) return 0
+  let total = 0
+  for (let l = 2; l <= level; l++) {
+    total += 40 + (l - 1) * 30 // L2=70, L3+=100, L4+=130, …
+  }
+  return total
+}
+
+function levelFromXp(xp) {
+  let level = 1
+  while (level < 99 && xp >= xpToReachLevel(level + 1)) level++
+  return level
+}
+
+function levelTitle(level) {
+  if (level >= 30) return 'Legend'
+  if (level >= 20) return 'Master'
+  if (level >= 12) return 'Pro'
+  if (level >= 7) return 'Contributor'
+  if (level >= 3) return 'Coder'
+  return 'Newbie'
+}
+
+function levelInfo(stats) {
+  const xp = calcXp(stats)
+  const level = levelFromXp(xp)
+  const curFloor = xpToReachLevel(level)
+  const nextFloor = xpToReachLevel(level + 1)
+  const span = Math.max(1, nextFloor - curFloor)
+  const into = Math.max(0, xp - curFloor)
+  const pct = Math.min(100, Math.round((into / span) * 100))
+  return {
+    xp,
+    level,
+    title: levelTitle(level),
+    nextXp: nextFloor,
+    need: Math.max(0, nextFloor - xp),
+    pct,
+    into,
+    span
+  }
+}
+
+function levelBadgeHtml(level, { compact = false } = {}) {
+  if (!level || level < 1) return ''
+  const title = levelTitle(level)
+  if (compact) {
+    return `<span class="lvl-badge lvl-badge-sm" title="Level ${level} · ${title}">Lv.${level}</span>`
+  }
+  return `<span class="lvl-badge" title="${title}">Lv.${level}</span>`
+}
+
+function levelProgressHtml(info) {
+  if (!info) return ''
+  return `
+  <div class="lvl-card">
+    <div class="lvl-card-top">
+      <div class="lvl-card-left">
+        <span class="lvl-badge lvl-badge-lg">Lv.${info.level}</span>
+        <div class="lvl-card-meta">
+          <div class="lvl-card-title">${escapeHtml(info.title)}</div>
+          <div class="lvl-card-xp">${info.xp.toLocaleString('id')} XP</div>
+        </div>
+      </div>
+      <div class="lvl-card-next">
+        <span class="lvl-card-next-label">Next</span>
+        <span class="lvl-card-next-val">Lv.${info.level + 1}</span>
+      </div>
+    </div>
+    <div class="lvl-bar" role="progressbar" aria-valuenow="${info.pct}" aria-valuemin="0" aria-valuemax="100">
+      <div class="lvl-bar-fill" style="width:${info.pct}%"></div>
+    </div>
+    <div class="lvl-card-hint">${info.need.toLocaleString('id')} XP lagi · upload +${XP_PER_CODE} XP · like +${XP_PER_LIKE} XP</div>
+  </div>`
+}
+
 function renderAuthArea() {
   const authArea = document.getElementById('authArea')
   if (!authArea) return

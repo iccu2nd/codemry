@@ -22,7 +22,7 @@ async function renderProfile() {
             <input type="file" id="avatarInput" accept="image/*" style="display:none">
           </div>
           <div class="profile-names">
-            <div class="profile-nickname">${escapeHtml(p.nickname || p.username)}${badgesHtml(p.badges)}${devBadgeHtml(p.isDeveloper)}${roleBadgeHtml(p.role)}</div>
+            <div class="profile-nickname">${escapeHtml(p.nickname || p.username)}${badgesHtml(p.badges)}${devBadgeHtml(p.isDeveloper)}${roleBadgeHtml(p.role)}${levelBadgeHtml(levelInfo({ codes: p.snippets.length, likes: p.totalLikes ?? 0, views: p.totalViews ?? totalViews, followers: p.followersCount || 0 }).level)}</div>
             <div class="profile-username">@${escapeHtml(p.username)}</div>
           </div>
         </div>
@@ -33,6 +33,12 @@ async function renderProfile() {
           <a class="stat" href="${followUrl(p.username, 'followers')}"><b>${p.followersCount}</b><span>Followers</span></a>
           <a class="stat" href="${followUrl(p.username, 'following')}"><b>${p.followingCount}</b><span>Following</span></a>
         </div>
+        ${levelProgressHtml(levelInfo({
+          codes: p.snippets.length,
+          likes: p.totalLikes ?? 0,
+          views: p.totalViews ?? totalViews,
+          followers: p.followersCount || 0
+        }))}
         <div class="profile-below-stats">
           <div class="profile-bio" id="bioText">${p.bio ? formatWaText(p.bio) : 'No bio yet'}</div>
           ${p.profileMusic ? `
@@ -89,8 +95,8 @@ async function renderProfile() {
       : (p.isMe
           ? `<div class="empty-state empty-cta">
                <div class="empty-cta-title">No code yet</div>
-               <div class="empty-cta-sub">Share your first snippet with the community.</div>
-               <a class="btn btn-primary" href="/upload">Upload code</a>
+               <div class="empty-cta-sub">Upload kode pertama kamu dan dapatkan +${XP_PER_CODE} XP untuk naik level.</div>
+               <a class="btn btn-primary" href="/upload">Upload code · +${XP_PER_CODE} XP</a>
              </div>`
           : `<div class="empty-state">No code shared yet.</div>`)
     highlightAllIn('#profileSnippets pre code')

@@ -175,7 +175,7 @@ body[data-floating-back] .app { padding-top: calc(74px + env(safe-area-inset-top
   transition: background .15s ease, border-color .15s ease;
 }
 .hamburger:hover { background: var(--bg-muted); border-color: var(--border-strong); }
-.hamburger:active { transform: scale(0.96); }
+.hamburger:active { transform: scale(0.92); transition-duration: .04s; }
 .hamburger span {
   width: 18px; height: 2px; background: var(--accent-dark); border-radius: 2px;
   transition: transform .2s ease, opacity .2s ease;
@@ -314,11 +314,22 @@ img.clickable:hover { outline: 2px solid rgba(var(--accent-rgb),.4); outline-off
   align-items: center;
   justify-content: center;
   gap: 8px;
-  transition: background .15s ease, box-shadow .15s ease, transform .1s ease;
+  /* Clicky: turun cepat, balik dengan sedikit spring — terasa "klik" tapi tidak berat */
+  transition:
+    transform .12s cubic-bezier(.22, 1.15, .36, 1),
+    box-shadow .12s ease,
+    background .12s ease,
+    border-color .12s ease,
+    filter .12s ease;
   text-decoration: none;
   box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
 }
-.btn:active { transform: scale(0.98); }
+.btn:active:not(:disabled):not(.btn-loading) {
+  transform: scale(0.94);
+  transition-duration: .04s;
+  filter: brightness(0.96);
+}
 .btn:disabled { opacity: .65; cursor: default; }
 .btn.btn-loading { cursor: default; }
 .btn.btn-loading .load-spinner { --load-color: var(--on-accent); }
@@ -361,28 +372,37 @@ img.clickable:hover { outline: 2px solid rgba(var(--accent-rgb),.4); outline-off
 .btn-primary {
   background: var(--accent);
   color: var(--on-accent);
-  box-shadow: 0 1px 3px rgba(var(--accent-rgb), .35);
+  box-shadow: 0 2px 0 rgba(var(--accent-dark-rgb), .35), 0 1px 3px rgba(var(--accent-rgb), .25);
 }
 .btn-primary:hover { background: var(--accent-dark); }
-.btn-primary:active { box-shadow: none; }
+.btn-primary:active:not(:disabled):not(.btn-loading) {
+  box-shadow: 0 0 0 rgba(0,0,0,0), inset 0 1px 2px rgba(0,0,0,.12);
+  transform: translateY(1px) scale(0.97);
+}
 
 .btn-white {
   background: var(--bg-card);
   color: var(--text);
   border: 1px solid var(--border);
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  box-shadow: 0 2px 0 var(--border), 0 1px 2px rgba(15, 23, 42, 0.04);
 }
 .btn-white:hover { background: var(--bg-muted); border-color: var(--border-strong); }
-.btn-white:active { box-shadow: none; }
+.btn-white:active:not(:disabled):not(.btn-loading) {
+  box-shadow: 0 0 0 var(--border), inset 0 1px 2px rgba(0,0,0,.06);
+  transform: translateY(1px) scale(0.97);
+}
 
 .btn-danger {
   background: var(--accent);
   color: var(--on-accent);
-  box-shadow: none;
+  box-shadow: 0 2px 0 rgba(var(--accent-dark-rgb), .3);
   border: 1px solid var(--accent);
 }
 .btn-danger:hover { background: var(--accent-dark); color: var(--on-accent); }
-.btn-danger:active { box-shadow: none; }
+.btn-danger:active:not(:disabled):not(.btn-loading) {
+  box-shadow: none;
+  transform: translateY(1px) scale(0.97);
+}
 
 .btn-block { width: 100%; }
 .btn-sm { padding: 8px 14px; font-size: 13px; border-radius: 8px; }
@@ -414,7 +434,7 @@ img.clickable:hover { outline: 2px solid rgba(var(--accent-rgb),.4); outline-off
   transition: background .15s ease, border-color .15s ease;
 }
 .icon-btn:hover { background: var(--bg-muted); border-color: var(--border-strong); }
-.icon-btn:active { transform: scale(0.97); }
+.icon-btn:active { transform: scale(0.9); transition-duration: .04s; }
 
 /* Toolbar aksi terstruktur di halaman view code dengan grid seimbang */
 .action-toolbar {
@@ -457,7 +477,7 @@ img.clickable:hover { outline: 2px solid rgba(var(--accent-rgb),.4); outline-off
   border-color: var(--accent-border);
   color: var(--accent-dark);
 }
-.action-btn:active { transform: scale(.98); }
+.action-btn:active { transform: scale(.93); transition-duration: .04s; }
 .action-btn-main {
   padding: 12px 16px;
   font-size: 14px;
@@ -772,7 +792,7 @@ img.clickable:hover { outline: 2px solid rgba(var(--accent-rgb),.4); outline-off
   transition: background .15s ease, color .15s ease, transform .1s ease, box-shadow .15s ease;
 }
 .page-btn:hover:not(:disabled):not(.active) { background: var(--accent-border); color: var(--text); }
-.page-btn:active:not(:disabled) { transform: scale(.9); }
+.page-btn:active:not(:disabled) { transform: scale(.88); transition-duration: .04s; }
 .page-btn.active {
   background: var(--accent);
   color: var(--on-accent);
@@ -797,7 +817,7 @@ img.clickable:hover { outline: 2px solid rgba(var(--accent-rgb),.4); outline-off
 }
 .like-btn svg { width: 20px; height: 20px; fill: none; }
 .like-btn:hover { color: var(--text); }
-.like-btn:active { transform: scale(.88); }
+.like-btn:active { transform: scale(.86); transition-duration: .04s; }
 .like-btn.liked { color: var(--text); }
 .like-btn.liked svg { fill: #111; animation: like-pop .35s cubic-bezier(.17,.89,.32,1.49); }
 @keyframes like-pop { 0% { transform: scale(.6); } 60% { transform: scale(1.25); } 100% { transform: scale(1); } }
@@ -1029,9 +1049,6 @@ img.clickable:hover { outline: 2px solid rgba(var(--accent-rgb),.4); outline-off
 html:has(.code-window.fullscreen) { overflow: hidden; touch-action: pan-x pan-y; }
 body:has(.code-window.fullscreen) { touch-action: pan-x pan-y; }
 .code-window.fullscreen .code-view { flex: 1; overflow: auto; touch-action: pan-x pan-y; }
-/* Font-size default di fullscreen; nilai aktual di-set lewat JS (applyZoom)
-   jadi inline style selalu menang dari rule ini. */
-.code-window.fullscreen .code-view code { font-size: 16px; }
 .code-window.fullscreen::after { top: 49px; }
 
 @media (max-width: 480px) {
@@ -1217,6 +1234,54 @@ body:has(.code-window.fullscreen) { touch-action: pan-x pan-y; }
 .stat { text-align: center; display: block; text-decoration: none; color: inherit; flex: 1; }
 .stat b { display: block; font-size: 18px; }
 .stat span { font-size: 12px; color: var(--text-muted); }
+
+/* Level badge + progress card */
+.lvl-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 800; letter-spacing: .02em;
+  padding: 2px 8px; border-radius: 999px;
+  background: var(--accent-bg); color: var(--accent-dark);
+  border: 1px solid var(--accent-border);
+  vertical-align: middle; line-height: 1.3;
+  margin-left: 6px;
+}
+.lvl-badge-sm { font-size: 10px; padding: 1px 6px; margin-left: 4px; }
+.lvl-badge-lg {
+  font-size: 13px; padding: 5px 10px; margin-left: 0;
+  min-width: 48px;
+}
+.lvl-card {
+  margin: 4px 0 14px;
+  padding: 12px 14px;
+  background: var(--bg-muted);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+}
+.lvl-card-top {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  margin-bottom: 10px;
+}
+.lvl-card-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.lvl-card-meta { min-width: 0; }
+.lvl-card-title { font-size: 14px; font-weight: 700; color: var(--text); line-height: 1.2; }
+.lvl-card-xp { font-size: 12px; color: var(--text-muted); margin-top: 2px; font-weight: 600; }
+.lvl-card-next { text-align: right; flex-shrink: 0; }
+.lvl-card-next-label { display: block; font-size: 10px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: .04em; }
+.lvl-card-next-val { font-size: 13px; font-weight: 800; color: var(--text); }
+.lvl-bar {
+  height: 8px; border-radius: 999px; background: var(--border);
+  overflow: hidden;
+}
+.lvl-bar-fill {
+  height: 100%; width: 0;
+  background: linear-gradient(90deg, var(--accent-light), var(--accent));
+  border-radius: 999px;
+  transition: width .45s cubic-bezier(.22,.9,.32,1);
+}
+.lvl-card-hint {
+  margin-top: 8px;
+  font-size: 11.5px; color: var(--text-muted); line-height: 1.4;
+}
 
 .profile-below-stats { padding-top: 2px; }
 .profile-bio { color: var(--text-secondary); font-size: 14px; line-height: 1.55; white-space: pre-line; }
@@ -2632,6 +2697,11 @@ html:not(.light) .theme-switch input:checked ~ .theme-switch-text-dark {
 .like-sep { margin: 0 2px; opacity: .5; }
 .comments-title { font-size: 16px; font-weight: 700; }
 .code-view code { font-size: 13.5px !important; line-height: 1.7 !important; }
+/* Fullscreen: default 16px; JS applyZoom menimpa dengan inline !important. */
+.code-window.fullscreen .code-view code {
+  font-size: 16px !important;
+  line-height: 1.7 !important;
+}
 .sc-title { font-size: 17px !important; }
 .sc-desc { font-size: 14px !important; }
 .sc-name { font-size: 14px !important; }
