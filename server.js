@@ -287,9 +287,9 @@ function injectMeta(template, titleTag, { title, desc, imgUrl, pageUrl }) {
                 '@id': `${origin}/#website`,
                 name: 'Codery',
                 url: origin,
-                description: 'Upload, bagikan, dan temukan potongan kode dari developer lain.',
+                description: 'Upload, share, and discover code snippets from other developers.',
                 publisher: { '@id': `${origin}/#organization` },
-                inLanguage: 'id'
+                inLanguage: 'en'
             }
         ]
     }
@@ -369,9 +369,9 @@ app.get('/code', async (req, res) => {
             if (snippet && snippet.isPublic) {
                 const host = `${req.protocol}://${req.get('host')}`
                 const desc = snippet.isLocked
-                    ? 'Kode ini dikunci PIN.'
-                    : (snippet.description || (snippet.preview || '').replace(/\n/g, '  ').slice(0, 150) || 'Lihat kode di Codery')
-                html = injectMeta(html, '<title>Codery - Lihat Kode</title>', {
+                    ? 'This code is locked with a PIN.'
+                    : (snippet.description || (snippet.preview || '').replace(/\n/g, '  ').slice(0, 150) || 'View code on Codery')
+                html = injectMeta(html, '<title>Codery - View Code</title>', {
                     title: `${snippet.title || snippet.filename} - Codery`,
                     desc,
                     imgUrl: `${host}/og/code/${encodeURIComponent(shortId)}.png`,
@@ -392,9 +392,9 @@ app.get('/profile', async (req, res) => {
             if (user) {
                 const host = `${req.protocol}://${req.get('host')}`
                 const nickname = await ensureNickname(user)
-                html = injectMeta(html, '<title>Codery - Profil</title>', {
+                html = injectMeta(html, '<title>Codery - Profile</title>', {
                     title: `${nickname} (@${user.username}) - Codery`,
-                    desc: user.bio || `Lihat profil dan kode yang dibagikan ${nickname} di Codery.`,
+                    desc: user.bio || `View ${nickname}'s profile and shared code on Codery.`,
                     imgUrl: `${host}/og/profile/${encodeURIComponent(user.username)}.png`,
                     pageUrl: `${host}/profile?u=${encodeURIComponent(user.username)}`
                 })
@@ -408,7 +408,7 @@ app.get('/', (req, res) => {
     const host = `${req.protocol}://${req.get('host')}`
     const html = injectMeta(indexHtmlTemplate, '<title>Codery - Feed</title>', {
         title: 'Codery - Code Sharing Platform',
-        desc: 'Upload, bagikan, dan temukan potongan kode dari developer lain di Codery.',
+        desc: 'Upload, share, and discover code snippets from other developers on Codery.',
         imgUrl: `${host}/og/feed.png`,
         pageUrl: `${host}/`
     })

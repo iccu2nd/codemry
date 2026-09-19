@@ -67,6 +67,11 @@ const I18N = {
     comments: 'Comments',
     signInToComment: 'Sign in to comment.',
     signIn: 'Sign in',
+    signUp: 'Sign up',
+    noAccount: 'No account yet?',
+    hasAccount: 'Already have an account?',
+    loginSuccess: 'Signed in!',
+    registerSuccess: 'Account created!',
     noComments: 'No comments yet. Be the first!',
     relatedCode: 'Related code',
     uploadValueTitle: 'Share code in minutes',
@@ -135,6 +140,11 @@ const I18N = {
     comments: 'Komentar',
     signInToComment: 'Masuk dulu untuk berkomentar.',
     signIn: 'Masuk',
+    signUp: 'Daftar',
+    noAccount: 'Belum punya akun?',
+    hasAccount: 'Sudah punya akun?',
+    loginSuccess: 'Berhasil masuk!',
+    registerSuccess: 'Akun dibuat!',
     noComments: 'Belum ada komentar. Jadilah yang pertama!',
     relatedCode: 'Kode terkait',
     uploadValueTitle: 'Bagikan kode dalam hitungan menit',
@@ -505,8 +515,8 @@ function renderAuthArea() {
     ? `${onProfilePage ? '' : `<a class="link-btn link-btn-avatar" href="${profileUrl(me.username)}">
          ${avatarHtml(me.avatar, me.nickname || me.username, 'avatar-circle-xs')} ${escapeHtml(me.nickname || me.username)}${badgesHtml(me.badges)}${devBadgeHtml(me.isDeveloper)}${roleBadgeHtml(me.role)}
        </a>`}
-       <button class="link-btn" id="logoutBtn">Sign out</button>`
-    : `<a class="link-btn" href="/auth">Masuk</a>`
+       <button class="link-btn" id="logoutBtn">${t('signOut')}</button>`
+    : `<a class="link-btn" href="/auth">${t('signIn')}</a>`
   const logoutBtn = document.getElementById('logoutBtn')
   if (logoutBtn) {
     logoutBtn.onclick = async () => {
@@ -577,7 +587,7 @@ function injectMenuHeader(topnav, closeMenu) {
   document.getElementById('navCloseBtn').addEventListener('click', closeMenu)
 }
 
-/** Language switcher inside hamburger menu */
+/** Language switcher inside hamburger menu — plain row, same style as menu links */
 function injectLanguageControl(topnav) {
   if (document.getElementById('langControl')) return
   const authArea = document.getElementById('authArea')
@@ -592,6 +602,7 @@ function injectLanguageControl(topnav) {
       <button type="button" class="lang-btn${cur === 'id' ? ' active' : ''}" data-lang="id">ID</button>
     </div>
   `
+  // Place above auth/sign-in so it sits with other menu items
   if (authArea) topnav.insertBefore(row, authArea)
   else topnav.appendChild(row)
   row.querySelectorAll('.lang-btn').forEach(btn => {
@@ -611,12 +622,13 @@ function injectAccountLinks() {
   const onProfilePage = location.pathname.startsWith('/profile')
   let likedLink = document.getElementById('likedMenuLink')
   let savedLink = document.getElementById('savedMenuLink')
-  let scrapeLink = document.getElementById('scrapeMenuLink')
   let apiDocsLink = document.getElementById('apiDocsMenuLink')
+  // Remove deprecated scrape menu if still present
+  document.getElementById('scrapeMenuLink')?.remove()
+  document.getElementById('requestScrapeMenuLink')?.remove()
   if (!me || !onProfilePage) {
     if (likedLink) likedLink.remove()
     if (savedLink) savedLink.remove()
-    if (scrapeLink) scrapeLink.remove()
     if (apiDocsLink) apiDocsLink.remove()
     return
   }
@@ -636,14 +648,6 @@ function injectAccountLinks() {
     savedLink.textContent = t('savedCodes')
     topnav.insertBefore(savedLink, authArea)
   }
-  if (!scrapeLink) {
-    scrapeLink = document.createElement('a')
-    scrapeLink.id = 'scrapeMenuLink'
-    scrapeLink.className = 'link-btn'
-    scrapeLink.href = '/scrape-requests'
-    scrapeLink.textContent = t('scrapeList')
-    topnav.insertBefore(scrapeLink, authArea)
-  }
   if (!apiDocsLink) {
     apiDocsLink = document.createElement('a')
     apiDocsLink.id = 'apiDocsMenuLink'
@@ -655,9 +659,12 @@ function injectAccountLinks() {
 }
 
 function injectStaticMenuLinks(topnav) {
+  // Always remove scrape links (deprecated)
+  document.getElementById('requestScrapeMenuLink')?.remove()
+  document.getElementById('scrapeMenuLink')?.remove()
+
   if (location.pathname !== '/') {
     document.getElementById('searchMenuLink')?.remove()
-    document.getElementById('requestScrapeMenuLink')?.remove()
     document.getElementById('panduanMenuLink')?.remove()
     return
   }
@@ -670,13 +677,6 @@ function injectStaticMenuLinks(topnav) {
   searchLink.href = '/search'
   searchLink.textContent = t('search')
   topnav.insertBefore(searchLink, authArea)
-
-  const requestScrapeLink = document.createElement('a')
-  requestScrapeLink.id = 'requestScrapeMenuLink'
-  requestScrapeLink.className = 'link-btn'
-  requestScrapeLink.href = '/request-scrape'
-  requestScrapeLink.textContent = t('requestScrape')
-  topnav.insertBefore(requestScrapeLink, authArea)
 
   const panduanLink = document.createElement('a')
   panduanLink.id = 'panduanMenuLink'
@@ -867,7 +867,10 @@ function snippetCard(s) {
   while (previewStart < rawLines.length && rawLines[previewStart].trim() === '') previewStart++
   const trimmedPreview = rawLines.slice(previewStart).join('\n')
   const previewText = trimmedPreview ? escapeHtml(trimmedPreview) : ''
-  const lineCount = Math.max(1, rawLines.filter((l, i) => i >= previewStart || l.trim() !== '').length)
+  // Prefer real lineCount from API; fall back only if missing
+  const lineCount = (typeof s.lineCount === 'number' && s.lineCount > 0)
+    ? s.lineCount
+    : Math.max(1, (s.preview || '').split('\n').length)
   const viewsLabel = formatViews(s.views)
   const lang = (s.language || 'text').toLowerCase()
   return `
@@ -908,7 +911,7 @@ function snippetCard(s) {
         <span class="sc-filename">${escapeHtml(s.filename || 'code')}</span>
         <span class="sc-preview-meta">
           <span class="sc-lang-tag">${escapeHtml(lang)}</span>
-          <span class="sc-lines">${lineCount}+ ${t('lines')}</span>
+          <span class="sc-lines">${lineCount} ${t('lines')}</span>
         </span>
       </div>
       <pre class="sc-preview-code"><code class="language-${hljsLang(s.language)}">${previewText}</code></pre>

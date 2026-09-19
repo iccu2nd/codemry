@@ -230,50 +230,53 @@ body[data-floating-back] .app { padding-top: calc(74px + env(safe-area-inset-top
   cursor: pointer; color: var(--text); flex-shrink: 0;
 }
 
-/* Language switcher in hamburger menu */
+/* Language switcher — plain row like other menu items */
 .lang-control {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 10px 12px;
-  margin: 4px 0 8px;
+  padding: 14px 14px;
+  margin: 0;
   border-radius: 12px;
-  background: var(--bg-muted);
-  border: 1px solid var(--border);
+  background: transparent;
+  border: none;
+  width: 100%;
+  box-sizing: border-box;
 }
+.lang-control:hover { background: rgba(var(--accent-rgb), .1); }
 .lang-control-label {
-  font-size: 13px;
+  font-size: 17px;
   font-weight: 700;
-  color: var(--text-secondary);
+  color: var(--text);
 }
 .lang-control-btns {
   display: inline-flex;
-  gap: 4px;
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  padding: 3px;
+  gap: 2px;
+  background: transparent;
+  border: none;
+  padding: 0;
 }
 .lang-btn {
   border: none;
   background: transparent;
   color: var(--text-muted);
   font-family: inherit;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 700;
-  letter-spacing: .04em;
-  padding: 5px 12px;
-  border-radius: 999px;
+  letter-spacing: .03em;
+  padding: 4px 10px;
+  border-radius: 8px;
   cursor: pointer;
-  transition: background .12s ease, color .12s ease;
+  transition: color .12s ease;
 }
 .lang-btn.active {
-  background: var(--accent);
-  color: var(--on-accent);
+  color: var(--text);
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 .lang-btn:not(.active):hover {
-  color: var(--text);
+  color: var(--text-secondary);
 }
 
 .nav-backdrop {
@@ -1325,14 +1328,14 @@ body:has(.code-window.fullscreen) { touch-action: pan-x pan-y; }
 }
 .sc-preview-hint { display: none; }
 
-/* Tombol kembali ke atas — di atas bottom nav (mobile), pojok kanan bawah (desktop) */
+/* Scroll-to-top: higher above bottom nav, slightly toward center for easy tap */
 .scroll-top-btn {
   position: fixed;
-  right: max(16px, env(safe-area-inset-right, 0px));
-  bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+  right: max(28px, env(safe-area-inset-right, 0px));
+  bottom: calc(112px + env(safe-area-inset-bottom, 0px));
   z-index: 45;
-  width: 40px;
-  height: 40px;
+  width: 42px;
+  height: 42px;
   border-radius: 12px;
   border: 1px solid var(--border);
   background: var(--bg-card);
@@ -1352,18 +1355,14 @@ body:has(.code-window.fullscreen) { touch-action: pan-x pan-y; }
 .scroll-top-btn:active { transform: scale(0.9); }
 .scroll-top-btn[hidden] { display: none !important; }
 body[data-no-bottom-nav] .scroll-top-btn {
-  bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  bottom: calc(24px + env(safe-area-inset-bottom, 0px));
 }
 @media (min-width: 768px) {
   .scroll-top-btn {
-    right: max(24px, env(safe-area-inset-right, 0px));
-    bottom: calc(28px + env(safe-area-inset-bottom, 0px));
+    right: max(32px, env(safe-area-inset-right, 0px));
+    bottom: calc(36px + env(safe-area-inset-bottom, 0px));
     width: 44px;
     height: 44px;
-  }
-  body:not([data-no-bottom-nav]) .scroll-top-btn {
-    /* Desktop: bottom nav biasanya tidak mengganggu — tetap di pojok */
-    bottom: calc(28px + env(safe-area-inset-bottom, 0px));
   }
 }
 

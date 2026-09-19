@@ -51,6 +51,11 @@ function buildPreview(content) {
     return preview.length > 700 ? preview.slice(0, 700) : preview
 }
 
+function countLines(content) {
+    if (!content) return 0
+    return String(content).split('\n').length
+}
+
 function sanitizeTags(input) {
     // Terima campuran koma, spasi, dan/atau tanda # sebagai pemisah tag,
     // jadi "algoritma, tutorial" maupun "#algoritma #tutorial" sama-sama valid.
@@ -91,6 +96,7 @@ router.post('/import', requireAuth, async (req, res) => {
                 rawUrl: file.raw_url,
                 htmlUrl: gist.html_url,
                 preview: buildPreview(file.content),
+                lineCount: countLines(file.content),
                 createdAt: new Date(gist.created_at).getTime()
             }
             await Snippets.create(snippet)
@@ -124,6 +130,7 @@ export async function createSnippetForUser(username, body) {
         rawUrl: file.raw_url,
         htmlUrl: gist.html_url,
         preview: buildPreview(content),
+        lineCount: countLines(content),
         createdAt: Date.now()
     }
     await Snippets.create(snippet)
@@ -290,6 +297,12 @@ router.get('/:shortId', async (req, res) => {
             Views.register(snippet.shortId, req.ip)
         ])
         const file = gist.files[snippet.filename]
+        const content = file?.content || ''
+        const lineCount = countLines(content)
+        // Backfill lineCount for older snippets so feed cards can show real counts later
+        if (content && snippet.lineCount !== lineCount) {
+            Snippets.update(snippet.id, { lineCount }).catch(() => {})
+        }
         const [views, likes, likedByMe, savedByMe] = await Promise.all([
             Views.count(snippet.shortId),
             Likes.count(snippet.shortId),
@@ -297,7 +310,7 @@ router.get('/:shortId', async (req, res) => {
             Bookmarks.hasSaved(req.username, snippet.shortId)
         ])
         res.json({
-            ...stripSnippetSecrets(snippet), tags: snippet.tags || [], content: file?.content || '', views, likes, likedByMe, savedByMe, forkedFrom,
+            ...stripSnippetSecrets(snippet), tags: snippet.tags || [], content, lineCount, views, likes, likedByMe, savedByMe, forkedFrom,
             locked: !!snippet.isLocked,
             ownerBadges: ownerDisplay.badges, ownerAvatar, ownerNickname, ownerRole: ownerDisplay.role, ownerIsDeveloper: ownerDisplay.isDeveloper
         })
@@ -377,6 +390,7 @@ router.patch('/:shortId', requireAuth, async (req, res) => {
             isPublic: isPublic !== undefined ? !!isPublic : snippet.isPublic,
             rawUrl,
             preview: contentChanged ? buildPreview(content) : snippet.preview,
+            lineCount: contentChanged ? countLines(content) : (snippet.lineCount ?? countLines(content)),
             ...pinPatch
         }
         const updated = await Snippets.update(snippet.id, patch)
@@ -447,6 +461,7 @@ router.post('/:shortId/fork', requireAuth, async (req, res) => {
             rawUrl: newFile.raw_url,
             htmlUrl: newGist.html_url,
             preview: buildPreview(content),
+            lineCount: countLines(content),
             createdAt: Date.now()
         }
         await Snippets.create(forked)

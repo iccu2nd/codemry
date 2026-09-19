@@ -19,13 +19,19 @@ async function init() {
   document.getElementById('toggleAuth').onclick = (e) => {
     e.preventDefault()
     mode = mode === 'login' ? 'register' : 'login'
-    document.getElementById('authTitle').textContent = mode === 'login' ? 'Masuk' : 'Daftar'
-    document.getElementById('authSubmit').textContent = mode === 'login' ? 'Masuk' : 'Daftar'
+    document.getElementById('authTitle').textContent = mode === 'login' ? t('signIn') : t('signUp')
+    document.getElementById('authSubmit').textContent = mode === 'login' ? t('signIn') : t('signUp')
     document.getElementById('captchaField').style.display = mode === 'register' ? 'block' : 'none'
-    document.getElementById('toggleAuthText').textContent = mode === 'login' ? 'Belum punya akun?' : 'Sudah punya akun?'
-    document.getElementById('toggleAuth').textContent = mode === 'login' ? 'Daftar' : 'Masuk'
+    document.getElementById('toggleAuthText').textContent = mode === 'login' ? t('noAccount') : t('hasAccount')
+    document.getElementById('toggleAuth').textContent = mode === 'login' ? t('signUp') : t('signIn')
     if (mode === 'register') { newCaptcha() }
   }
+
+  // Initial labels follow current language
+  document.getElementById('authTitle').textContent = t('signIn')
+  document.getElementById('authSubmit').textContent = t('signIn')
+  document.getElementById('toggleAuthText').textContent = t('noAccount')
+  document.getElementById('toggleAuth').textContent = t('signUp')
 
   document.getElementById('togglePassword').onclick = () => {
     const input = document.getElementById('passwordInput')
@@ -45,7 +51,7 @@ async function init() {
         body.captchaAnswer = Number(f.get('captchaAnswer'))
       }
       await api(`/auth/${mode}`, { method: 'POST', body: JSON.stringify(body) })
-      toast(mode === 'login' ? 'Berhasil masuk!' : 'Akun dibuat!')
+      toast(mode === 'login' ? t('loginSuccess') : t('registerSuccess'))
       window.location.href = '/'
     } catch (err) {
       toast(err.message)

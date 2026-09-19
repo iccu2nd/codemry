@@ -32,11 +32,16 @@ function ensureFonts() {
 
 const W = 1200
 const H = 630
-const INK = '#17293d'
-const INDIGO = '#2f8fd6'
-const MUTED = '#6b7280'
-const PAGE_BG = '#eaf5fc'
-const SHADOW = '#000000'
+// Dark theme — matches Codery site palette
+const PAGE_BG = '#0c0c0c'
+const CARD_BG = '#161616'
+const CARD_BORDER = '#2a2a2a'
+const INK = '#f0f0f0'
+const MUTED = '#8a8a8a'
+const ACCENT = '#d4d4d4'
+const ACCENT_DIM = '#555555'
+const SURFACE = '#1a1a1a'
+const SHADOW = 'rgba(0,0,0,0.55)'
 
 // ---------- generic drawing helpers ----------
 
@@ -116,10 +121,13 @@ function drawCircleImage(ctx, img, cx, cy, r) {
 function drawAvatarPlaceholder(ctx, cx, cy, r, label) {
     ctx.beginPath()
     ctx.arc(cx, cy, r, 0, Math.PI * 2)
-    ctx.fillStyle = '#dbeefc'
+    ctx.fillStyle = SURFACE
     ctx.fill()
-    ctx.fillStyle = '#1f6ea8'
-    ctx.font = `700 ${Math.round(r)}px "Poppins Bold"`
+    ctx.strokeStyle = CARD_BORDER
+    ctx.lineWidth = 2
+    ctx.stroke()
+    ctx.fillStyle = ACCENT
+    ctx.font = `700 ${Math.round(r * 0.9)}px "Poppins Bold"`
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
     ctx.fillText((label || '?').charAt(0).toUpperCase(), cx, cy + 2)
@@ -192,12 +200,12 @@ function iconCode(ctx, x, y, s, color) {
     ctx.stroke()
 }
 
-function iconCheckBadge(ctx, cx, cy, r, bg = '#2f8fd6') {
+function iconCheckBadge(ctx, cx, cy, r, bg = ACCENT_DIM) {
     ctx.beginPath()
     ctx.arc(cx, cy, r, 0, Math.PI * 2)
     ctx.fillStyle = bg
     ctx.fill()
-    ctx.strokeStyle = '#fff'
+    ctx.strokeStyle = INK
     ctx.lineWidth = r * 0.22
     ctx.lineCap = 'round'
     ctx.lineJoin = 'round'
@@ -213,11 +221,12 @@ function iconCheckBadge(ctx, cx, cy, r, bg = '#2f8fd6') {
 function drawBackground(ctx) {
     ctx.fillStyle = PAGE_BG
     ctx.fillRect(0, 0, W, H)
-    ctx.fillStyle = 'rgba(47,143,214,0.14)'
-    for (let gx = 24; gx < W; gx += 30) {
-        for (let gy = 24; gy < H; gy += 30) {
+    // subtle grid dots
+    ctx.fillStyle = 'rgba(255,255,255,0.04)'
+    for (let gx = 28; gx < W; gx += 32) {
+        for (let gy = 28; gy < H; gy += 32) {
             ctx.beginPath()
-            ctx.arc(gx, gy, 1.3, 0, Math.PI * 2)
+            ctx.arc(gx, gy, 1.1, 0, Math.PI * 2)
             ctx.fill()
         }
     }
@@ -228,22 +237,29 @@ function drawBrandHeader(ctx, domain = 'codery.my.id') {
     ctx.fillStyle = INK
     ctx.font = '700 32px "Poppins Bold"'
     ctx.fillText('Codery', 56, 60)
-    ctx.fillStyle = INDIGO
-    ctx.font = '500 19px "Poppins Medium"'
+    ctx.fillStyle = MUTED
+    ctx.font = '500 18px "Poppins Medium"'
     const label = domain
     ctx.fillText(label, W - 56 - ctx.measureText(label).width, 56)
 }
 
 function drawCardBase(ctx, x, y, w, h, r = 22) {
+    // soft outer shadow
     ctx.fillStyle = SHADOW
-    roundRect(ctx, x + 6, y + 8, w, h, r)
+    roundRect(ctx, x + 4, y + 6, w, h, r)
     ctx.fill()
-    ctx.fillStyle = '#ffffff'
+    // card face
+    ctx.fillStyle = CARD_BG
     roundRect(ctx, x, y, w, h, r)
     ctx.fill()
+    // thin border for definition on dark bg
+    ctx.strokeStyle = CARD_BORDER
+    ctx.lineWidth = 1.5
+    roundRect(ctx, x, y, w, h, r)
+    ctx.stroke()
 }
 
-function pillBadge(ctx, text, x, yCenter, { bg = '#dbeefc', fg = '#1f6ea8', font = '600 18px "Poppins Medium"', icon = null } = {}) {
+function pillBadge(ctx, text, x, yCenter, { bg = SURFACE, fg = ACCENT, font = '600 18px "Poppins Medium"', icon = null } = {}) {
     ctx.font = font
     const padX = 14
     const iconW = icon ? 22 : 0
@@ -253,6 +269,10 @@ function pillBadge(ctx, text, x, yCenter, { bg = '#dbeefc', fg = '#1f6ea8', font
     roundRect(ctx, x, yCenter - h / 2, w, h, 10)
     ctx.fillStyle = bg
     ctx.fill()
+    ctx.strokeStyle = CARD_BORDER
+    ctx.lineWidth = 1
+    roundRect(ctx, x, yCenter - h / 2, w, h, 10)
+    ctx.stroke()
     if (icon) icon(ctx, x + padX, yCenter - 9, 18, fg)
     ctx.fillStyle = fg
     ctx.textAlign = 'left'
@@ -293,21 +313,26 @@ function tokenizeLine(line) {
 function drawTerminal(ctx, x, y, w, h, filename) {
     const headerH = 42
     roundRect(ctx, x, y, w, h, 14)
-    ctx.fillStyle = '#282c34'
+    ctx.fillStyle = '#111111'
     ctx.fill()
+    ctx.strokeStyle = CARD_BORDER
+    ctx.lineWidth = 1
+    roundRect(ctx, x, y, w, h, 14)
+    ctx.stroke()
     ctx.save()
     roundRect(ctx, x, y, w, headerH, 14)
     ctx.clip()
-    ctx.fillStyle = '#21252b'
+    ctx.fillStyle = '#1a1a1a'
     ctx.fillRect(x, y, w, headerH)
-    ctx.restore();
-    ['#f87171', '#fbbf24', '#4ade80'].forEach((c, i) => {
+    ctx.restore()
+    // traffic lights — muted for dark chrome
+    ;['#ff5f57', '#febc2e', '#28c840'].forEach((c, i) => {
         ctx.beginPath()
         ctx.fillStyle = c
         ctx.arc(x + 22 + i * 22, y + headerH / 2, 6, 0, Math.PI * 2)
         ctx.fill()
     })
-    ctx.fillStyle = '#9ca3af'
+    ctx.fillStyle = MUTED
     ctx.font = '400 15px "JetBrains Mono"'
     ctx.textBaseline = 'middle'
     ctx.fillText(truncate(ctx, filename || '', w - 260), x + 100, y + headerH / 2 + 1)
@@ -367,13 +392,13 @@ export async function renderCodeOgImage(snippet, owner, domain) {
     drawCardBase(ctx, cardX, cardY, cardW, cardH)
     let cy = cardY + pad
 
-    const langLabel = isLocked ? 'Terkunci' : (LANG_LABEL[snippet.language] || snippet.language || 'Text')
+    const langLabel = isLocked ? 'Locked' : (LANG_LABEL[snippet.language] || snippet.language || 'Text')
     ctx.font = '600 18px "Poppins Medium"'
     const badgeW = ctx.measureText(langLabel).width + (isLocked ? 22 : 0) + 28
     const badgeX = cardX + cardW - pad - badgeW
     pillBadge(ctx, langLabel, badgeX, cy + 12, isLocked
-        ? { bg: '#fee2e2', fg: '#b91c1c', icon: iconLock }
-        : {})
+        ? { bg: '#2a1515', fg: '#f87171', icon: iconLock }
+        : { bg: SURFACE, fg: ACCENT })
 
     ctx.fillStyle = INK
     ctx.font = '700 28px "Poppins Bold"'
@@ -393,9 +418,9 @@ export async function renderCodeOgImage(snippet, owner, domain) {
     const headerH = drawTerminal(ctx, contentX, termY, contentW, termH, snippet.filename)
 
     if (isLocked) {
-        ctx.fillStyle = '#5c6370'
+        ctx.fillStyle = MUTED
         ctx.font = 'italic 400 18px "JetBrains Mono"'
-        ctx.fillText('// kode ini dikunci dengan PIN', contentX + 24, termY + headerH + 40)
+        ctx.fillText('// this code is locked with a PIN', contentX + 24, termY + headerH + 40)
     } else {
         const bodyPadX = 22
         const availH = termH - headerH - bodyPadY
@@ -414,7 +439,7 @@ export async function renderCodeOgImage(snippet, owner, domain) {
         shown.forEach((line, idx) => {
             let lx = contentX + bodyPadX
             const ly = termY + headerH + bodyPadY + idx * density.lineHeight
-            ctx.fillStyle = '#495162'
+            ctx.fillStyle = '#4a4a4a'
             ctx.font = `400 ${density.gutterFont}px "JetBrains Mono"`
             ctx.fillText(String(idx + 1).padStart(2, ' '), lx, ly)
             lx += gutterW
@@ -431,9 +456,9 @@ export async function renderCodeOgImage(snippet, owner, domain) {
         if (hiddenCount > 0) {
             const ly = termY + headerH + bodyPadY + shown.length * density.lineHeight
             if (ly < termY + termH - 6) {
-                ctx.fillStyle = '#5c6370'
+                ctx.fillStyle = MUTED
                 ctx.font = `italic 400 ${Math.max(12, density.font - 1)}px "JetBrains Mono"`
-                ctx.fillText(`... ${hiddenCount} baris lainnya`, contentX + bodyPadX + gutterW, ly)
+                ctx.fillText(`... ${hiddenCount} more lines`, contentX + bodyPadX + gutterW, ly)
             }
         }
     }
@@ -444,7 +469,7 @@ export async function renderCodeOgImage(snippet, owner, domain) {
     if (avatar) drawCircleImage(ctx, avatar, fx + 15, footerY - 5, 15)
     else drawAvatarPlaceholder(ctx, fx + 15, footerY - 5, 15, owner?.nickname || owner?.username || snippet.ownerUsername)
     fx += 38
-    ctx.fillStyle = '#374151'
+    ctx.fillStyle = ACCENT
     ctx.font = '600 17px "Poppins Medium"'
     ctx.fillText('@' + (owner ? (owner.nickname || owner.username) : (snippet.ownerUsername || '')), fx, footerY)
 
@@ -454,13 +479,13 @@ export async function renderCodeOgImage(snippet, owner, domain) {
         ctx.font = '500 17px "JetBrains Mono"'
         const textW = ctx.measureText(String(value)).width
         sx -= textW
-        ctx.fillStyle = '#374151'
+        ctx.fillStyle = MUTED
         ctx.fillText(String(value), sx, footerY)
         sx -= 8
         icon(ctx, sx - 20, footerY - 18, 20, color)
         sx -= 20 + 26
     }
-    statChipRTL(iconHeart, snippet.likes ?? 0, '#f43f5e')
+    statChipRTL(iconHeart, snippet.likes ?? 0, '#e8e8e8')
     statChipRTL(iconEye, snippet.views ?? 0, MUTED)
 
     return canvas.toBuffer('image/png')
@@ -488,11 +513,21 @@ export async function renderProfileOgImage(user, stats, domain) {
         const scale = Math.max(cardW / banner.width, bannerH / banner.height)
         const dw = banner.width * scale, dh = banner.height * scale
         ctx.drawImage(banner, cardX + (cardW - dw) / 2, cardY + (bannerH - dh) / 2, dw, dh)
+        // dark scrim so text below stays readable
+        const scrim = ctx.createLinearGradient(cardX, cardY + bannerH - 60, cardX, cardY + bannerH)
+        scrim.addColorStop(0, 'rgba(22,22,22,0)')
+        scrim.addColorStop(1, CARD_BG)
+        ctx.fillStyle = scrim
+        ctx.fillRect(cardX, cardY + bannerH - 60, cardW, 60)
     } else {
         const grad = ctx.createLinearGradient(cardX, cardY, cardX + cardW, cardY + bannerH)
-        grad.addColorStop(0, '#6ec1ef'); grad.addColorStop(1, '#2f8fd6')
+        grad.addColorStop(0, '#1f1f1f')
+        grad.addColorStop(1, '#121212')
         ctx.fillStyle = grad
         ctx.fillRect(cardX, cardY, cardW, bannerH)
+        // subtle accent line at bottom of banner
+        ctx.fillStyle = CARD_BORDER
+        ctx.fillRect(cardX, cardY + bannerH - 1, cardW, 1)
     }
     ctx.restore()
 
@@ -500,8 +535,11 @@ export async function renderProfileOgImage(user, stats, domain) {
     const avatarR = 62
     const avatarCx = cardX + pad + avatarR
     const avatarCy = cardY + bannerH + 10
-    ctx.fillStyle = '#ffffff'
+    ctx.fillStyle = CARD_BG
     ctx.beginPath(); ctx.arc(avatarCx, avatarCy, avatarR + 6, 0, Math.PI * 2); ctx.fill()
+    ctx.strokeStyle = CARD_BORDER
+    ctx.lineWidth = 2
+    ctx.beginPath(); ctx.arc(avatarCx, avatarCy, avatarR + 6, 0, Math.PI * 2); ctx.stroke()
     const avatar = await loadUserAvatar(user)
     if (avatar) drawCircleImage(ctx, avatar, avatarCx, avatarCy, avatarR)
     else drawAvatarPlaceholder(ctx, avatarCx, avatarCy, avatarR, user.nickname || user.username)
@@ -513,7 +551,7 @@ export async function renderProfileOgImage(user, stats, domain) {
     ctx.font = '700 32px "Poppins Bold"'
     const nameText = truncate(ctx, user.nickname || user.username, cardW - pad * 2 - 60)
     ctx.fillText(nameText, cardX + pad, ty)
-    if (isVerified) iconCheckBadge(ctx, cardX + pad + ctx.measureText(nameText).width + 22, ty - 10, 14, isDev ? '#f59e0b' : INDIGO)
+    if (isVerified) iconCheckBadge(ctx, cardX + pad + ctx.measureText(nameText).width + 22, ty - 10, 14, isDev ? '#a78bfa' : ACCENT_DIM)
     ty += 30
     ctx.fillStyle = MUTED
     ctx.font = '400 19px "JetBrains Mono"'
@@ -521,12 +559,12 @@ export async function renderProfileOgImage(user, stats, domain) {
     ctx.fillText(handleText, cardX + pad, ty)
     if (isDev) {
         pillBadge(ctx, 'Developer', cardX + pad + ctx.measureText(handleText).width + 18, ty - 7,
-            { bg: '#fef3c7', fg: '#92400e', font: '600 14px "Poppins Medium"' })
+            { bg: SURFACE, fg: ACCENT, font: '600 14px "Poppins Medium"' })
     }
     ty += 34
 
     if (user.bio) {
-        ctx.fillStyle = '#374151'
+        ctx.fillStyle = MUTED
         ctx.font = '400 18px "Poppins"'
         const lines = wrapText(ctx, user.bio, cardW - pad * 2, 2)
         for (const line of lines) { ctx.fillText(line, cardX + pad, ty); ty += 26 }
@@ -535,7 +573,7 @@ export async function renderProfileOgImage(user, stats, domain) {
     const statsY = cardY + cardH - 50
     let sx = cardX + pad
     const stat = (icon, value, label) => {
-        icon(ctx, sx, statsY - 18, 22, INDIGO)
+        icon(ctx, sx, statsY - 18, 22, ACCENT)
         sx += 30
         ctx.fillStyle = INK
         ctx.font = '700 20px "Poppins Bold"'
@@ -546,9 +584,9 @@ export async function renderProfileOgImage(user, stats, domain) {
         ctx.fillText(label, sx, statsY)
         sx += ctx.measureText(label).width + 36
     }
-    stat(iconUsers, stats.followers ?? 0, 'Pengikut')
-    stat(iconCode, stats.snippets ?? 0, 'Kode')
-    stat(iconHeart, stats.likes ?? 0, 'Suka')
+    stat(iconUsers, stats.followers ?? 0, 'Followers')
+    stat(iconCode, stats.snippets ?? 0, 'Codes')
+    stat(iconHeart, stats.likes ?? 0, 'Likes')
 
     return canvas.toBuffer('image/png')
 }
@@ -566,10 +604,10 @@ export async function renderFeedOgImage(stats, domain) {
     ctx.save()
     roundRect(ctx, cardX, cardY, cardW, headerH, radius)
     ctx.clip()
-    ctx.fillStyle = '#f3f4f6'
+    ctx.fillStyle = SURFACE
     ctx.fillRect(cardX, cardY, cardW, headerH)
-    ctx.restore();
-    ['#f87171', '#fbbf24', '#4ade80'].forEach((c, i) => {
+    ctx.restore()
+    ;['#ff5f57', '#febc2e', '#28c840'].forEach((c, i) => {
         ctx.beginPath(); ctx.fillStyle = c; ctx.arc(cardX + 26 + i * 24, cardY + headerH / 2, 7, 0, Math.PI * 2); ctx.fill()
     })
 
@@ -579,8 +617,9 @@ export async function renderFeedOgImage(stats, domain) {
     ctx.font = '800 76px "Poppins Bold"'
     ctx.fillText('Codery', cx, cardY + headerH + 130)
 
-    ctx.fillStyle = INDIGO
-    ctx.fillRect(cx - 24, cardY + headerH + 158, 48, 5)
+    // accent underline
+    ctx.fillStyle = ACCENT_DIM
+    ctx.fillRect(cx - 28, cardY + headerH + 158, 56, 4)
 
     ctx.fillStyle = MUTED
     ctx.font = '500 24px "JetBrains Mono"'
@@ -589,8 +628,8 @@ export async function renderFeedOgImage(stats, domain) {
 
     const statsY = cardY + cardH - 70
     const items = [
-        { icon: iconCode, value: stats.snippets ?? 0, label: 'Kode dibagikan' },
-        { icon: iconUsers, value: stats.users ?? 0, label: 'Developer' }
+        { icon: iconCode, value: stats.snippets ?? 0, label: 'Codes shared' },
+        { icon: iconUsers, value: stats.users ?? 0, label: 'Developers' }
     ]
     const gap = 90
     const widths = items.map(it => {
@@ -603,7 +642,7 @@ export async function renderFeedOgImage(stats, domain) {
     const totalW = widths.reduce((a, b) => a + b, 0) + gap * (items.length - 1)
     let sx = cardX + (cardW - totalW) / 2
     items.forEach((it, i) => {
-        it.icon(ctx, sx, statsY - 18, 22, INDIGO)
+        it.icon(ctx, sx, statsY - 18, 22, ACCENT)
         sx += 34
         ctx.fillStyle = INK
         ctx.font = '700 26px "Poppins Bold"'
@@ -615,7 +654,7 @@ export async function renderFeedOgImage(stats, domain) {
         sx += widths[i] - (34 + ctx.measureText(String(it.value)).width + 10) + gap
     })
 
-    ctx.fillStyle = INDIGO
+    ctx.fillStyle = MUTED
     ctx.font = '500 20px "Poppins Medium"'
     const label = domain || 'codery.my.id'
     ctx.textAlign = 'center'
