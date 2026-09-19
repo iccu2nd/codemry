@@ -98,15 +98,8 @@ function renderUnlockedDetail(app, shortId, s) {
               <span class="zoom-level" id="zoomLevel">100%</span>
               <button type="button" class="zoom-btn" id="zoomInBtn" title="Zoom in">+</button>
             </div>
-            <button type="button" class="code-expand-btn" id="codeGrepBtn" title="Find in code">${searchIconSvg()}</button>
+            <button type="button" class="code-expand-btn" id="codeWrapBtn" title="Wrap lines">${wrapIconSvg()}</button>
             <button type="button" class="code-expand-btn" id="codeFullscreenBtn" title="Fullscreen">${expandIconSvg()}</button>
-          </div>
-          <div class="code-grep-bar" id="codeGrepBar" hidden>
-            <input type="text" class="code-grep-input" id="codeGrepInput" placeholder="Find in code..." autocomplete="off" spellcheck="false">
-            <span class="code-grep-count" id="codeGrepCount"></span>
-            <button type="button" class="code-grep-nav" id="codeGrepPrev" title="Previous">↑</button>
-            <button type="button" class="code-grep-nav" id="codeGrepNext" title="Next">↓</button>
-            <button type="button" class="code-grep-close" id="codeGrepClose" title="Close">${closeIconSvg()}</button>
           </div>
           <pre class="code-view" id="codeViewPre"><code id="codeBlock" class="language-${hljsLang(s.language)}">${escapeHtml(s.content)}</code></pre>
         </div>
@@ -353,7 +346,7 @@ function renderUnlockedDetail(app, shortId, s) {
     const codeViewPre = document.getElementById('codeViewPre')
     const zoomLevelEl = document.getElementById('zoomLevel')
     const BASE_FONT = 16
-    const MIN_ZOOM = 50, MAX_ZOOM = 300, ZOOM_STEP = 10, DEFAULT_ZOOM = 100
+    const MIN_ZOOM = 50, MAX_ZOOM = 300, ZOOM_STEP = 10, DEFAULT_ZOOM = 100, FULLSCREEN_ZOOM = 70
     let zoom = DEFAULT_ZOOM
 
     function applyZoom() {
@@ -376,122 +369,19 @@ function renderUnlockedDetail(app, shortId, s) {
     document.getElementById('zoomInBtn').onclick = () => { zoom += ZOOM_STEP; applyZoom() }
     document.getElementById('zoomOutBtn').onclick = () => { zoom -= ZOOM_STEP; applyZoom() }
 
-    // --- Find in code (grep) ---
-    const grepBtn = document.getElementById('codeGrepBtn')
-    const grepBar = document.getElementById('codeGrepBar')
-    const grepInput = document.getElementById('codeGrepInput')
-    const grepCount = document.getElementById('codeGrepCount')
-    const grepPrev = document.getElementById('codeGrepPrev')
-    const grepNext = document.getElementById('codeGrepNext')
-    const grepClose = document.getElementById('codeGrepClose')
-    const originalCodeHtml = codeBlock.innerHTML
-    let grepMatches = []
-    let grepIndex = -1
-
-    function clearGrepHighlights() {
-      codeBlock.innerHTML = originalCodeHtml
-      grepMatches = []
-      grepIndex = -1
-      if (grepCount) grepCount.textContent = ''
-    }
-
-    function runGrep(query) {
-      clearGrepHighlights()
-      if (!query) return
-      const text = codeBlock.textContent || ''
-      const q = query
-      const lowerText = text.toLowerCase()
-      const lowerQ = q.toLowerCase()
-      const ranges = []
-      let pos = 0
-      while (true) {
-        const i = lowerText.indexOf(lowerQ, pos)
-        if (i < 0) break
-        ranges.push([i, i + q.length])
-        pos = i + Math.max(1, q.length)
+    // --- Word wrap toggle ---
+    const wrapBtn = document.getElementById('codeWrapBtn')
+    let wrapOn = false
+    function setWrap(on) {
+      wrapOn = !!on
+      if (codeViewPre) codeViewPre.classList.toggle('code-wrap', wrapOn)
+      if (codeBlock) codeBlock.classList.toggle('code-wrap', wrapOn)
+      if (wrapBtn) {
+        wrapBtn.classList.toggle('active', wrapOn)
+        wrapBtn.title = wrapOn ? 'Unwrap lines' : 'Wrap lines'
       }
-      if (!ranges.length) {
-        if (grepCount) grepCount.textContent = '0'
-        return
-      }
-      // Rebuild HTML with mark tags around matches (on plain text, then re-apply structure simply)
-      let out = ''
-      let last = 0
-      ranges.forEach(([start, end], idx) => {
-        out += escapeHtml(text.slice(last, start))
-        out += `<mark class="code-grep-hit" data-grep-i="${idx}">${escapeHtml(text.slice(start, end))}</mark>`
-        last = end
-      })
-      out += escapeHtml(text.slice(last))
-      codeBlock.innerHTML = out
-      grepMatches = Array.from(codeBlock.querySelectorAll('mark.code-grep-hit'))
-      grepIndex = 0
-      updateGrepNav()
-      scrollToGrepMatch(0)
     }
-
-    function updateGrepNav() {
-      if (!grepCount) return
-      if (!grepMatches.length) {
-        grepCount.textContent = '0'
-        return
-      }
-      grepCount.textContent = `${grepIndex + 1}/${grepMatches.length}`
-      grepMatches.forEach((m, i) => m.classList.toggle('code-grep-current', i === grepIndex))
-    }
-
-    function scrollToGrepMatch(i) {
-      if (!grepMatches[i]) return
-      grepMatches[i].scrollIntoView({ block: 'center', behavior: 'smooth' })
-    }
-
-    function gotoGrep(delta) {
-      if (!grepMatches.length) return
-      grepIndex = (grepIndex + delta + grepMatches.length) % grepMatches.length
-      updateGrepNav()
-      scrollToGrepMatch(grepIndex)
-    }
-
-    function openGrep() {
-      if (!grepBar) return
-      grepBar.hidden = false
-      if (grepInput) {
-        grepInput.value = ''
-        grepInput.focus()
-      }
-      clearGrepHighlights()
-    }
-
-    function closeGrep() {
-      if (!grepBar) return
-      grepBar.hidden = true
-      clearGrepHighlights()
-    }
-
-    if (grepBtn) grepBtn.onclick = () => {
-      if (grepBar && !grepBar.hidden) closeGrep()
-      else openGrep()
-    }
-    if (grepClose) grepClose.onclick = closeGrep
-    if (grepPrev) grepPrev.onclick = () => gotoGrep(-1)
-    if (grepNext) grepNext.onclick = () => gotoGrep(1)
-    if (grepInput) {
-      let grepTimer = null
-      grepInput.addEventListener('input', () => {
-        clearTimeout(grepTimer)
-        grepTimer = setTimeout(() => runGrep(grepInput.value.trim()), 120)
-      })
-      grepInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-          e.preventDefault()
-          if (e.shiftKey) gotoGrep(-1)
-          else gotoGrep(1)
-        } else if (e.key === 'Escape') {
-          e.preventDefault()
-          closeGrep()
-        }
-      })
-    }
+    if (wrapBtn) wrapBtn.onclick = () => setWrap(!wrapOn)
 
     let pinchStartDist = 0, pinchStartZoom = 100
     function touchDist(touches) {
@@ -613,7 +503,7 @@ function renderUnlockedDetail(app, shortId, s) {
       if (isOpen) enterFullscreen(); else exitFullscreen()
       fullscreenBtn.innerHTML = isOpen ? collapseIconSvg() : expandIconSvg()
       fullscreenBtn.title = isOpen ? 'Exit fullscreen' : 'Fullscreen'
-      if (isOpen) { zoom = DEFAULT_ZOOM; applyZoom() } else resetZoom()
+      if (isOpen) { zoom = FULLSCREEN_ZOOM; applyZoom() } else resetZoom()
     }
     document.addEventListener('keydown', function escClose(e) {
       if (e.key === 'Escape' && codeWindow.classList.contains('fullscreen')) fullscreenBtn.click()
@@ -785,6 +675,9 @@ function qrIconSvg() {
   return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><path d="M13.5 13.5h3.2v3.2h-3.2z"/><path d="M18.5 13.5h2v2h-2z"/><path d="M13.5 18.5h2v2h-2z"/><path d="M18.5 18.5h2v2h-2z"/></svg>`
 }
 
+function wrapIconSvg() {
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h12"/><path d="M4 12h16"/><path d="M4 17h8"/><path d="M15 15l3 3-3 3"/><path d="M18 18h2a2 2 0 0 0 0-4h-1"/></svg>`
+}
 function forkIconSvg() {
   return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2.6" fill="currentColor" fill-opacity=".12"/><circle cx="18" cy="6" r="2.6" fill="currentColor" fill-opacity=".12"/><circle cx="12" cy="18" r="2.6" fill="currentColor" fill-opacity=".12"/><path d="M6 8.6V12a4 4 0 0 0 4 4"/><path d="M18 8.6V12a4 4 0 0 1-4 4"/></svg>`
 }

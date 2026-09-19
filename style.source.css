@@ -1004,66 +1004,6 @@ img.clickable:hover { outline: 2px solid rgba(var(--accent-rgb),.4); outline-off
   font-family: 'JetBrains Mono', monospace;
 }
 
-/* Find-in-code (grep) bar */
-.code-grep-bar {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 10px;
-  background: #252526;
-  border-bottom: 1px solid rgba(255,255,255,.08);
-  flex-shrink: 0;
-}
-.code-grep-bar[hidden] { display: none !important; }
-.code-grep-input {
-  flex: 1;
-  min-width: 0;
-  height: 28px;
-  padding: 0 10px;
-  border: 1px solid rgba(255,255,255,.12);
-  border-radius: 8px;
-  background: rgba(0,0,0,.35);
-  color: #e5e5e5;
-  font-size: 13px;
-  font-family: 'JetBrains Mono', monospace;
-  outline: none;
-}
-.code-grep-input:focus { border-color: rgba(165,180,252,.5); }
-.code-grep-count {
-  flex-shrink: 0;
-  min-width: 36px;
-  text-align: center;
-  color: #9d9d9d;
-  font-size: 11px;
-  font-weight: 600;
-  font-family: 'JetBrains Mono', monospace;
-}
-.code-grep-nav,
-.code-grep-close {
-  flex-shrink: 0;
-  width: 26px; height: 26px;
-  border: none; border-radius: 7px;
-  background: rgba(255,255,255,.06);
-  color: var(--accent-glow);
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer;
-  font-size: 13px; font-weight: 700;
-  transition: background .12s ease;
-}
-.code-grep-nav:hover,
-.code-grep-close:hover { background: rgba(165,180,252,.18); }
-.code-grep-close svg { width: 12px; height: 12px; }
-mark.code-grep-hit {
-  background: rgba(250, 204, 21, .35);
-  color: inherit;
-  border-radius: 2px;
-  padding: 0 1px;
-}
-mark.code-grep-hit.code-grep-current {
-  background: rgba(251, 146, 60, .65);
-  outline: 1px solid rgba(251, 146, 60, .9);
-}
-
 .code-preview-body {
   position: relative;
   max-height: 118px;
@@ -1158,6 +1098,18 @@ mark.code-grep-hit.code-grep-current {
 }
 html:has(.code-window.fullscreen) { overflow: hidden; touch-action: pan-x pan-y; }
 body:has(.code-window.fullscreen) { touch-action: pan-x pan-y; }
+
+.code-expand-btn.active {
+  background: rgba(165,180,252,.28);
+  color: #c7d2fe;
+}
+.code-view.code-wrap,
+.code-view.code-wrap code {
+  white-space: pre-wrap !important;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
 .code-window.fullscreen .code-view { flex: 1; overflow: auto; touch-action: pan-x pan-y; }
 .code-window.fullscreen::after { top: 49px; }
 
