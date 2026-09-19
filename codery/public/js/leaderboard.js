@@ -46,7 +46,7 @@ async function renderLeaderboard() {
           </div>
           ${rows.length
             ? rows.map((row, i) => lbRowHtml(row, i + 1, tab.unit)).join('')
-            : `<div class="empty-state">Belum ada data. Jadi yang pertama upload!</div>`}
+            : `<div class="empty-state">No data yet. Be the first to upload!</div>`}
         </div>
       `
       app.querySelectorAll('.lb-tab-btn').forEach(btn => {

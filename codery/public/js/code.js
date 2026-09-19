@@ -2,7 +2,7 @@
 async function renderCodeDetail(authReady) {
   const app = document.getElementById('app')
   const shortId = qs('id')
-  if (!shortId) { app.innerHTML = `<div class="card"><div class="empty-state">Kode tidak ditemukan.</div></div>`; return }
+  if (!shortId) { app.innerHTML = `<div class="card"><div class="empty-state">Code not found.</div></div>`; return }
   try {
     const [s] = await Promise.all([api(`/codes/${shortId}`), authReady])
     if (s.locked && s.content == null && !(me && me.username === s.ownerUsername)) {
@@ -98,7 +98,15 @@ function renderUnlockedDetail(app, shortId, s) {
               <span class="zoom-level" id="zoomLevel">100%</span>
               <button type="button" class="zoom-btn" id="zoomInBtn" title="Zoom in">+</button>
             </div>
+            <button type="button" class="code-expand-btn" id="codeGrepBtn" title="Find in code">${searchIconSvg()}</button>
             <button type="button" class="code-expand-btn" id="codeFullscreenBtn" title="Fullscreen">${expandIconSvg()}</button>
+          </div>
+          <div class="code-grep-bar" id="codeGrepBar" hidden>
+            <input type="text" class="code-grep-input" id="codeGrepInput" placeholder="Find in code..." autocomplete="off" spellcheck="false">
+            <span class="code-grep-count" id="codeGrepCount"></span>
+            <button type="button" class="code-grep-nav" id="codeGrepPrev" title="Previous">↑</button>
+            <button type="button" class="code-grep-nav" id="codeGrepNext" title="Next">↓</button>
+            <button type="button" class="code-grep-close" id="codeGrepClose" title="Close">${closeIconSvg()}</button>
           </div>
           <pre class="code-view" id="codeViewPre"><code id="codeBlock" class="language-${hljsLang(s.language)}">${escapeHtml(s.content)}</code></pre>
         </div>
@@ -122,12 +130,12 @@ function renderUnlockedDetail(app, shortId, s) {
             <select id="reportReason">
               <option value="vulgar">Inappropriate content</option>
               <option value="spam">Spam / promo</option>
-              <option value="plagiarism">Plagiat/klaim kode orang lain</option>
-              <option value="malware">Malware/kode berbahaya</option>
-              <option value="other">Lainnya</option>
+              <option value="plagiarism">Plagiarism / stolen code</option>
+              <option value="malware">Malware / harmful code</option>
+              <option value="other">Other</option>
             </select>
           </div>
-          <div class="field"><label>Detail (opsional)</label><textarea id="reportDetail" class="textarea-autogrow" style="min-height:60px" maxlength="300" placeholder="Jelasin lebih lanjut kalau perlu..."></textarea></div>
+          <div class="field"><label>Detail (optional)</label><textarea id="reportDetail" class="textarea-autogrow" style="min-height:60px" maxlength="300" placeholder="Add more details if needed..."></textarea></div>
           <div class="snippet-meta" style="margin-bottom:12px">This report is sent to Codery moderators for review, not to the code owner.</div>
           <div class="btn-row">
             <button class="btn btn-white" id="cancelReportBtn">Cancel</button>
@@ -136,22 +144,22 @@ function renderUnlockedDetail(app, shortId, s) {
         </div>` : ''}
         ${me && me.username === s.ownerUsername ? `
         <div id="editForm" style="display:none;margin-top:14px">
-          <div class="field"><label>Judul</label><input id="editTitle" value="${escapeHtml(s.title)}" maxlength="120"></div>
-          <div class="field"><label>Deskripsi (opsional)</label><textarea id="editDescription" class="textarea-autogrow" style="min-height:70px">${escapeHtml(s.description || '')}</textarea></div>
-          <div class="field"><label>Tag (pisah koma, maks 5)</label><input id="editTags" value="${escapeHtml((s.tags || []).join(', '))}" placeholder="algoritma, tutorial, bug-fix"></div>
-          <div class="field"><label>Nama File</label><input id="editFilename" value="${escapeHtml(s.filename)}" maxlength="80"></div>
-          <div class="field"><label>Bahasa</label>
+          <div class="field"><label>Title</label><input id="editTitle" value="${escapeHtml(s.title)}" maxlength="120"></div>
+          <div class="field"><label>Description (optional)</label><textarea id="editDescription" class="textarea-autogrow" style="min-height:70px">${escapeHtml(s.description || '')}</textarea></div>
+          <div class="field"><label>Tags (comma separated, max 5)</label><input id="editTags" value="${escapeHtml((s.tags || []).join(', '))}" placeholder="algorithm, tutorial, bug-fix"></div>
+          <div class="field"><label>Filename</label><input id="editFilename" value="${escapeHtml(s.filename)}" maxlength="80"></div>
+          <div class="field"><label>Language</label>
             <select id="editLanguage">
               ${['javascript', 'typescript', 'python', 'html', 'css', 'json', 'java', 'php', 'bash', 'markdown', 'text']
                 .map(l => `<option value="${l}" ${s.language === l ? 'selected' : ''}>${l}</option>`).join('')}
             </select>
           </div>
-          <div class="field"><label>Kode</label><textarea id="editContent" style="min-height:160px;font-family:'JetBrains Mono',monospace;font-size:13px">${escapeHtml(s.content)}</textarea></div>
+          <div class="field"><label>Code</label><textarea id="editContent" style="min-height:160px;font-family:'JetBrains Mono',monospace;font-size:13px">${escapeHtml(s.content)}</textarea></div>
           <div class="checkbox-row"><input type="checkbox" id="editIsPublic" ${s.isPublic ? 'checked' : ''}><label for="editIsPublic">Public (show on feed)</label></div>
           <div class="checkbox-row"><input type="checkbox" id="editUsePin" ${s.locked ? 'checked' : ''}><label for="editUsePin">Lock with Password</label></div>
           <div class="field" id="editPinField" style="display:${s.locked ? 'block' : 'none'}">
-            <label>Password ${s.locked ? 'baru (opsional)' : ''} (4-8 karakter, huruf/angka)</label>
-            <input type="password" id="editPinInput" maxlength="8" placeholder="${s.locked ? 'Kosongkan jika tidak ingin mengganti Password' : 'misal r4hasia'}">
+            <label>Password ${s.locked ? 'new (optional)' : ''} (4-8 characters, letters/numbers)</label>
+            <input type="password" id="editPinInput" maxlength="8" placeholder="${s.locked ? 'Leave empty to keep current password' : 'e.g. mypass1'}">
           </div>
           <div class="btn-row">
             <button class="btn btn-white" id="cancelEditBtn">Cancel</button>
@@ -288,7 +296,7 @@ function renderUnlockedDetail(app, shortId, s) {
       forkBtn.dataset.busy = '1'
       try {
         const forked = await api(`/codes/${shortId}/fork`, { method: 'POST' })
-        toast('Kode berhasil di-fork!')
+        toast('Code forked!')
         window.location.href = codeUrl(forked.shortId)
       } catch (e) { toast(e.message) }
       finally { delete forkBtn.dataset.busy }
@@ -367,6 +375,123 @@ function renderUnlockedDetail(app, shortId, s) {
 
     document.getElementById('zoomInBtn').onclick = () => { zoom += ZOOM_STEP; applyZoom() }
     document.getElementById('zoomOutBtn').onclick = () => { zoom -= ZOOM_STEP; applyZoom() }
+
+    // --- Find in code (grep) ---
+    const grepBtn = document.getElementById('codeGrepBtn')
+    const grepBar = document.getElementById('codeGrepBar')
+    const grepInput = document.getElementById('codeGrepInput')
+    const grepCount = document.getElementById('codeGrepCount')
+    const grepPrev = document.getElementById('codeGrepPrev')
+    const grepNext = document.getElementById('codeGrepNext')
+    const grepClose = document.getElementById('codeGrepClose')
+    const originalCodeHtml = codeBlock.innerHTML
+    let grepMatches = []
+    let grepIndex = -1
+
+    function clearGrepHighlights() {
+      codeBlock.innerHTML = originalCodeHtml
+      grepMatches = []
+      grepIndex = -1
+      if (grepCount) grepCount.textContent = ''
+    }
+
+    function runGrep(query) {
+      clearGrepHighlights()
+      if (!query) return
+      const text = codeBlock.textContent || ''
+      const q = query
+      const lowerText = text.toLowerCase()
+      const lowerQ = q.toLowerCase()
+      const ranges = []
+      let pos = 0
+      while (true) {
+        const i = lowerText.indexOf(lowerQ, pos)
+        if (i < 0) break
+        ranges.push([i, i + q.length])
+        pos = i + Math.max(1, q.length)
+      }
+      if (!ranges.length) {
+        if (grepCount) grepCount.textContent = '0'
+        return
+      }
+      // Rebuild HTML with mark tags around matches (on plain text, then re-apply structure simply)
+      let out = ''
+      let last = 0
+      ranges.forEach(([start, end], idx) => {
+        out += escapeHtml(text.slice(last, start))
+        out += `<mark class="code-grep-hit" data-grep-i="${idx}">${escapeHtml(text.slice(start, end))}</mark>`
+        last = end
+      })
+      out += escapeHtml(text.slice(last))
+      codeBlock.innerHTML = out
+      grepMatches = Array.from(codeBlock.querySelectorAll('mark.code-grep-hit'))
+      grepIndex = 0
+      updateGrepNav()
+      scrollToGrepMatch(0)
+    }
+
+    function updateGrepNav() {
+      if (!grepCount) return
+      if (!grepMatches.length) {
+        grepCount.textContent = '0'
+        return
+      }
+      grepCount.textContent = `${grepIndex + 1}/${grepMatches.length}`
+      grepMatches.forEach((m, i) => m.classList.toggle('code-grep-current', i === grepIndex))
+    }
+
+    function scrollToGrepMatch(i) {
+      if (!grepMatches[i]) return
+      grepMatches[i].scrollIntoView({ block: 'center', behavior: 'smooth' })
+    }
+
+    function gotoGrep(delta) {
+      if (!grepMatches.length) return
+      grepIndex = (grepIndex + delta + grepMatches.length) % grepMatches.length
+      updateGrepNav()
+      scrollToGrepMatch(grepIndex)
+    }
+
+    function openGrep() {
+      if (!grepBar) return
+      grepBar.hidden = false
+      if (grepInput) {
+        grepInput.value = ''
+        grepInput.focus()
+      }
+      clearGrepHighlights()
+    }
+
+    function closeGrep() {
+      if (!grepBar) return
+      grepBar.hidden = true
+      clearGrepHighlights()
+    }
+
+    if (grepBtn) grepBtn.onclick = () => {
+      if (grepBar && !grepBar.hidden) closeGrep()
+      else openGrep()
+    }
+    if (grepClose) grepClose.onclick = closeGrep
+    if (grepPrev) grepPrev.onclick = () => gotoGrep(-1)
+    if (grepNext) grepNext.onclick = () => gotoGrep(1)
+    if (grepInput) {
+      let grepTimer = null
+      grepInput.addEventListener('input', () => {
+        clearTimeout(grepTimer)
+        grepTimer = setTimeout(() => runGrep(grepInput.value.trim()), 120)
+      })
+      grepInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault()
+          if (e.shiftKey) gotoGrep(-1)
+          else gotoGrep(1)
+        } else if (e.key === 'Escape') {
+          e.preventDefault()
+          closeGrep()
+        }
+      })
+    }
 
     let pinchStartDist = 0, pinchStartZoom = 100
     function touchDist(touches) {
@@ -487,7 +612,7 @@ function renderUnlockedDetail(app, shortId, s) {
       const isOpen = !codeWindow.classList.contains('fullscreen')
       if (isOpen) enterFullscreen(); else exitFullscreen()
       fullscreenBtn.innerHTML = isOpen ? collapseIconSvg() : expandIconSvg()
-      fullscreenBtn.title = isOpen ? 'Kecilkan kode' : 'Perbesar kode'
+      fullscreenBtn.title = isOpen ? 'Exit fullscreen' : 'Fullscreen'
       if (isOpen) { zoom = DEFAULT_ZOOM; applyZoom() } else resetZoom()
     }
     document.addEventListener('keydown', function escClose(e) {
@@ -497,7 +622,7 @@ function renderUnlockedDetail(app, shortId, s) {
     const delBtn = document.getElementById('delBtn')
     if (delBtn) delBtn.onclick = async () => {
       if (!confirm('Delete this code?')) return
-      try { await api(`/codes/${shortId}`, { method: 'DELETE' }); toast('Kode dihapus'); window.location.href = '/' }
+      try { await api(`/codes/${shortId}`, { method: 'DELETE' }); toast('Code deleted'); window.location.href = '/' }
       catch (e) { toast(e.message) }
     }
 
@@ -540,12 +665,12 @@ function renderUnlockedDetail(app, shortId, s) {
       const title = document.getElementById('editTitle').value.trim()
       const filename = document.getElementById('editFilename').value.trim()
       const content = document.getElementById('editContent').value
-      if (!title || !filename || !content) { toast('Judul, nama file, dan kode wajib diisi'); return }
+      if (!title || !filename || !content) { toast('Title, filename, and code are required'); return }
 
       const nowWantsPin = editUsePin.checked
       const pinVal = editPinInput.value.trim()
-      if (nowWantsPin && pinVal && !/^[a-zA-Z0-9]{4,8}$/.test(pinVal)) { toast('Password harus 4-8 karakter huruf/angka'); return }
-      if (nowWantsPin && !s.locked && !pinVal) { toast('Isi Password terlebih dahulu untuk mengunci kode ini.'); return }
+      if (nowWantsPin && pinVal && !/^[a-zA-Z0-9]{4,8}$/.test(pinVal)) { toast('Password must be 4-8 letters or numbers'); return }
+      if (nowWantsPin && !s.locked && !pinVal) { toast('Enter a password to lock this code.'); return }
 
       const body = {
         title, filename, content,
@@ -560,7 +685,7 @@ function renderUnlockedDetail(app, shortId, s) {
       saveEditBtn.disabled = true
       try {
         await api(`/codes/${shortId}`, { method: 'PATCH', body: JSON.stringify(body) })
-        toast('Kode diperbarui!')
+        toast('Code updated!')
         renderCodeDetail()
       } catch (e) { toast(e.message) }
       finally { saveEditBtn.disabled = false }
@@ -595,12 +720,12 @@ function replyItemHtml(r, commentId, isOwner, rootUsername) {
     : ''
   return `
   <div class="comment-item reply-item" data-reply-id="${r.id}">
-    <a href="${profileUrl(r.username)}" aria-label="Lihat profil @${escapeHtml(r.username || '')}"><img class="avatar-circle avatar-circle-xs clickable" src="${r.avatar || ''}" onerror="this.style.visibility='hidden'" loading="lazy" decoding="async"></a>
+    <a href="${profileUrl(r.username)}" aria-label="View profile @${escapeHtml(r.username || '')}"><img class="avatar-circle avatar-circle-xs clickable" src="${r.avatar || ''}" onerror="this.style.visibility='hidden'" loading="lazy" decoding="async"></a>
     <div class="comment-body">
       <div class="comment-nickname">${escapeHtml(replyNick)}${roleBadgeHtml(r.role)}${devBadgeHtml(r.isDeveloper)}</div>
       <div class="comment-meta"><a class="user-link" href="${profileUrl(r.username || '')}">@${escapeHtml(r.username || '')}</a>${badgesHtml(r.badges)} · ${timeAgo(r.createdAt)}</div>
       ${commentBodyHtml(r, mentionHtml)}
-      ${me ? `<button type="button" class="comment-action-btn reply-toggle-btn" data-id="${commentId}" data-target="${escapeHtml(r.username || '')}" data-target-nick="${escapeHtml(replyNick)}">${replyIconSvg()} Balas</button>` : ''}
+      ${me ? `<button type="button" class="comment-action-btn reply-toggle-btn" data-id="${commentId}" data-target="${escapeHtml(r.username || '')}" data-target-nick="${escapeHtml(replyNick)}">${replyIconSvg()} Reply</button>` : ''}
     </div>
     ${canDeleteReply ? `<button class="comment-del" data-role="delete-reply" data-comment-id="${commentId}" data-reply-id="${r.id}" title="Delete reply">${trashIconSvg()}</button>` : ''}
   </div>`
@@ -617,18 +742,18 @@ function commentCardHtml(c, canDelete, isOwner) {
   const replies = c.replies || []
   return `
   <div class="comment-item" data-id="${c.id}">
-    <a href="${profileUrl(c.username)}" aria-label="Lihat profil @${escapeHtml(c.username || '')}"><img class="avatar-circle avatar-circle-sm clickable" src="${c.avatar || ''}" onerror="this.style.visibility='hidden'" loading="lazy" decoding="async"></a>
+    <a href="${profileUrl(c.username)}" aria-label="View profile @${escapeHtml(c.username || '')}"><img class="avatar-circle avatar-circle-sm clickable" src="${c.avatar || ''}" onerror="this.style.visibility='hidden'" loading="lazy" decoding="async"></a>
     <div class="comment-body">
       <div class="comment-nickname">${escapeHtml(c.nickname || c.username)}${roleBadgeHtml(c.role)}${devBadgeHtml(c.isDeveloper)}</div>
       <div class="comment-meta"><a class="user-link" href="${profileUrl(c.username)}">@${escapeHtml(c.username)}</a>${badgesHtml(c.badges)} · ${timeAgo(c.createdAt)}</div>
       ${commentBodyHtml(c)}
 
-      ${me ? `<button type="button" class="comment-action-btn reply-toggle-btn" data-id="${c.id}" data-target="${escapeHtml(c.username || '')}" data-target-nick="${escapeHtml(c.nickname || c.username || '')}">${replyIconSvg()} Balas</button>` : ''}
+      ${me ? `<button type="button" class="comment-action-btn reply-toggle-btn" data-id="${c.id}" data-target="${escapeHtml(c.username || '')}" data-target-nick="${escapeHtml(c.nickname || c.username || '')}">${replyIconSvg()} Reply</button>` : ''}
 
       ${replies.length ? `
       <button type="button" class="view-replies-btn" data-id="${c.id}" aria-expanded="false">
         <span class="view-replies-line"></span>
-        <span class="view-replies-label">Lihat ${replies.length} balasan</span>
+        <span class="view-replies-label">View ${replies.length} replies</span>
         <svg class="view-replies-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
       </button>
       <div class="reply-thread" id="replies-${c.id}" style="display:none">
@@ -704,7 +829,7 @@ async function setupComments(shortId, ownerUsername) {
            <img class="avatar-circle avatar-circle-sm" src="${me.avatar}">
            <div class="comment-input-box">
              <button type="button" class="sticker-pick-btn" id="stickerPickBtn" title="Kirim stiker">${stickerIconSvg()}</button>
-             <textarea id="commentInput" class="comment-input" placeholder="Tuliskan komentar..." maxlength="500" rows="1"></textarea>
+             <textarea id="commentInput" class="comment-input" placeholder="Write a comment..." maxlength="500" rows="1"></textarea>
            </div>
            <button class="send-icon-btn" id="commentSendBtn" title="Kirim">${sendIconSvg()}</button>
          </div>
@@ -746,7 +871,7 @@ async function setupComments(shortId, ownerUsername) {
     if (chip) chip.style.display = 'flex'
     if (chipName) chipName.textContent = '@' + (username || nickname || '')
     if (input) {
-      input.placeholder = `Balas ${nickname || username}...`
+      input.placeholder = `Reply to ${nickname || username}...`
       input.focus()
     }
     document.getElementById('commentFormWrap')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
@@ -755,7 +880,7 @@ async function setupComments(shortId, ownerUsername) {
   function exitReplyMode() {
     replyTarget = null
     if (chip) chip.style.display = 'none'
-    if (input) input.placeholder = 'Tulis komentar tentang kode ini...'
+    if (input) input.placeholder = 'Write a comment about this code...'
   }
 
   chipCancel?.addEventListener('click', exitReplyMode)
@@ -788,7 +913,7 @@ async function setupComments(shortId, ownerUsername) {
           btn.setAttribute('aria-expanded', String(willExpand))
           const label = btn.querySelector('.view-replies-label')
           const count = thread.children.length
-          if (label) label.textContent = willExpand ? 'Sembunyikan balasan' : `Lihat ${count} balasan`
+          if (label) label.textContent = willExpand ? 'Hide replies' : `View ${count} replies`
         }
       })
 

@@ -8,7 +8,7 @@ async function init() {
     const snippets = await api('/codes/liked')
     container.innerHTML = `
       <div class="section-label">Liked Code</div>
-      <div id="likedList">${snippets.length ? snippets.map(snippetCard).join('') : `<div class="card"><div class="empty-state">Belum ada kode yang disukai.</div></div>`}</div>
+      <div id="likedList">${snippets.length ? snippets.map(snippetCard).join('') : `<div class="card"><div class="empty-state">No liked code yet.</div></div>`}</div>
     `
     highlightAllIn('#likedList pre code')
     wireLikeButtons(document.getElementById('likedList'))

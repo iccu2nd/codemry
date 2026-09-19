@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -15,7 +15,7 @@
 <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
 <link rel="manifest" href="/site.webmanifest">
 
-<title>Codery - Profil</title>
+<title>Codery - View Code</title>
 <link rel="preload" href="fonts/Utendo-Regular.woff" as="font" type="font/woff" crossorigin>
 <link rel="preload" href="fonts/Utendo-Bold.woff" as="font" type="font/woff" crossorigin>
 <link rel="stylesheet" href="style.css">
@@ -23,30 +23,20 @@
 <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css"></noscript>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
 </head>
-<body>
+<body data-floating-back>
 
-<header class="topbar">
-  <div class="brand">Codery</div>
-  <div class="topbar-right-icons">
-    <button class="hamburger" id="hamburgerBtn" aria-label="Buka menu">
-      <span></span><span></span><span></span>
-    </button>
-  </div>
-  <nav class="topnav" id="topnav">
-    <div id="authArea"></div>
-  </nav>
-</header>
-
-<div class="nav-backdrop" id="navBackdrop"></div>
+<button class="float-back-btn" id="backBtn" type="button" aria-label="Kembali">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5.5 8.5 12 15 18.5"/><path d="M9 12h10.5"/></svg>
+</button>
 
 <main class="app" id="app">
-  <div id="skelInit"><div class="skel-card skel-card-plain"><div class="skel-row"><div class="skeleton skel-avatar" style="width:64px;height:64px"></div><div class="skel-col"><div class="skeleton skel-line" style="width:55%;height:20px"></div><div class="skeleton skel-line" style="width:35%;height:12px"></div></div></div><div class="skel-tags" style="margin-top:18px"><div class="skeleton skel-line" style="width:18%;height:32px"></div><div class="skeleton skel-line" style="width:18%;height:32px"></div><div class="skeleton skel-line" style="width:18%;height:32px"></div><div class="skeleton skel-line" style="width:18%;height:32px"></div></div><div class="skel-col" style="margin-top:16px"><div class="skeleton skel-line" style="width:100%;height:12px"></div><div class="skeleton skel-line" style="width:80%;height:12px"></div></div></div></div>
+  <div id="skelInit"><div class="skel-card skel-card-plain"><div class="skel-row"><div class="skeleton skel-avatar" style="width:34px;height:34px"></div><div class="skel-col"><div class="skeleton skel-line" style="width:40%;height:13px"></div><div class="skeleton skel-line" style="width:25%;height:10px"></div></div></div><div class="skeleton skel-line" style="width:60%;height:20px"></div><div class="skeleton skel-block" style="height:220px;border-radius:18px"></div><div class="skel-tags"><div class="skeleton skel-line" style="width:90px;height:40px"></div><div class="skeleton skel-line" style="width:90px;height:40px"></div></div></div></div>
 </main>
 
 <div id="toast" class="toast"></div>
 
 <script src="js/config.js"></script>
 <script src="js/common.js"></script>
-<script src="js/profile.js"></script>
+<script src="js/code.js"></script>
 </body>
 </html>

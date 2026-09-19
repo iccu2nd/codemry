@@ -7,8 +7,8 @@ let devUsersExpanded = false
 
 async function renderDevPanel() {
   const app = document.getElementById('app')
-  if (!me) { app.innerHTML = `<div class="card"><div class="empty-state">Login dulu ya.</div></div>`; return }
-  if (!me.isDeveloper) { app.innerHTML = `<div class="card"><div class="empty-state">Halaman ini hanya untuk developer.</div></div>`; return }
+  if (!me) { app.innerHTML = `<div class="card"><div class="empty-state">Please sign in first.</div></div>`; return }
+  if (!me.isDeveloper) { app.innerHTML = `<div class="card"><div class="empty-state">This page is for developers only.</div></div>`; return }
 
   app.innerHTML = `
     <div class="card">
@@ -75,7 +75,7 @@ function renderDevUserList(filter) {
     ? allDevUsers.filter(u => u.username.toLowerCase().includes(filter) || (u.nickname || '').toLowerCase().includes(filter))
     : allDevUsers
 
-  if (!rows.length) { list.innerHTML = `<div class="empty-state">Gak ada user yang cocok.</div>`; return }
+  if (!rows.length) { list.innerHTML = `<div class="empty-state">No matching users.</div>`; return }
 
   const visible = devUsersExpanded ? rows : rows.slice(0, 5)
 

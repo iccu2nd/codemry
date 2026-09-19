@@ -3,8 +3,8 @@ let reportFilter = 'pending'
 
 async function renderModerasiPanel() {
   const app = document.getElementById('app')
-  if (!me) { app.innerHTML = `<div class="card"><div class="empty-state">Login dulu ya.</div></div>`; return }
-  if (!me.isModerator) { app.innerHTML = `<div class="card"><div class="empty-state">Halaman ini hanya untuk moderator.</div></div>`; return }
+  if (!me) { app.innerHTML = `<div class="card"><div class="empty-state">Please sign in first.</div></div>`; return }
+  if (!me.isModerator) { app.innerHTML = `<div class="card"><div class="empty-state">This page is for moderators only.</div></div>`; return }
 
   app.innerHTML = `
     <div class="card">
@@ -93,7 +93,7 @@ function renderDevReportsList(reports) {
 
   renderReportFilterTabs(reports)
 
-  if (!reports.length) { list.innerHTML = `<div class="empty-state">Belum ada laporan.</div>`; return }
+  if (!reports.length) { list.innerHTML = `<div class="empty-state">No reports yet.</div>`; return }
 
   const filtered = reportFilter === 'all' ? reports : reports.filter(r => r.status === reportFilter)
   if (!filtered.length) { list.innerHTML = `<div class="empty-state">Gak ada laporan di kategori ini.</div>`; return }
