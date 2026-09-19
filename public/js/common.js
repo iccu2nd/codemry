@@ -478,13 +478,12 @@ function injectDarkModeToggle() {
   label.id = 'darkModeSwitch'
   label.title = 'Dark / Light mode'
   label.setAttribute('aria-label', 'Toggle dark mode')
+  // Teks Light/Dark di samping track (tanpa icon matahari/bulan)
   label.innerHTML = `
+    <span class="theme-switch-text theme-switch-text-light">Light</span>
     <input type="checkbox" id="darkModeCheckbox" ${isDarkMode() ? 'checked' : ''}>
-    <span class="theme-switch-track">
-      <span class="theme-switch-thumb"></span>
-      <span class="theme-switch-icon theme-switch-sun" aria-hidden="true">☀</span>
-      <span class="theme-switch-icon theme-switch-moon" aria-hidden="true">☾</span>
-    </span>
+    <span class="theme-switch-track"><span class="theme-switch-thumb"></span></span>
+    <span class="theme-switch-text theme-switch-text-dark">Dark</span>
   `
   // Sisipkan sebelum hamburger (kiri hamburger)
   iconsWrap.insertBefore(label, hamburgerBtn)

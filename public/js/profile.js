@@ -485,12 +485,6 @@ function openImageCropper(file, { outW, outH, shape = 'rect' }) {
 refreshAuth()
 renderProfile()
 
-const themeBtn = document.getElementById('themeBtn')
-if (themeBtn) {
-  themeBtn.innerHTML = paletteIconSvg()
-  themeBtn.onclick = openThemePicker
-}
-
 function musicTitleFromUrl(url) {
   try {
     const path = decodeURIComponent(new URL(url).pathname)

@@ -1769,11 +1769,13 @@ body:not([data-no-bottom-nav]) .app { padding-bottom: 116px; }
 .topbar-right-icons { display: flex; align-items: center; gap: 10px; }
 
 /* Dark/Light toggle switch di sebelah kiri hamburger.
-   checked (on) = dark mode, unchecked (off) = light mode. */
+   checked (on) = dark mode, unchecked (off) = light mode.
+   Label teks "Light" / "Dark" di samping track (tanpa icon). */
 .theme-switch {
   position: relative;
   display: inline-flex;
   align-items: center;
+  gap: 6px;
   cursor: pointer;
   flex-shrink: 0;
   user-select: none;
@@ -1787,17 +1789,15 @@ body:not([data-no-bottom-nav]) .app { padding-bottom: 116px; }
 }
 .theme-switch-track {
   position: relative;
-  width: 52px;
-  height: 30px;
+  width: 44px;
+  height: 26px;
   border-radius: 999px;
   background: var(--bg-muted);
   border: 1px solid var(--border-strong);
   transition: background .2s ease, border-color .2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 6px;
+  display: block;
   box-sizing: border-box;
+  flex-shrink: 0;
 }
 .theme-switch input:checked + .theme-switch-track {
   background: var(--accent-bg);
@@ -1805,10 +1805,10 @@ body:not([data-no-bottom-nav]) .app { padding-bottom: 116px; }
 }
 .theme-switch-thumb {
   position: absolute;
-  top: 3px;
-  left: 3px;
-  width: 22px;
-  height: 22px;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
   background: #fff;
   box-shadow: 0 1px 4px rgba(0,0,0,.25);
@@ -1816,7 +1816,7 @@ body:not([data-no-bottom-nav]) .app { padding-bottom: 116px; }
   z-index: 1;
 }
 .theme-switch input:checked + .theme-switch-track .theme-switch-thumb {
-  transform: translateX(22px);
+  transform: translateX(18px);
   background: var(--accent);
 }
 html.light .theme-switch-thumb {
@@ -1825,19 +1825,31 @@ html.light .theme-switch-thumb {
 html.light .theme-switch input:checked + .theme-switch-track .theme-switch-thumb {
   background: var(--accent);
 }
-.theme-switch-icon {
+.theme-switch-text {
   font-size: 11px;
-  line-height: 1;
-  z-index: 0;
-  opacity: 0.45;
+  font-weight: 600;
+  letter-spacing: .02em;
   color: var(--text-muted);
-  transition: opacity .2s ease;
-  pointer-events: none;
+  transition: color .15s ease;
+  line-height: 1;
 }
-.theme-switch-sun { order: 1; }
-.theme-switch-moon { order: 0; }
-.theme-switch input:checked + .theme-switch-track .theme-switch-moon { opacity: 0.95; color: var(--text); }
-.theme-switch input:not(:checked) + .theme-switch-track .theme-switch-sun { opacity: 0.95; color: var(--text); }
+/* Highlight teks sesuai mode aktif */
+.theme-switch input:not(:checked) ~ .theme-switch-text-light,
+html:not(.light) .theme-switch input:checked ~ .theme-switch-text-dark {
+  color: var(--text);
+}
+.theme-switch input:checked ~ .theme-switch-text-dark {
+  color: var(--text);
+}
+.theme-switch input:not(:checked) ~ .theme-switch-text-dark {
+  color: var(--text-muted);
+}
+/* Karena struktur: Light text, input, track, Dark text — Light text ada SEBELUM input,
+   jadi pakai sibling selector terbalik lewat parent state: */
+.theme-switch:has(input:not(:checked)) .theme-switch-text-light { color: var(--text); }
+.theme-switch:has(input:checked) .theme-switch-text-dark { color: var(--text); }
+.theme-switch:has(input:not(:checked)) .theme-switch-text-dark { color: var(--text-muted); }
+.theme-switch:has(input:checked) .theme-switch-text-light { color: var(--text-muted); }
 .theme-switch:active .theme-switch-track { transform: scale(0.96); }
 .theme-swatch-grid {
   display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
