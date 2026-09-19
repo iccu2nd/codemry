@@ -92,13 +92,16 @@ async function init() {
       <form id="uploadForm" autocomplete="off">
         <div class="upload-panel" style="display:${step === 1 ? 'block' : 'none'}">
           <div class="upload-value">
-            <div class="upload-value-title">${t('uploadValueTitle')}</div>
-            <div class="upload-value-sub">${t('uploadValueSub')}</div>
+            <div class="upload-value-title">Share code in minutes</div>
+            <div class="upload-value-sub">Get a public link, help other developers, and keep snippets in one place. Drafts save automatically.</div>
           </div>
-          <div class="upload-panel-title">${t('yourCode')}</div>
-          <div class="upload-panel-sub">${t('yourCodeSub')}</div>
-          <div class="upload-source-row">
-            <button type="button" class="btn btn-white btn-block" id="pickFileBtn">${uploadIconSvg()} ${t('chooseFile')}</button>
+          <div class="upload-panel-title">Your code</div>
+          <div class="upload-panel-sub">Pick a file or paste — language is detected for you</div>
+          <div class="upload-dropzone" id="uploadDropzone" tabindex="0" role="button" aria-label="Drop a file or click to choose">
+            <div class="upload-dropzone-icon">${uploadIconSvg()}</div>
+            <div class="upload-dropzone-title">Drop a file here</div>
+            <div class="upload-dropzone-sub">or click to browse · language auto-detected</div>
+            <button type="button" class="btn btn-white btn-sm" id="pickFileBtn">Choose file</button>
             <input type="file" id="fileInput" style="display:none" accept=".js,.jsx,.ts,.tsx,.py,.html,.htm,.css,.json,.java,.php,.sh,.md,.txt,.c,.cpp,.go,.rb,.rs,.kt,.swift,.xml,.yml,.yaml,.sql,.env">
           </div>
           <div class="field-hint" style="margin-bottom:12px">File name → title, filename, and language auto-fill.</div>
@@ -276,28 +279,64 @@ async function init() {
       }
     }
 
-    document.getElementById('pickFileBtn')?.addEventListener('click', () => fileInput?.click())
+    async function applyFile(file) {
+      if (!file) return
+      const ext = file.name.includes('.') ? file.name.split('.').pop().toLowerCase() : ''
+      if (!ext || !Object.prototype.hasOwnProperty.call(EXT_LANG, ext)) {
+        toast('Only code files (.js, .py, .html, etc.)')
+        return
+      }
+      try {
+        const text = await file.text()
+        if (contentInput) contentInput.value = text
+        if (filenameInput) filenameInput.value = file.name.replace(/\s/g, '_')
+        if (languageInput) languageInput.value = EXT_LANG[ext] || 'text'
+        if (titleInput && !titleInput.value.trim()) {
+          titleInput.value = ext ? file.name.slice(0, -(ext.length + 1)) : file.name
+        }
+        const lines = text.split('\n').length
+        toast(`Loaded ${file.name} · ${lines} lines`)
+        snapshot()
+      } catch {
+        toast('Could not read file')
+      }
+    }
+
+    const dropzone = document.getElementById('uploadDropzone')
+    document.getElementById('pickFileBtn')?.addEventListener('click', (e) => {
+      e.stopPropagation()
+      fileInput?.click()
+    })
+    dropzone?.addEventListener('click', (e) => {
+      if (e.target.closest('#pickFileBtn')) return
+      fileInput?.click()
+    })
+    if (dropzone) {
+      ;['dragenter', 'dragover'].forEach(ev => {
+        dropzone.addEventListener(ev, (e) => {
+          e.preventDefault()
+          e.stopPropagation()
+          dropzone.classList.add('is-dragover')
+        })
+      })
+      ;['dragleave', 'drop'].forEach(ev => {
+        dropzone.addEventListener(ev, (e) => {
+          e.preventDefault()
+          e.stopPropagation()
+          dropzone.classList.remove('is-dragover')
+        })
+      })
+      dropzone.addEventListener('drop', (e) => {
+        const file = e.dataTransfer?.files?.[0]
+        if (file) applyFile(file)
+      })
+    }
     if (fileInput) {
       fileInput.onchange = async () => {
         const file = fileInput.files[0]
+        fileInput.value = ''
         if (!file) return
-        const ext = file.name.includes('.') ? file.name.split('.').pop().toLowerCase() : ''
-        if (!ext || !EXT_LANG.hasOwnProperty(ext)) {
-          toast('Only code files (.js, .py, .html, etc.)')
-          fileInput.value = ''
-          return
-        }
-        try {
-          const text = await file.text()
-          if (contentInput) contentInput.value = text
-          if (filenameInput) filenameInput.value = file.name.replace(/\s/g, '_')
-          if (languageInput) languageInput.value = EXT_LANG[ext] || 'text'
-          if (titleInput && !titleInput.value.trim()) {
-            titleInput.value = ext ? file.name.slice(0, -(ext.length + 1)) : file.name
-          }
-          toast('File loaded')
-        } catch { toast('Failed to read file') }
-        finally { fileInput.value = '' }
+        await applyFile(file)
       }
     }
 
@@ -342,7 +381,7 @@ async function init() {
           })
         })
         clearDraft()
-        toast(t('published'))
+        toast("Published!")
         window.location.href = codeUrl(s.shortId)
       } catch (err) {
         toast(err.message)

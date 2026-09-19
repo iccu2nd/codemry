@@ -48,8 +48,13 @@ async function init() {
   const container = document.getElementById('notifPage')
   try {
     const list = await api('/notifications')
+    const unread = list.filter(n => !n.read).length
     container.innerHTML = list.length
-      ? `<div id="notifList">${list.map(notifItemHtml).join('')}</div>`
+      ? `<div class="notif-head">
+           <div class="notif-head-title">Notifications${unread ? ` <span class="notif-head-count">${unread}</span>` : ''}</div>
+           ${unread ? `<button type="button" class="btn btn-white btn-sm" id="markAllReadBtn">Mark all read</button>` : ''}
+         </div>
+         <div id="notifList">${list.map(notifItemHtml).join('')}</div>`
       : `<div class="card"><div class="empty-state">No notifications yet.</div></div>`
 
     container.querySelectorAll('.notif-item[data-id]').forEach(el => {
@@ -63,6 +68,26 @@ async function init() {
           .then(refreshNotifBadge)
           .catch(() => {})
       })
+    })
+
+    document.getElementById('markAllReadBtn')?.addEventListener('click', async () => {
+      const btn = document.getElementById('markAllReadBtn')
+      if (btn) btn.disabled = true
+      try {
+        await api('/notifications/read-all', { method: 'POST' })
+        container.querySelectorAll('.notif-item.unread').forEach(el => {
+          el.classList.remove('unread')
+          el.querySelector('.notif-unread-dot')?.remove()
+        })
+        btn?.remove()
+        const count = container.querySelector('.notif-head-count')
+        if (count) count.remove()
+        refreshNotifBadge()
+        toast('All marked as read')
+      } catch (e) {
+        toast(e.message || 'Failed')
+        if (btn) btn.disabled = false
+      }
     })
   } catch (e) {
     container.innerHTML = `<div class="card"><div class="empty-state">${escapeHtml(e.message)}</div></div>`
