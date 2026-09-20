@@ -3,7 +3,7 @@ async function renderFollowList() {
   const app = document.getElementById('app')
   const username = qs('u')
   const kind = qs('type') === 'following' ? 'following' : 'followers'
-  if (!username) { app.innerHTML = `<div class="card"><div class="empty-state">User not found.</div></div>`; return }
+  if (!username) { app.innerHTML = `<div class="card">${emptyStateHtml({ mascot: 'notFound', title: 'User not found' })}</div>`; return }
   try {
     const list = await api(`/users/${username}/${kind}`)
     app.innerHTML = `
@@ -14,11 +14,11 @@ async function renderFollowList() {
           <a class="btn btn-white btn-block" style="margin-bottom:10px;justify-content:flex-start;gap:10px" href="${profileUrl(u.username)}">
             ${avatarHtml(u.avatar, u.nickname || u.username, 'avatar-circle-sm')} @${escapeHtml(u.username)}
           </a>
-        `).join('') : `<div class="empty-state">Nothing here yet.</div>`}
+        `).join('') : `${emptyStateHtml({ mascot: 'emptyFeed', title: 'Nothing here yet' })}`}
       </div>
     `
   } catch (e) {
-    app.innerHTML = `<div class="card"><div class="empty-state">${escapeHtml(e.message)}</div></div>`
+    app.innerHTML = `<div class="card">${emptyStateHtml({ mascot: 'error', title: escapeHtml(e.message) })}</div>`
   }
 }
 

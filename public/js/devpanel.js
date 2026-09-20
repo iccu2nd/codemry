@@ -7,8 +7,8 @@ let devUsersExpanded = false
 
 async function renderDevPanel() {
   const app = document.getElementById('app')
-  if (!me) { app.innerHTML = `<div class="card"><div class="empty-state">Please sign in first.</div></div>`; return }
-  if (!me.isDeveloper) { app.innerHTML = `<div class="card"><div class="empty-state">This page is for developers only.</div></div>`; return }
+  if (!me) { app.innerHTML = `<div class="card">${emptyStateHtml({ mascot: 'error', title: 'Please sign in first' })}</div>`; return }
+  if (!me.isDeveloper) { app.innerHTML = `<div class="card">${emptyStateHtml({ mascot: 'error', title: 'This page is for developers only' })}</div>`; return }
 
   app.innerHTML = `
     <div class="card">
@@ -56,7 +56,7 @@ async function loadDevStats() {
       <div class="dev-stat-box"><b>${s.pendingReports}</b><span>Laporan Baru</span></div>
     `
   } catch (e) {
-    grid.innerHTML = `<div class="empty-state">${escapeHtml(e.message)}</div>`
+    grid.innerHTML = emptyStateHtml({ mascot: 'error', title: escapeHtml(e.message) })
   }
 }
 
@@ -65,7 +65,7 @@ async function loadDevUsers() {
     allDevUsers = await api('/dev/users')
     renderDevUserList('')
   } catch (e) {
-    document.getElementById('devUserList').innerHTML = `<div class="empty-state">${escapeHtml(e.message)}</div>`
+    document.getElementById('devUserList').innerHTML = emptyStateHtml({ mascot: 'error', title: escapeHtml(e.message) })
   }
 }
 
@@ -75,7 +75,7 @@ function renderDevUserList(filter) {
     ? allDevUsers.filter(u => u.username.toLowerCase().includes(filter) || (u.nickname || '').toLowerCase().includes(filter))
     : allDevUsers
 
-  if (!rows.length) { list.innerHTML = `<div class="empty-state">No matching users.</div>`; return }
+  if (!rows.length) { list.innerHTML = emptyStateHtml({ mascot: 'noResults', title: 'No matching users' }); return }
 
   const visible = devUsersExpanded ? rows : rows.slice(0, 5)
 

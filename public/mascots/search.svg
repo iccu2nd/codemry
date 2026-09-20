@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none" aria-hidden="true">
+  <style>
+    .b { fill: currentColor; opacity: 0.12; }
+    .s { stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; opacity: 0.75; }
+    .f { fill: currentColor; opacity: 0.75; }
+    .a { stroke: currentColor; stroke-width: 2; stroke-linecap: round; opacity: 0.45; }
+    .d { fill: currentColor; opacity: 0.55; }
+  </style>
+
+  <!-- soft ground shadow -->
+  <ellipse cx="100" cy="178" rx="48" ry="8" class="b"/>
+  <!-- body: code card -->
+  <rect x="58" y="52" width="84" height="100" rx="18" class="s" fill="none"/>
+  <rect x="58" y="52" width="84" height="100" rx="18" class="b"/>
+  <!-- title bar -->
+  <path d="M58 70h84" class="a"/>
+  <circle cx="72" cy="61" r="3" class="d"/>
+  <circle cx="82" cy="61" r="3" class="d"/>
+  <circle cx="92" cy="61" r="3" class="d"/>
+  <!-- face -->
+  <circle cx="85" cy="98" r="4.5" class="f"/>
+  <circle cx="115" cy="98" r="4.5" class="f"/>
+  <path d="M90 114c4 6 16 6 20 0" class="s"/>
+  <!-- arms holding magnifier -->
+  <path d="M58 110c-14 4-22 18-18 28" class="s"/>
+  <circle cx="48" cy="148" r="22" class="s"/>
+  <circle cx="48" cy="148" r="14" class="a"/>
+  <path d="M64 164l14 14" class="s" stroke-width="3"/>
+  <!-- other arm -->
+  <path d="M142 108c10 8 14 20 8 30" class="s"/>
+  <!-- feet -->
+  <path d="M78 152v12M122 152v12" class="s"/>
+  <path d="M70 164h16M114 164h16" class="s"/>
+
+</svg>

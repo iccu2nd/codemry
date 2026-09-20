@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none" aria-hidden="true">
+  <style>
+    .b { fill: currentColor; opacity: 0.12; }
+    .s { stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; opacity: 0.75; }
+    .f { fill: currentColor; opacity: 0.75; }
+    .a { stroke: currentColor; stroke-width: 2; stroke-linecap: round; opacity: 0.45; }
+    .d { fill: currentColor; opacity: 0.55; }
+  </style>
+
+  <ellipse cx="100" cy="178" rx="48" ry="8" class="b"/>
+  <rect x="58" y="52" width="84" height="100" rx="18" class="s"/>
+  <rect x="58" y="52" width="84" height="100" rx="18" class="b"/>
+  <path d="M58 70h84" class="a"/>
+  <circle cx="72" cy="61" r="3" class="d"/>
+  <circle cx="82" cy="61" r="3" class="d"/>
+  <circle cx="92" cy="61" r="3" class="d"/>
+  <!-- focused eyes -->
+  <circle cx="86" cy="98" r="4.5" class="f"/>
+  <circle cx="114" cy="98" r="4.5" class="f"/>
+  <path d="M92 114c4 4 12 4 16 0" class="s"/>
+  <!-- wrench / building -->
+  <path d="M150 56l16 16-8 8-4-4-12 12-8-8 12-12-4-4z" class="s"/>
+  <path d="M40 130h24v24H40z" class="s"/>
+  <path d="M46 130v-10h12v10" class="a"/>
+  <path d="M58 118c-8 2-12 10-8 18" class="s"/>
+  <path d="M142 110c12 8 14 18 6 28" class="s"/>
+  <path d="M78 152v12M122 152v12M70 164h16M114 164h16" class="s"/>
+  <!-- gear -->
+  <circle cx="52" cy="70" r="10" class="a"/>
+  <circle cx="52" cy="70" r="4" class="d"/>
+
+</svg>

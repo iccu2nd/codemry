@@ -3,7 +3,7 @@
 async function renderProfile() {
   const app = document.getElementById('app')
   const username = qs('u')
-  if (!username) { app.innerHTML = `<div class="card"><div class="empty-state">Profile not found.</div></div>`; return }
+  if (!username) { app.innerHTML = `<div class="card">${emptyStateHtml({ mascot: 'notFound', title: 'Profile not found' })}</div>`; return }
   app.innerHTML = skelProfileHeader()
   try {
     const p = await api(`/users/${username}`)
@@ -99,12 +99,13 @@ async function renderProfile() {
           return card
         }).join('')
       : (p.isMe
-          ? `<div class="empty-state empty-cta">
-               <div class="empty-cta-title">${t('noCodeYet')}</div>
-               <div class="empty-cta-sub">${t('noCodeYetSub')}</div>
-               <a class="btn btn-primary" href="/upload">${t('uploadCode')}</a>
-             </div>`
-          : `<div class="empty-state">${t('noCodeShared')}</div>`)
+          ? emptyStateHtml({
+               mascot: 'emptyProfile',
+               title: t('noCodeYet'),
+               sub: t('noCodeYetSub'),
+               actionHtml: `<a class="btn btn-primary" href="/upload">${t('uploadCode')}</a>`
+             })
+          : emptyStateHtml({ mascot: 'noCode', title: t('noCodeShared') }))
     highlightAllIn('#profileSnippets pre code')
     wireLikeButtons(list)
     wireBookmarkButtons(list)
@@ -306,7 +307,7 @@ async function renderProfile() {
       window.location.href = '/'
     }
   } catch (e) {
-    app.innerHTML = `<div class="card"><div class="empty-state">${escapeHtml(e.message)}</div></div>`
+    app.innerHTML = `<div class="card">${emptyStateHtml({ mascot: 'error', title: escapeHtml(e.message) })}</div>`
   }
 }
 

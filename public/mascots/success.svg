@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none" aria-hidden="true">
+  <style>
+    .b { fill: currentColor; opacity: 0.12; }
+    .s { stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; opacity: 0.75; }
+    .f { fill: currentColor; opacity: 0.75; }
+    .a { stroke: currentColor; stroke-width: 2; stroke-linecap: round; opacity: 0.45; }
+    .d { fill: currentColor; opacity: 0.55; }
+  </style>
+
+  <ellipse cx="100" cy="178" rx="48" ry="8" class="b"/>
+  <rect x="58" y="48" width="84" height="100" rx="18" class="s"/>
+  <rect x="58" y="48" width="84" height="100" rx="18" class="b"/>
+  <path d="M58 66h84" class="a"/>
+  <circle cx="72" cy="57" r="3" class="d"/>
+  <circle cx="82" cy="57" r="3" class="d"/>
+  <circle cx="92" cy="57" r="3" class="d"/>
+  <!-- happy eyes -->
+  <path d="M78 94c3 5 10 5 13 0" class="s"/>
+  <path d="M109 94c3 5 10 5 13 0" class="s"/>
+  <path d="M88 112c6 10 20 10 26 0" class="s"/>
+  <!-- check badge -->
+  <circle cx="150" cy="56" r="22" class="s"/>
+  <path d="M140 56l8 8 14-16" class="s" stroke-width="2.6"/>
+  <path d="M58 110c-12 8-14 20-6 28" class="s"/>
+  <path d="M142 110c12 8 14 20 6 28" class="s"/>
+  <path d="M78 148v14M122 148v14M70 162h16M114 162h16" class="s"/>
+
+</svg>

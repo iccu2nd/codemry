@@ -3698,3 +3698,71 @@ html.light .toast {
   margin-left: 6px;
 }
 
+
+
+/* ---- Codery mascots ---- */
+.mascot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 12px;
+  width: var(--mascot-size, 140px);
+  height: var(--mascot-size, 140px);
+  color: var(--text);
+  pointer-events: none;
+  user-select: none;
+}
+.mascot-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  opacity: 0.92;
+}
+html.light .mascot { color: #222; }
+html.light .mascot-img { opacity: 0.88; }
+
+.empty-state {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 28px 18px 24px;
+  font-size: 14px;
+  line-height: 1.45;
+}
+.empty-state .empty-cta-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 4px 0 6px;
+}
+.empty-state .empty-cta-sub {
+  font-size: 13.5px;
+  color: var(--text-muted);
+  margin: 0 auto 14px;
+  max-width: 280px;
+  line-height: 1.45;
+}
+.empty-state .btn {
+  margin-top: 4px;
+}
+.empty-state-compact {
+  padding: 16px 12px;
+}
+.empty-state-compact .mascot {
+  margin-bottom: 8px;
+}
+.empty-state-sm {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 16px 0;
+  font-size: 13.5px;
+}
+
+@media (max-width: 480px) {
+  .mascot {
+    --mascot-size: 120px;
+  }
+  .empty-state-compact .mascot {
+    --mascot-size: 88px;
+  }
+}

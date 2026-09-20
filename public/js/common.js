@@ -1266,6 +1266,41 @@ document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal
 })()
 
 // --- Skeleton loading: dipakai buat gantiin teks "Memuat..." di semua halaman ---
+
+/* ---- Codery mascots (empty / error / success states) ---- */
+const MASCOT = {
+  search: '/mascots/search.svg',
+  noResults: '/mascots/no-results.svg',
+  emptyFeed: '/mascots/empty-feed.svg',
+  emptyNotifications: '/mascots/empty-notifications.svg',
+  emptyProfile: '/mascots/empty-profile.svg',
+  upload: '/mascots/upload.svg',
+  success: '/mascots/success.svg',
+  error: '/mascots/error.svg',
+  notFound: '/mascots/not-found.svg',
+  comingSoon: '/mascots/coming-soon.svg',
+  noCode: '/mascots/no-code.svg'
+}
+
+function mascotHtml(key, size = 140) {
+  const src = MASCOT[key] || MASCOT.emptyFeed
+  return `<div class="mascot" style="--mascot-size:${size}px">
+    <img class="mascot-img" src="${src}" alt="" width="${size}" height="${size}" decoding="async" draggable="false">
+  </div>`
+}
+
+/** Unified empty / status block */
+function emptyStateHtml({ mascot = 'emptyFeed', title = '', sub = '', actionHtml = '', compact = false } = {}) {
+  const size = compact ? 100 : 140
+  return `<div class="empty-state${compact ? ' empty-state-compact' : ''}${actionHtml ? ' empty-cta' : ''}">
+    ${mascotHtml(mascot, size)}
+    ${title ? `<div class="empty-cta-title">${title}</div>` : ''}
+    ${sub ? `<div class="empty-cta-sub">${sub}</div>` : ''}
+    ${!title && !sub ? '' : ''}
+    ${actionHtml || ''}
+  </div>`
+}
+
 function skelLine(w = '100%', h = 12, extraClass = '') {
   return `<div class="skeleton skel-line ${extraClass}" style="width:${w};height:${h}px"></div>`
 }

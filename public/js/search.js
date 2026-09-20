@@ -104,7 +104,7 @@ async function loadTrendingSearch() {
     const ranked = [...scoreByTag.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10)
 
     if (!ranked.length) {
-      wrap.innerHTML = `<div class="empty-state-sm">Belum ada tren. Unggah kode dan gunakan tag agar muncul di sini.</div>`
+      wrap.innerHTML = emptyStateHtml({ mascot: 'emptyFeed', title: 'No trends yet', sub: 'Upload code with tags to appear here.', compact: true })
       return
     }
 
@@ -122,7 +122,7 @@ async function loadTrendingSearch() {
       btn.onclick = () => runSearch(btn.dataset.term)
     })
   } catch (e) {
-    wrap.innerHTML = `<div class="empty-state-sm">${escapeHtml(e.message)}</div>`
+    wrap.innerHTML = emptyStateHtml({ mascot: 'error', title: escapeHtml(e.message), compact: true })
   }
 }
 

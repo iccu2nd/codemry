@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none" aria-hidden="true">
+  <style>
+    .b { fill: currentColor; opacity: 0.12; }
+    .s { stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; opacity: 0.75; }
+    .f { fill: currentColor; opacity: 0.75; }
+    .a { stroke: currentColor; stroke-width: 2; stroke-linecap: round; opacity: 0.45; }
+    .d { fill: currentColor; opacity: 0.55; }
+  </style>
+
+  <ellipse cx="100" cy="178" rx="48" ry="8" class="b"/>
+  <rect x="58" y="50" width="84" height="100" rx="18" class="s"/>
+  <rect x="58" y="50" width="84" height="100" rx="18" class="b"/>
+  <path d="M58 68h84" class="a"/>
+  <circle cx="72" cy="59" r="3" class="d"/>
+  <circle cx="82" cy="59" r="3" class="d"/>
+  <circle cx="92" cy="59" r="3" class="d"/>
+  <circle cx="86" cy="96" r="4.5" class="f"/>
+  <circle cx="114" cy="96" r="4.5" class="f"/>
+  <path d="M92 112c4 5 12 5 16 0" class="s"/>
+  <!-- holding folder/workspace -->
+  <path d="M30 120h44l8 8h40v36H30z" class="s"/>
+  <path d="M30 120v44" class="s"/>
+  <path d="M142 100c12 10 16 24 6 34" class="s"/>
+  <path d="M78 150v14M122 150v14M70 164h16M114 164h16" class="s"/>
+  <!-- code lines in body -->
+  <path d="M76 128h48M76 136h36" class="a"/>
+
+</svg>

@@ -8,14 +8,14 @@ async function init() {
     const snippets = await api('/codes/liked')
     container.innerHTML = `
       <div class="section-label">Liked Code</div>
-      <div id="likedList">${snippets.length ? snippets.map(snippetCard).join('') : `<div class="card"><div class="empty-state">No liked code yet.</div></div>`}</div>
+      <div id="likedList">${snippets.length ? snippets.map(snippetCard).join('') : `<div class="card">${emptyStateHtml({ mascot: 'noCode', title: 'No liked code yet', sub: 'Like code on the feed to see it here.' })}</div>`}</div>
     `
     highlightAllIn('#likedList pre code')
     wireLikeButtons(document.getElementById('likedList'))
     wireBookmarkButtons(document.getElementById('likedList'))
     wireCopyLinkButtons(document.getElementById('likedList'))
   } catch (e) {
-    container.innerHTML = `<div class="card"><div class="empty-state">${escapeHtml(e.message)}</div></div>`
+    container.innerHTML = `<div class="card">${emptyStateHtml({ mascot: 'error', title: escapeHtml(e.message) })}</div>`
   }
 }
 
