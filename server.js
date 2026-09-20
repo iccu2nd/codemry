@@ -13,7 +13,6 @@ import devRoutes from './src/routes/dev.js'
 import notificationRoutes from './src/routes/notifications.js'
 import tenorRoutes from './src/routes/tenor.js'
 import publicApiRoutes from './src/routes/public-api.js'
-import telegramRoutes from './src/routes/telegram.js'
 import { initGithub, getAssetContent } from './src/github.js'
 import { Snippets, Users, Views, Likes, Follows, ensureSessionSecret, isDeveloperUsername, isModeratorUser, ensureNickname, readBadges, badgeDisplay } from './src/db.js'
 import { verifyToken, parseCookies, COOKIE_NAME, MAX_AGE, createToken, setSecret } from './src/token.js'
@@ -98,7 +97,6 @@ app.use('/api/dev', devRoutes)
 app.use('/api/notifications', notificationRoutes)
 app.use('/api/tenor', tenorRoutes)
 app.use('/api/public', publicApiRoutes)
-app.use('/telegram', telegramRoutes)
 
 
 app.get('/avatar/:username', async (req, res) => {

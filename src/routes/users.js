@@ -2,7 +2,6 @@ import crypto from 'crypto'
 import { Router } from 'express'
 import { Users, Follows, Snippets, Views, Likes, Bookmarks, avatarUrl, bannerUrl, ensureNickname, renameUsername, ensureBadges, readBadges, badgeDisplay, stripSnippetSecrets, lockedSnippetStub, Notifications, MAX_PINS, normalizePins } from '../db.js'
 import { upsertAsset } from '../github.js'
-import { telegramLinkUrl } from '../push.js'
 
 const router = Router()
 
@@ -17,7 +16,7 @@ router.patch('/me', async (req, res) => {
     if (!req.username) return res.status(401).json({ error: 'Please sign in' })
     const user = await Users.find(req.username)
     if (!user) return res.status(401).json({ error: 'Please sign in' })
-    const { bio, nickname, username, hideBadges, profileMusic, waNumber, pushEnabled } = req.body
+    const { bio, nickname, username, hideBadges, profileMusic } = req.body
 
     try {
         if (typeof bio === 'string') await Users.update(req.username, { bio })
@@ -25,12 +24,6 @@ router.patch('/me', async (req, res) => {
             await Users.update(req.username, { nickname: nickname.trim().slice(0, 32) })
         }
         if (typeof hideBadges === 'boolean') await Users.update(req.username, { hideBadges })
-        if (typeof waNumber === 'string') {
-            const digits = waNumber.replace(/[^\d]/g, '')
-            if (digits && digits.length < 8) return res.status(400).json({ error: 'WhatsApp number looks too short' })
-            await Users.update(req.username, { waNumber: digits || null })
-        }
-        if (typeof pushEnabled === 'boolean') await Users.update(req.username, { pushEnabled })
         if (typeof profileMusic === 'string') {
             const url = profileMusic.trim()
             if (url && !/^https?:\/\//i.test(url)) {
@@ -69,9 +62,6 @@ router.patch('/me', async (req, res) => {
             profileMusic: updated.profileMusic || null,
             avatar: avatarUrl(updated),
             hideBadges: !!updated.hideBadges,
-            waNumber: updated.waNumber || null,
-            pushEnabled: !!updated.pushEnabled,
-            telegramConnected: !!updated.telegramChatId,
             usernameChangedAt: updated.usernameChangedAt || null
         })
     } catch (e) {
@@ -207,21 +197,6 @@ router.get('/leaderboard', async (req, res) => {
 })
 
 
-router.post('/me/telegram/link', async (req, res) => {
-    if (!req.username) return res.status(401).json({ error: 'Please sign in' })
-    const token = crypto.randomBytes(16).toString('hex')
-    await Users.update(req.username, { telegramLinkToken: token })
-    const url = telegramLinkUrl(token)
-    if (!url) return res.status(500).json({ error: 'Telegram bot is not configured' })
-    res.json({ url })
-})
-
-router.post('/me/telegram/unlink', async (req, res) => {
-    if (!req.username) return res.status(401).json({ error: 'Please sign in' })
-    await Users.update(req.username, { telegramChatId: null, telegramLinkToken: null })
-    res.json({ ok: true })
-})
-
 // Pin / unpin own code on profile (max MAX_PINS)
 router.post('/me/pins', async (req, res) => {
     if (!req.username) return res.status(401).json({ error: 'Please sign in' })
@@ -289,9 +264,6 @@ router.get('/:username', async (req, res) => {
         nickname,
         ...badgeDisplay(user, badges),
         hideBadges: isMe ? !!user.hideBadges : undefined,
-        waNumber: isMe ? (user.waNumber || null) : undefined,
-        pushEnabled: isMe ? !!user.pushEnabled : undefined,
-        telegramConnected: isMe ? !!user.telegramChatId : undefined,
         bio: user.bio || '',
         profileMusic: user.profileMusic || null,
         avatar: avatarUrl(user),

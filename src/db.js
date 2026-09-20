@@ -1,7 +1,6 @@
 import crypto from 'crypto'
 import bcrypt from 'bcryptjs'
 import { readDbFile, writeDbFile, listGists } from './github.js'
-import { pushNotify } from './push.js'
 
 // avatarUpdatedAt/bannerUpdatedAt dipake sebagai cache-buster di URL biar
 // begitu user ganti foto profil/sampul, gambar barunya langsung kepake di
@@ -74,10 +73,6 @@ export const Users = {
         return u.find(x => x.username.toLowerCase() === username.toLowerCase())
     },
     async create(user) { return update('users.json', d => [...d, user], `add user ${user.username}`) },
-    async findByTelegramToken(token) {
-        const u = await this.all()
-        return u.find(x => x.telegramLinkToken && x.telegramLinkToken === token)
-    },
     async update(username, patch) {
         return update('users.json', d => d.map(u =>
             u.username.toLowerCase() === username.toLowerCase() ? { ...u, ...patch } : u
@@ -389,7 +384,6 @@ export const Notifications = {
             // Batasi riwayat biar file index gak membengkak tak terbatas.
             return next.length > 500 ? next.slice(0, 500) : next
         }, `notify ${notif.username} <- ${notif.type} from ${notif.fromUsername}`)
-        Users.find(notif.username).then(u => pushNotify(u, entry)).catch(() => {})
         return entry
     },
     async forUser(username, limit = 50) {
