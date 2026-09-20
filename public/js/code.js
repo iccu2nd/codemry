@@ -78,10 +78,10 @@ function renderUnlockedDetail(app, shortId, s) {
             <div class="cd-more-menu" id="cdMoreMenu" hidden>
               <button type="button" class="cd-more-item" id="shareBtn">${shareIconSvg()}<span>Share link</span></button>
               <button type="button" class="cd-more-item" id="copyMdBtn">${markdownIconSvg()}<span>Copy as Markdown</span></button>
-              ${me ? `<button type="button" class="cd-more-item" id="addToCollectionBtn">${collectionIconSvg()}<span>Add to collection</span></button>` : ''}
               <button type="button" class="cd-more-item" id="embedBtn">${embedIconSvg()}<span>Embed</span></button>
               <button type="button" class="cd-more-item" id="qrBtn">${qrIconSvg()}<span>QR code</span></button>
               ${!me || me.username !== s.ownerUsername ? `<button type="button" class="cd-more-item" id="forkBtn">${forkIconSvg()}<span>Fork</span></button>` : ''}
+              ${me && me.username === s.ownerUsername ? `<button type="button" class="cd-more-item" id="pinBtn">${pinIconSvg()}<span id="pinBtnLabel">Pin to profile</span></button>` : ''}
               ${me && me.username === s.ownerUsername ? `<button type="button" class="cd-more-item" id="duplicateBtn">${copyIconSvg()}<span>Duplicate</span></button>` : ''}
               <a class="cd-more-item" href="${profileUrl(s.ownerUsername)}">${userIconSvg()}<span>Profile</span></a>
               ${!me || me.username !== s.ownerUsername ? `<button type="button" class="cd-more-item cd-more-danger" id="reportBtn">${flagIconSvg()}<span>Report</span></button>` : ''}
@@ -216,50 +216,37 @@ function renderUnlockedDetail(app, shortId, s) {
       navigator.clipboard.writeText(md).then(() => toast('Markdown copied!')).catch(() => toast('Could not copy'))
     }
 
-    document.getElementById('addToCollectionBtn')?.addEventListener('click', async () => {
+    document.getElementById('pinBtn')?.addEventListener('click', async () => {
       if (!me) { toast('Sign in first'); return }
+      const btn = document.getElementById('pinBtn')
+      const label = document.getElementById('pinBtnLabel')
       try {
-        const list = await api('/collections/mine')
-        openModal(`
-          <div class="modal-head">
-            <div class="modal-head-title">Add to collection</div>
-            <button class="modal-close-btn" onclick="closeModal()">${closeIconSvg()}</button>
-          </div>
-          <div class="modal-body">
-            <div class="field">
-              <label>Choose collection</label>
-              <select id="collectionPick">
-                ${list.length ? list.map(c => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)} (${c.count || 0})</option>`).join('') : '<option value="">No collections yet</option>'}
-              </select>
-            </div>
-            <div class="field">
-              <label>Or create new</label>
-              <input id="collectionNewName" placeholder="Collection name" maxlength="60">
-            </div>
-            <div class="modal-actions" style="margin-top:12px">
-              <button class="btn btn-primary" type="button" id="confirmAddCollection">Save</button>
-            </div>
-          </div>
-        `)
-        document.getElementById('confirmAddCollection').onclick = async () => {
-          const newName = (document.getElementById('collectionNewName')?.value || '').trim()
-          let collectionId = document.getElementById('collectionPick')?.value || ''
-          try {
-            if (newName) {
-              const created = await api('/collections', { method: 'POST', body: JSON.stringify({ name: newName, isPublic: true }) })
-              collectionId = created.id
-            }
-            if (!collectionId) { toast('Create or choose a collection'); return }
-            await api(`/collections/${encodeURIComponent(collectionId)}/items`, {
-              method: 'POST',
-              body: JSON.stringify({ shortId: s.shortId })
-            })
-            toast('Added to collection')
-            closeModal()
-          } catch (e) { toast(e.message) }
+        const profile = await api(`/users/${encodeURIComponent(me.username)}`)
+        const pins = Array.isArray(profile.pinnedShortIds) ? profile.pinnedShortIds : []
+        const isPinned = pins.includes(s.shortId)
+        if (isPinned) {
+          await api(`/users/me/pins/${encodeURIComponent(s.shortId)}`, { method: 'DELETE' })
+          toast('Unpinned from profile')
+          if (label) label.textContent = 'Pin to profile'
+        } else {
+          await api('/users/me/pins', { method: 'POST', body: JSON.stringify({ shortId: s.shortId }) })
+          toast('Pinned to profile')
+          if (label) label.textContent = 'Unpin from profile'
         }
       } catch (e) { toast(e.message) }
     })
+
+    ;(async () => {
+      if (!me || me.username !== s.ownerUsername) return
+      try {
+        const profile = await api(`/users/${encodeURIComponent(me.username)}`)
+        const pins = Array.isArray(profile.pinnedShortIds) ? profile.pinnedShortIds : []
+        const label = document.getElementById('pinBtnLabel')
+        if (label) label.textContent = pins.includes(s.shortId) ? 'Unpin from profile' : 'Pin to profile'
+      } catch {}
+    })()
+
+
 
 
     document.getElementById('embedBtn')?.addEventListener('click', () => {
@@ -887,8 +874,8 @@ function qrIconSvg() {
   return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><path d="M13.5 13.5h3.2v3.2h-3.2z"/><path d="M18.5 13.5h2v2h-2z"/><path d="M13.5 18.5h2v2h-2z"/><path d="M18.5 18.5h2v2h-2z"/></svg>`
 }
 
-function collectionIconSvg() {
-  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5h7.5v13H4z"/><path d="M12.5 5.5H20v13h-7.5z"/><path d="M7 9h1.5M7 12h1.5M15.5 9H17M15.5 12H17"/></svg>`
+function pinIconSvg() {
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v4"/><path d="M9 3h6l1 7H8L9 3z"/><path d="M8 10c0 2.5 1.5 4 4 5 2.5-1 4-2.5 4-5"/></svg>`
 }
 function markdownIconSvg() {
   return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.5h16v11H4z"/><path d="M7 15V9l2.5 3L12 9v6"/><path d="M15.5 12.5 17 15l1.5-2.5"/><path d="M17 9v6"/></svg>`

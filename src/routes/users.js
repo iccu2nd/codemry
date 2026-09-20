@@ -1,6 +1,6 @@
 import crypto from 'crypto'
 import { Router } from 'express'
-import { Users, Follows, Snippets, Views, Likes, Bookmarks, avatarUrl, bannerUrl, ensureNickname, renameUsername, ensureBadges, readBadges, badgeDisplay, stripSnippetSecrets, lockedSnippetStub, Notifications } from '../db.js'
+import { Users, Follows, Snippets, Views, Likes, Bookmarks, avatarUrl, bannerUrl, ensureNickname, renameUsername, ensureBadges, readBadges, badgeDisplay, stripSnippetSecrets, lockedSnippetStub, Notifications, MAX_PINS, normalizePins } from '../db.js'
 import { upsertAsset } from '../github.js'
 
 const router = Router()
@@ -196,6 +196,47 @@ router.get('/leaderboard', async (req, res) => {
     }
 })
 
+
+// Pin / unpin own code on profile (max MAX_PINS)
+router.post('/me/pins', async (req, res) => {
+    if (!req.username) return res.status(401).json({ error: 'Please sign in' })
+    const shortId = String(req.body?.shortId || '').trim()
+    if (!shortId) return res.status(400).json({ error: 'shortId is required' })
+    try {
+        const snippet = await Snippets.findByShort(shortId)
+        if (!snippet) return res.status(404).json({ error: 'Code not found' })
+        if (snippet.ownerUsername.toLowerCase() !== req.username.toLowerCase()) {
+            return res.status(403).json({ error: 'You can only pin your own code' })
+        }
+        const user = await Users.find(req.username)
+        const pins = normalizePins(user?.pinnedShortIds)
+        if (pins.includes(shortId)) {
+            return res.json({ pinnedShortIds: pins, pinned: true })
+        }
+        if (pins.length >= MAX_PINS) {
+            return res.status(400).json({ error: `You can pin up to ${MAX_PINS} codes` })
+        }
+        const next = normalizePins([shortId, ...pins])
+        await Users.update(req.username, { pinnedShortIds: next })
+        res.json({ pinnedShortIds: next, pinned: true })
+    } catch (e) {
+        res.status(500).json({ error: e.message })
+    }
+})
+
+router.delete('/me/pins/:shortId', async (req, res) => {
+    if (!req.username) return res.status(401).json({ error: 'Please sign in' })
+    try {
+        const user = await Users.find(req.username)
+        const shortId = String(req.params.shortId || '')
+        const next = normalizePins(user?.pinnedShortIds).filter(id => id !== shortId)
+        await Users.update(req.username, { pinnedShortIds: next })
+        res.json({ pinnedShortIds: next, pinned: false })
+    } catch (e) {
+        res.status(500).json({ error: e.message })
+    }
+})
+
 router.get('/:username', async (req, res) => {
     const user = await Users.find(req.params.username)
     if (!user) return res.status(404).json({ error: 'User not found' })
@@ -233,19 +274,35 @@ router.get('/:username', async (req, res) => {
         codeCount: publicSnippetsOnly.length,
         totalViews,
         totalLikes,
-        snippets: visibleSnippets.map(s => {
-            const isOwnerViewing = req.username && req.username === s.ownerUsername
-            const base = s.isLocked && !isOwnerViewing ? lockedSnippetStub(s) : stripSnippetSecrets(s)
-            return {
-                ...base,
-                tags: s.tags || [],
-                ownerAvatar: avatarUrl(user),
-                views: viewCounts[s.shortId] || 0,
-                likes: likeCounts[s.shortId] || 0,
-                likedByMe: likedByMe.has(s.shortId),
-                savedByMe: savedByMeSet.has(s.shortId)
-            }
-        }),
+        snippets: (() => {
+            const pinOrder = normalizePins(user.pinnedShortIds)
+            const pinSet = new Set(pinOrder)
+            const mapped = visibleSnippets.map(s => {
+                const isOwnerViewing = req.username && req.username === s.ownerUsername
+                const base = s.isLocked && !isOwnerViewing ? lockedSnippetStub(s) : stripSnippetSecrets(s)
+                return {
+                    ...base,
+                    tags: s.tags || [],
+                    ownerAvatar: avatarUrl(user),
+                    views: viewCounts[s.shortId] || 0,
+                    likes: likeCounts[s.shortId] || 0,
+                    likedByMe: likedByMe.has(s.shortId),
+                    savedByMe: savedByMeSet.has(s.shortId),
+                    pinned: pinSet.has(s.shortId)
+                }
+            })
+            // Pinned codes first, in pin order
+            mapped.sort((a, b) => {
+                const ai = pinOrder.indexOf(a.shortId)
+                const bi = pinOrder.indexOf(b.shortId)
+                if (ai === -1 && bi === -1) return (b.createdAt || 0) - (a.createdAt || 0)
+                if (ai === -1) return 1
+                if (bi === -1) return -1
+                return ai - bi
+            })
+            return mapped
+        })(),
+        pinnedShortIds: normalizePins(user.pinnedShortIds),
         isFollowing,
         isMe,
         usernameChangedAt: isMe ? (user.usernameChangedAt || null) : undefined

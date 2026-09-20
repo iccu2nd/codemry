@@ -1,40 +1,5 @@
 
 
-async function renderProfileCollections(p) {
-  const box = document.getElementById('profileCollections')
-  if (!box) return
-  try {
-    const list = await api(`/collections?user=${encodeURIComponent(p.username)}`)
-    const isMe = !!p.isMe
-    if (!list.length && !isMe) {
-      box.innerHTML = ''
-      return
-    }
-    box.innerHTML = `
-      <div class="section-label">Collections</div>
-      <div class="collection-row" id="collectionRow">
-        ${list.map(c => `
-          <a class="collection-chip" href="/collection?id=${encodeURIComponent(c.id)}">
-            <span class="collection-chip-name">${escapeHtml(c.name)}</span>
-            <span class="collection-chip-count">${c.count || 0}</span>
-          </a>`).join('')}
-        ${isMe ? `<button type="button" class="collection-chip collection-chip-new" id="newCollectionBtn">+ New</button>` : ''}
-      </div>
-    `
-    document.getElementById('newCollectionBtn')?.addEventListener('click', async () => {
-      const name = prompt('Collection name')
-      if (!name || !name.trim()) return
-      try {
-        const c = await api('/collections', { method: 'POST', body: JSON.stringify({ name: name.trim(), isPublic: true }) })
-        toast('Collection created')
-        window.location.href = `/collection?id=${encodeURIComponent(c.id)}`
-      } catch (e) { toast(e.message) }
-    })
-  } catch {
-    box.innerHTML = ''
-  }
-}
-
 async function renderProfile() {
   const app = document.getElementById('app')
   const username = qs('u')
@@ -115,15 +80,24 @@ async function renderProfile() {
              </div>`
           : `<button class="btn ${p.isFollowing ? 'btn-white' : 'btn-primary'} btn-block profile-actions" id="followBtn">${p.isFollowing ? t('following') : t('follow')}</button>`}
       </div>
-      <div id="profileCollections"></div>
       <div class="section-label">${t('sharedCode')}</div>
       <div id="profileSnippets"></div>
     `
 
-    renderProfileCollections(p)
     const list = document.getElementById('profileSnippets')
+    const pinCount = (p.pinnedShortIds || []).length
+    const sectionLabel = document.querySelector('.section-label')
+    if (sectionLabel && pinCount) {
+      sectionLabel.innerHTML = `${t('sharedCode')}${pinCount ? ` <span class="pin-hint">${pinCount} pinned</span>` : ''}`
+    }
     list.innerHTML = p.snippets.length
-      ? p.snippets.map(snippetCard).join('')
+      ? p.snippets.map(s => {
+          let card = snippetCard(s)
+          if (!s.pinned) return card
+          card = card.replace('class="snippet-card"', 'class="snippet-card is-pinned"')
+          card = card.replace('<h3 class="sc-title">', '<h3 class="sc-title"><span class="pin-badge" title="Pinned">📌</span> ')
+          return card
+        }).join('')
       : (p.isMe
           ? `<div class="empty-state empty-cta">
                <div class="empty-cta-title">${t('noCodeYet')}</div>

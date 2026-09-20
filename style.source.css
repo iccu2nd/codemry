@@ -3562,46 +3562,18 @@ html.light .toast {
 }
 .upload-draft-note .link-btn-inline { font-size: 13px; }
 
-.collection-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin: 0 0 18px;
+
+.snippet-card.is-pinned {
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
 }
-.collection-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  background: var(--bg-card);
-  color: var(--text);
-  text-decoration: none;
-  font-size: 13px;
+.pin-badge {
+  font-size: 12px;
+  margin-right: 2px;
+  vertical-align: middle;
+}
+.pin-hint {
+  font-size: 12px;
   font-weight: 600;
-  transition: border-color .15s ease, background .15s ease;
-}
-.collection-chip:hover { border-color: var(--border-strong); background: var(--bg-muted); }
-.collection-chip-name { max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.collection-chip-count {
-  font-size: 11.5px;
-  font-weight: 700;
   color: var(--text-muted);
-  background: var(--bg-muted);
-  border-radius: 999px;
-  padding: 2px 7px;
+  margin-left: 6px;
 }
-.collection-chip-new {
-  cursor: pointer;
-  font-family: inherit;
-  color: var(--text-muted);
-  border-style: dashed;
-}
-.collection-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-}
-.btn-sm { padding: 8px 12px; font-size: 13px; }
