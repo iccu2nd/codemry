@@ -191,9 +191,7 @@ function openThemePicker() {
 
 async function api(path, opts = {}) {
   const controller = new AbortController()
-  // Run can take longer (scrapers / network)
-  const ms = /\/run\b/.test(path) ? 45000 : 15000
-  const timeout = setTimeout(() => controller.abort(), ms)
+  const timeout = setTimeout(() => controller.abort(), 15000)
   try {
     const res = await fetch('/api' + path, {
       headers: { 'Content-Type': 'application/json' },

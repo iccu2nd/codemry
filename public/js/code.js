@@ -71,7 +71,6 @@ function renderUnlockedDetail(app, shortId, s) {
 
         <div class="cd-toolbar">
           <button class="cd-btn cd-btn-primary" id="copyBtn" type="button">${copyIconSvg()}<span>Copy</span></button>
-          ${isRunnableLang(s.language, s.filename) ? `<button class="cd-btn cd-btn-run" id="runBtn" type="button">${playIconSvg()}<span>Run</span></button>` : ''}
           <button class="cd-btn" type="button" onclick="window.open('/raw/${s.shortId}','_blank')">${rawIconSvg()}<span>Raw</span></button>
           <button class="cd-btn" id="downloadBtn" type="button">${downloadIconSvg()}<span>Download</span></button>
           <div class="cd-more-wrap">
@@ -93,17 +92,6 @@ function renderUnlockedDetail(app, shortId, s) {
         </div>
 
         
-        ${isRunnableLang(s.language, s.filename) ? `
-        <div class="run-panel" id="runPanel" hidden>
-          <div class="run-panel-bar">
-            <span class="run-panel-dot"></span>
-            <span class="run-panel-title">Terminal</span>
-            <span class="run-panel-meta" id="runMeta"></span>
-            <button type="button" class="run-panel-clear" id="runClearBtn" title="Clear">Clear</button>
-          </div>
-          <pre class="run-output" id="runOutput"></pre>
-        </div>` : ''}
-
         <div class="code-window" id="codeWindow">
           <div class="code-window-bar">
             <span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>
@@ -203,75 +191,6 @@ function renderUnlockedDetail(app, shortId, s) {
     
     
     
-    ;(function wireRun() {
-      const btn = document.getElementById('runBtn')
-      const panel = document.getElementById('runPanel')
-      const out = document.getElementById('runOutput')
-      const meta = document.getElementById('runMeta')
-      if (!btn || !panel || !out) return
-
-      function showPanel() {
-        panel.hidden = false
-        panel.removeAttribute('hidden')
-        panel.classList.add('run-panel-open')
-      }
-
-      function setOut(text, isErr) {
-        out.textContent = text
-        out.classList.toggle('run-error', !!isErr)
-        out.scrollTop = out.scrollHeight
-      }
-
-      btn.addEventListener('click', async () => {
-        showPanel()
-        setOut('Detecting modules…\n', false)
-        if (meta) meta.textContent = 'running'
-        btn.disabled = true
-        btn.classList.add('is-loading')
-        try {
-          const r = await api(`/codes/${encodeURIComponent(shortId)}/run`, {
-            method: 'POST',
-            body: '{}'
-          })
-          const lines = []
-          if (r.progress && r.progress.length) {
-            r.progress.forEach(p => lines.push('› ' + p))
-          }
-          if (r.moduleReport) {
-            const mr = r.moduleReport
-            if (mr.installed && mr.installed.length) lines.push('✓ Installed: ' + mr.installed.join(', '))
-            if (mr.alreadyHad && mr.alreadyHad.length) lines.push('· Available: ' + mr.alreadyHad.join(', '))
-            if (mr.failed && mr.failed.length) {
-              mr.failed.forEach(f => lines.push('✗ ' + f.name + ': ' + f.error))
-            }
-          }
-          if (lines.length) lines.push('─'.repeat(24))
-          if (r.stdout) lines.push(r.stdout)
-          if (r.stderr) lines.push(r.stderr)
-          if (!r.stdout && !r.stderr) lines.push('(no output — use console.log to print)')
-          setOut(lines.join('\n'), !!(r.stderr && r.exitCode))
-          const bits = []
-          if (r.engine) bits.push(r.engine)
-          if (r.timedOut) bits.push('timed out')
-          else if (typeof r.exitCode === 'number') bits.push('exit ' + r.exitCode)
-          if (meta) meta.textContent = bits.join(' · ')
-        } catch (e) {
-          showPanel()
-          setOut(e.message || 'Run failed', true)
-          if (meta) meta.textContent = 'error'
-        } finally {
-          btn.disabled = false
-          btn.classList.remove('is-loading')
-        }
-      })
-
-      document.getElementById('runClearBtn')?.addEventListener('click', () => {
-        out.textContent = ''
-        if (meta) meta.textContent = ''
-        panel.hidden = true
-        panel.classList.remove('run-panel-open')
-      })
-    })()
 
     document.getElementById('copyBtn').onclick = () => { navigator.clipboard.writeText(s.content); toast('Copied!') }
 
@@ -1253,12 +1172,3 @@ function editIconSvg() {
 }
 
 
-function isRunnableLang(lang, filename) {
-  const k = String(lang || '').toLowerCase()
-  if (['javascript','typescript','python','java','php','bash','shell','sh','c','cpp','c++','go','rust','ruby','kotlin','swift','csharp','c#'].includes(k)) return true
-  const f = String(filename || '').toLowerCase()
-  return /\.(js|mjs|cjs|ts|py|java|php|sh|bash|c|cpp|go|rs|rb)$/.test(f)
-}
-function playIconSvg() {
-  return `<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M8 5.5v13l11-6.5L8 5.5z"/></svg>`
-}
