@@ -46,7 +46,7 @@ async function renderLeaderboard() {
           </div>
           ${rows.length
             ? rows.map((row, i) => lbRowHtml(row, i + 1, tab.unit)).join('')
-            : `${emptyStateHtml({ mascot: 'emptyFeed', title: 'No data yet', sub: 'Be the first to upload!' })}`}
+            : `${emptyStateHtml({ title: 'No data yet', sub: 'Be the first to upload!' })}`}
         </div>
       `
       app.querySelectorAll('.lb-tab-btn').forEach(btn => {
@@ -55,7 +55,7 @@ async function renderLeaderboard() {
     }
     draw()
   } catch (e) {
-    app.innerHTML = `<div class="card">${emptyStateHtml({ mascot: 'error', title: escapeHtml(e.message) })}</div>`
+    app.innerHTML = `<div class="card">${emptyStateHtml({ title: escapeHtml(e.message) })}</div>`
   }
 }
 

@@ -50,7 +50,7 @@ async function init() {
     const list = await api('/notifications')
     container.innerHTML = list.length
       ? `<div id="notifList">${list.map(notifItemHtml).join('')}</div>`
-      : `<div class="card">${emptyStateHtml({ mascot: 'emptyNotifications', title: 'No notifications yet', sub: 'Likes, comments, and follows will show up here.' })}</div>`
+      : `<div class="card">${emptyStateHtml({ title: 'No notifications yet', sub: 'Likes, comments, and follows will show up here.' })}</div>`
 
     container.querySelectorAll('.notif-item[data-id]').forEach(el => {
       el.addEventListener('click', () => {
@@ -65,7 +65,7 @@ async function init() {
       })
     })
   } catch (e) {
-    container.innerHTML = `<div class="card">${emptyStateHtml({ mascot: 'error', title: escapeHtml(e.message) })}</div>`
+    container.innerHTML = `<div class="card">${emptyStateHtml({ title: escapeHtml(e.message) })}</div>`
   }
 }
 

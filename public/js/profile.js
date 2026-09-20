@@ -3,7 +3,7 @@
 async function renderProfile() {
   const app = document.getElementById('app')
   const username = qs('u')
-  if (!username) { app.innerHTML = `<div class="card">${emptyStateHtml({ mascot: 'notFound', title: 'Profile not found' })}</div>`; return }
+  if (!username) { app.innerHTML = `<div class="card">${emptyStateHtml({ title: 'Profile not found' })}</div>`; return }
   app.innerHTML = skelProfileHeader()
   try {
     const p = await api(`/users/${username}`)
@@ -76,6 +76,20 @@ async function renderProfile() {
                  <input type="checkbox" id="hideBadgesInput" ${p.hideBadges ? 'checked' : ''}>
                  ${t('hideBadges')}
                </label>
+               <div class="field">
+                 <label>Notifikasi WhatsApp <span class="label-opt">(${t('optional')})</span></label>
+                 <input id="waNumberInput" type="tel" placeholder="628xxxxxxxxxx" value="${escapeHtml(p.waNumber || '')}">
+               </div>
+               <div class="field">
+                 <label>Notifikasi Telegram <span class="label-opt">(${t('optional')})</span></label>
+                 ${p.telegramConnected
+                   ? `<button type="button" class="btn btn-white btn-block" id="telegramUnlinkBtn">Telegram terhubung — putuskan</button>`
+                   : `<button type="button" class="btn btn-white btn-block" id="telegramLinkBtn">Hubungkan Telegram</button>`}
+               </div>
+               <label class="checkbox-row">
+                 <input type="checkbox" id="pushEnabledInput" ${p.pushEnabled ? 'checked' : ''}>
+                 Aktifkan notifikasi push (WA/Telegram)
+               </label>
                <button class="btn btn-primary btn-block" id="saveBioBtn">${t('save')}</button>
              </div>`
           : `<button class="btn ${p.isFollowing ? 'btn-white' : 'btn-primary'} btn-block profile-actions" id="followBtn">${p.isFollowing ? t('following') : t('follow')}</button>`}
@@ -100,12 +114,11 @@ async function renderProfile() {
         }).join('')
       : (p.isMe
           ? emptyStateHtml({
-               mascot: 'emptyProfile',
                title: t('noCodeYet'),
                sub: t('noCodeYetSub'),
                actionHtml: `<a class="btn btn-primary" href="/upload">${t('uploadCode')}</a>`
              })
-          : emptyStateHtml({ mascot: 'noCode', title: t('noCodeShared') }))
+          : emptyStateHtml({ title: t('noCodeShared') }))
     highlightAllIn('#profileSnippets pre code')
     wireLikeButtons(list)
     wireBookmarkButtons(list)
@@ -202,7 +215,9 @@ async function renderProfile() {
           bio: document.getElementById('bioInput').value,
           nickname: document.getElementById('nicknameInput').value,
           profileMusic: (document.getElementById('musicInput')?.value || '').trim(),
-          hideBadges: document.getElementById('hideBadgesInput').checked
+          hideBadges: document.getElementById('hideBadgesInput').checked,
+          waNumber: document.getElementById('waNumberInput').value.trim(),
+          pushEnabled: document.getElementById('pushEnabledInput').checked
         }
         const newUsername = document.getElementById('usernameInput').value.trim()
         if (newUsername && newUsername !== username) body.username = newUsername
@@ -212,6 +227,20 @@ async function renderProfile() {
         if (r.username !== username) window.location.href = profileUrl(r.username)
         else renderProfile()
       } catch (e) { toast(e.message); setBtnLoading(saveBioBtn, false) }
+    }
+    const telegramLinkBtn = document.getElementById('telegramLinkBtn')
+    if (telegramLinkBtn) telegramLinkBtn.onclick = async () => {
+      setBtnLoading(telegramLinkBtn, true)
+      try {
+        const r = await api('/users/me/telegram/link', { method: 'POST' })
+        window.open(r.url, '_blank')
+      } catch (e) { toast(e.message) } finally { setBtnLoading(telegramLinkBtn, false) }
+    }
+    const telegramUnlinkBtn = document.getElementById('telegramUnlinkBtn')
+    if (telegramUnlinkBtn) telegramUnlinkBtn.onclick = async () => {
+      setBtnLoading(telegramUnlinkBtn, true)
+      try { await api('/users/me/telegram/unlink', { method: 'POST' }); renderProfile() }
+      catch (e) { toast(e.message); setBtnLoading(telegramUnlinkBtn, false) }
     }
 
     // Penting: tombol kamera (avatar & banner) TIDAK PERNAH dipindah posisinya.
@@ -307,7 +336,7 @@ async function renderProfile() {
       window.location.href = '/'
     }
   } catch (e) {
-    app.innerHTML = `<div class="card">${emptyStateHtml({ mascot: 'error', title: escapeHtml(e.message) })}</div>`
+    app.innerHTML = `<div class="card">${emptyStateHtml({ title: escapeHtml(e.message) })}</div>`
   }
 }
 

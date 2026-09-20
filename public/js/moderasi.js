@@ -3,8 +3,8 @@ let reportFilter = 'pending'
 
 async function renderModerasiPanel() {
   const app = document.getElementById('app')
-  if (!me) { app.innerHTML = `<div class="card">${emptyStateHtml({ mascot: 'error', title: 'Please sign in first' })}</div>`; return }
-  if (!me.isModerator) { app.innerHTML = `<div class="card">${emptyStateHtml({ mascot: 'error', title: 'This page is for moderators only' })}</div>`; return }
+  if (!me) { app.innerHTML = `<div class="card">${emptyStateHtml({ title: 'Please sign in first' })}</div>`; return }
+  if (!me.isModerator) { app.innerHTML = `<div class="card">${emptyStateHtml({ title: 'This page is for moderators only' })}</div>`; return }
 
   app.innerHTML = `
     <div class="card">
@@ -54,7 +54,7 @@ async function loadDevReports() {
     lastReports = await api('/dev/reports')
     renderDevReportsList(lastReports)
   } catch (e) {
-    list.innerHTML = emptyStateHtml({ mascot: 'error', title: escapeHtml(e.message) })
+    list.innerHTML = emptyStateHtml({ title: escapeHtml(e.message) })
   }
 }
 
@@ -93,10 +93,10 @@ function renderDevReportsList(reports) {
 
   renderReportFilterTabs(reports)
 
-  if (!reports.length) { list.innerHTML = emptyStateHtml({ mascot: 'emptyNotifications', title: 'No reports yet' }); return }
+  if (!reports.length) { list.innerHTML = emptyStateHtml({ title: 'No reports yet' }); return }
 
   const filtered = reportFilter === 'all' ? reports : reports.filter(r => r.status === reportFilter)
-  if (!filtered.length) { list.innerHTML = emptyStateHtml({ mascot: 'noResults', title: 'No reports in this category' }); return }
+  if (!filtered.length) { list.innerHTML = emptyStateHtml({ title: 'No reports in this category' }); return }
 
   list.innerHTML = filtered.map(r => `
     <div class="report-card" data-status="${r.status}" data-report-id="${r.id}">

@@ -2,7 +2,7 @@
 async function renderCodeDetail(authReady) {
   const app = document.getElementById('app')
   const shortId = qs('id')
-  if (!shortId) { app.innerHTML = `<div class="card">${emptyStateHtml({ mascot: 'notFound', title: 'Code not found' })}</div>`; return }
+  if (!shortId) { app.innerHTML = `<div class="card">${emptyStateHtml({ title: 'Code not found' })}</div>`; return }
   try {
     const [s] = await Promise.all([api(`/codes/${shortId}`), authReady])
     if (s.locked && s.content == null && !(me && me.username === s.ownerUsername)) {
@@ -11,7 +11,7 @@ async function renderCodeDetail(authReady) {
     }
     renderUnlockedDetail(app, shortId, s)
   } catch (e) {
-    app.innerHTML = `<div class="card">${emptyStateHtml({ mascot: 'error', title: escapeHtml(e.message) })}</div>`
+    app.innerHTML = `<div class="card">${emptyStateHtml({ title: escapeHtml(e.message) })}</div>`
   }
 }
 
@@ -994,7 +994,7 @@ async function setupComments(shortId, ownerUsername) {
       countEl.textContent = comments.length ? `(${comments.length})` : ''
       listEl.innerHTML = comments.length
         ? comments.slice().reverse().map(c => commentCardHtml(c, me && (me.username === c.username || isOwner), isOwner)).join('')
-        : emptyStateHtml({ mascot: 'emptyFeed', title: t('noComments'), compact: true })
+        : emptyStateHtml({ title: t('noComments'), compact: true })
 
       listEl.querySelectorAll('[data-role="delete-comment"]').forEach(btn => {
         btn.onclick = async () => {
@@ -1049,7 +1049,7 @@ async function setupComments(shortId, ownerUsername) {
         }
       })
     } catch (e) {
-      listEl.innerHTML = emptyStateHtml({ mascot: 'error', title: escapeHtml(e.message), compact: true })
+      listEl.innerHTML = emptyStateHtml({ title: escapeHtml(e.message), compact: true })
     }
   }
 

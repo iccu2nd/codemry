@@ -220,7 +220,7 @@ function renderFeed(opts = {}) {
       if (feedSort === 'following') msg = !me ? 'Sign in to see posts from people you follow.' : (followingSet.size ? 'No posts from people you follow yet.' : 'Follow someone to see their posts here.')
       else msg = 'No matches. Try another keyword.'
     }
-    list.innerHTML = emptyStateHtml({ mascot: feedSort === 'following' ? 'emptyFeed' : (query || feedActiveTag || feedActiveLang) ? 'noResults' : 'emptyFeed', title: msg })
+    list.innerHTML = emptyStateHtml({ title: msg })
     if (pagerEl) pagerEl.innerHTML = ''
     return
   }
@@ -273,7 +273,7 @@ async function loadFeed() {
     renderRecentSection()
     renderFeed()
   } catch (e) {
-    list.innerHTML = emptyStateHtml({ mascot: 'error', title: escapeHtml(e.message) })
+    list.innerHTML = emptyStateHtml({ title: escapeHtml(e.message) })
     document.getElementById('feedPagination').innerHTML = ''
   }
 }
