@@ -20,18 +20,29 @@ export function bannerUrl(user) {
 }
 
 async function update(path, mutator, message) {
-    for (let i = 0; i < 3; i++) {
-        const { data, sha } = await readDbFile(path)
+    // GitHub Contents API rejects writes when the provided SHA is stale
+    // (concurrent writes from other serverless instances). Retry with a
+    // fresh read + short backoff so upload/view/like stay reliable.
+    const maxAttempts = 6
+    let lastErr = null
+    for (let i = 0; i < maxAttempts; i++) {
+        const { data, sha } = await readDbFile(path, { fresh: i > 0 })
         const updated = mutator(data)
         if (updated === data) return updated // mutator made no change, skip the write
         try {
             await writeDbFile(path, updated, sha, message)
             return updated
         } catch (e) {
-            if (e.response?.status === 409 && i < 2) continue
+            lastErr = e
+            const status = e.response?.status
+            if ((status === 409 || status === 422) && i < maxAttempts - 1) {
+                await new Promise(r => setTimeout(r, 40 + i * 60))
+                continue
+            }
             throw e
         }
     }
+    throw lastErr || new Error('Failed to update ' + path)
 }
 
 export async function ensureSessionSecret() {
@@ -420,7 +431,16 @@ export const Reports = {
 export const Snippets = {
     async all() { return (await readDbFile('snippets.json')).data },
     async find(id) { const s = await this.all(); return s.find(x => x.id === id) },
-    async findByShort(shortId) { const s = await this.all(); return s.find(x => x.shortId === shortId) },
+    async findByShort(shortId) {
+        // First try normal (possibly cached) read — fast path.
+        let s = await this.all()
+        let hit = s.find(x => x.shortId === shortId)
+        if (hit) return hit
+        // Right after upload, another serverless instance may still hold a
+        // stale snippets.json cache. Force a fresh GitHub read once.
+        s = (await readDbFile('snippets.json', { fresh: true })).data
+        return s.find(x => x.shortId === shortId)
+    },
     async create(snippet) { return update('snippets.json', d => [snippet, ...d], `add snippet ${snippet.id}`) },
     async remove(id) { return update('snippets.json', d => d.filter(x => x.id !== id), `remove snippet ${id}`) },
     async update(id, patch) {

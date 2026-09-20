@@ -149,7 +149,11 @@ router.post('/', requireAuth, async (req, res) => {
         const snippet = await createSnippetForUser(req.username, req.body)
         res.json(stripSnippetSecrets(snippet))
     } catch (e) {
-        res.status(e.status || 500).json({ error: e.response?.data?.message || e.message })
+        const raw = e.response?.data?.message || e.message || ''
+        const friendly = /expected|is at [a-f0-9]|conflict/i.test(raw)
+            ? 'Upload failed due to a temporary conflict. Please try again.'
+            : (raw || 'Upload failed')
+        res.status(e.status || 500).json({ error: friendly })
     }
 })
 
@@ -291,11 +295,11 @@ router.get('/:shortId', async (req, res) => {
         })
     }
 
+    // Record the view in the background. Never let a views.json SHA conflict
+    // (common right after upload under concurrent traffic) break the code page.
+    Views.register(snippet.shortId, req.ip).catch(() => {})
     try {
-        const [gist] = await Promise.all([
-            getGist(snippet.id),
-            Views.register(snippet.shortId, req.ip)
-        ])
+        const gist = await getGist(snippet.id)
         const file = gist.files[snippet.filename]
         const content = file?.content || ''
         const lineCount = countLines(content)
@@ -315,8 +319,13 @@ router.get('/:shortId', async (req, res) => {
             ownerBadges: ownerDisplay.badges, ownerAvatar, ownerNickname, ownerRole: ownerDisplay.role, ownerIsDeveloper: ownerDisplay.isDeveloper
         })
     } catch (e) {
-        if (e.response?.status === 404) return res.status(404).json({ error: 'kode ini sudah dihapus dari gist' })
-        res.status(500).json({ error: e.response?.data?.message || e.message })
+        if (e.response?.status === 404) return res.status(404).json({ error: 'This code was deleted from GitHub Gist' })
+        // Don't leak raw GitHub SHA conflict messages to the UI
+        const raw = e.response?.data?.message || e.message || ''
+        const friendly = /expected|is at [a-f0-9]/i.test(raw)
+            ? 'Could not load code right now. Please refresh.'
+            : (raw || 'Failed to load code')
+        res.status(500).json({ error: friendly })
     }
 })
 
@@ -329,10 +338,10 @@ router.post('/:shortId/unlock', async (req, res) => {
     const ok = await verifyPin(req.body.pin, snippet.pinHash)
     if (!ok) return res.status(403).json({ error: 'Wrong password' })
     try {
+        Views.register(snippet.shortId, req.ip).catch(() => {})
         const [gist, owner] = await Promise.all([
             getGist(snippet.id),
-            Users.find(snippet.ownerUsername),
-            Views.register(snippet.shortId, req.ip)
+            Users.find(snippet.ownerUsername)
         ])
         const file = gist.files[snippet.filename]
         const [views, likes, likedByMe] = await Promise.all([
