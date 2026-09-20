@@ -8,6 +8,7 @@ import vm from 'node:vm'
 import { createRequire } from 'node:module'
 import fs from 'node:fs'
 import path from 'node:path'
+import { ensureModules, resolveModule, ALLOWED_PACKAGES } from './modules.js'
 
 const require = createRequire(import.meta.url)
 const PISTON_URL = process.env.PISTON_URL || 'https://emkc.org/api/v2/piston/execute'
@@ -138,16 +139,6 @@ function createAxiosShim() {
   return api
 }
 
-function tryLoadCheerio() {
-  try {
-    const base = path.dirname(createRequire(import.meta.url).resolve('cheerio/package.json'))
-    const pkg = JSON.parse(fs.readFileSync(path.join(base, 'package.json'), 'utf8'))
-    const main = pkg.main || 'index.js'
-    return require(path.join(base, main))
-  } catch {
-    return null
-  }
-}
 
 function rewriteImports(code) {
   let c = String(code)
@@ -163,31 +154,53 @@ function rewriteImports(code) {
   return c
 }
 
-function buildRequire(axios, cheerio) {
-  const allowed = {
-    axios,
-    cheerio,
-    'node-fetch': globalThis.fetch.bind(globalThis),
-    fetch: globalThis.fetch.bind(globalThis)
-  }
+function buildRequire(axiosShim) {
   return function safeRequire(id) {
     const name = String(id || '').replace(/^node:/, '')
-    if (!(name in allowed) || allowed[name] == null) {
-      if (name === 'cheerio') {
-        throw new Error('cheerio is not installed on the server. Use regex or install cheerio dependency.')
-      }
-      throw new Error(`Module "${name}" is not allowed. Allowed: axios, cheerio, fetch`)
+    if (name === 'fetch' || name === 'node-fetch') return globalThis.fetch.bind(globalThis)
+    if (name === 'axios') {
+      const real = resolveModule('axios')
+      return real || axiosShim
     }
-    return allowed[name]
+    const mod = resolveModule(name)
+    if (mod) return mod
+    throw new Error(`Module "${name}" is not available. Allowed packages can be auto-installed on Run.`)
   }
 }
 
 async function runJsScraper(code) {
   const logs = []
   const errors = []
+  const progress = []
+
+  // Auto-detect & install missing allowlisted modules (isolated tmp dir, no package.json change)
+  let modReport = null
+  try {
+    modReport = await ensureModules(code, {
+      onProgress: (msg) => progress.push(msg)
+    })
+    if (modReport.installed.length) {
+      logs.push(`[modules] installed: ${modReport.installed.join(', ')}`)
+    }
+    if (modReport.alreadyHad.length) {
+      logs.push(`[modules] already available: ${modReport.alreadyHad.join(', ')}`)
+    }
+    if (modReport.failed.length) {
+      for (const f of modReport.failed) {
+        errors.push(`[modules] failed ${f.name}: ${f.error}`)
+      }
+    }
+    for (const s of modReport.skipped) {
+      if (s.reason === 'not-allowlisted') {
+        errors.push(`[modules] blocked (not allowed): ${s.name}`)
+      }
+    }
+  } catch (e) {
+    errors.push(`[modules] ${e.message}`)
+  }
+
   const transformed = rewriteImports(code)
-  const axios = createAxiosShim()
-  const cheerio = tryLoadCheerio()
+  const axiosShim = createAxiosShim()
 
   let resolveRun, rejectRun
   const done = new Promise((resolve, reject) => {
@@ -203,10 +216,10 @@ async function runJsScraper(code) {
       error: (...a) => errors.push(a.map(formatArg).join(' ')),
       debug: (...a) => logs.push(a.map(formatArg).join(' '))
     },
-    require: buildRequire(axios, cheerio),
+    require: buildRequire(axiosShim),
     fetch: globalThis.fetch.bind(globalThis),
-    axios,
-    cheerio,
+    axios: resolveModule('axios') || axiosShim,
+    cheerio: resolveModule('cheerio'),
     setTimeout,
     clearTimeout,
     setInterval,
@@ -269,6 +282,11 @@ ${transformed}
     }
   }
 
+  const available = []
+  if (sandbox.axios) available.push('axios')
+  if (sandbox.cheerio) available.push('cheerio')
+  available.push('fetch')
+
   return {
     engine: 'scraper-vm',
     language: 'javascript',
@@ -277,7 +295,9 @@ ${transformed}
     exitCode: errors.length ? 1 : 0,
     signal: null,
     timedOut,
-    modules: cheerio ? ['axios', 'cheerio', 'fetch'] : ['axios', 'fetch']
+    modules: available,
+    moduleReport: modReport,
+    progress
   }
 }
 

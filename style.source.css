@@ -3587,57 +3587,82 @@ html.light .toast {
   background: color-mix(in srgb, #22c55e 28%, var(--bg-card));
 }
 .run-panel[hidden] { display: none !important; }
-.run-panel.run-panel-open { display: block !important; }
+.run-panel.run-panel-open,
+.run-panel:not([hidden]) {
+  display: flex !important;
+  flex-direction: column;
+}
 .cd-btn-run.is-loading { opacity: .7; pointer-events: none; }
 .run-panel {
-  margin: 10px 0 0;
+  margin: 8px 0 12px;
   border-radius: 12px;
   border: 1px solid var(--border);
   background: #0d1117;
   overflow: hidden;
+  max-height: 220px;
 }
 .run-panel-bar {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 12px;
+  padding: 6px 10px;
   background: #161b22;
   border-bottom: 1px solid rgba(255,255,255,.06);
+  flex-shrink: 0;
+}
+.run-panel-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 6px rgba(34,197,94,.5);
+  flex-shrink: 0;
 }
 .run-panel-title {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
   color: #e6edf3;
-  letter-spacing: .02em;
+  letter-spacing: .04em;
   text-transform: uppercase;
 }
 .run-panel-meta {
   flex: 1;
+  min-width: 0;
   font-size: 11px;
   color: #8b949e;
   font-family: 'JetBrains Mono', monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .run-panel-clear {
   border: none;
   background: transparent;
   color: #8b949e;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   cursor: pointer;
-  padding: 4px 8px;
+  padding: 3px 8px;
   border-radius: 6px;
+  flex-shrink: 0;
 }
 .run-panel-clear:hover { color: #e6edf3; background: rgba(255,255,255,.06); }
 .run-output {
   margin: 0;
-  padding: 12px 14px;
-  max-height: 280px;
+  padding: 10px 12px;
+  flex: 1;
+  min-height: 72px;
+  max-height: 168px;
   overflow: auto;
+  -webkit-overflow-scrolling: touch;
   font-family: 'JetBrains Mono', monospace;
-  font-size: 12.5px;
-  line-height: 1.5;
+  font-size: 12px;
+  line-height: 1.45;
   color: #d4d4d4;
   white-space: pre-wrap;
   word-break: break-word;
 }
 .run-output.run-error { color: #fca5a5; }
+@media (max-width: 480px) {
+  .run-panel { max-height: 180px; margin: 6px 0 10px; border-radius: 10px; }
+  .run-output { max-height: 130px; font-size: 11.5px; padding: 8px 10px; }
+}

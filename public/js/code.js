@@ -92,6 +92,18 @@ function renderUnlockedDetail(app, shortId, s) {
           </div>
         </div>
 
+        
+        ${isRunnableLang(s.language, s.filename) ? `
+        <div class="run-panel" id="runPanel" hidden>
+          <div class="run-panel-bar">
+            <span class="run-panel-dot"></span>
+            <span class="run-panel-title">Terminal</span>
+            <span class="run-panel-meta" id="runMeta"></span>
+            <button type="button" class="run-panel-clear" id="runClearBtn" title="Clear">Clear</button>
+          </div>
+          <pre class="run-output" id="runOutput"></pre>
+        </div>` : ''}
+
         <div class="code-window" id="codeWindow">
           <div class="code-window-bar">
             <span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>
@@ -114,16 +126,6 @@ function renderUnlockedDetail(app, shortId, s) {
           </div>
           <pre class="code-view" id="codeViewPre"><code id="codeBlock" class="language-${hljsLang(s.language)}">${escapeHtml(s.content)}</code></pre>
         </div>
-
-        ${isRunnableLang(s.language, s.filename) ? `
-        <div class="run-panel" id="runPanel" hidden>
-          <div class="run-panel-bar">
-            <span class="run-panel-title">Output</span>
-            <span class="run-panel-meta" id="runMeta"></span>
-            <button type="button" class="run-panel-clear" id="runClearBtn" title="Clear">Clear</button>
-          </div>
-          <pre class="run-output" id="runOutput"></pre>
-        </div>` : ''}
 
         <div class="cd-engage">
           <button type="button" class="like-btn like-btn-detail t-like ${s.likedByMe ? 'liked' : ''}" data-role="like" data-short="${s.shortId}" data-liked="${s.likedByMe ? 'true' : 'false'}">
@@ -200,6 +202,7 @@ function renderUnlockedDetail(app, shortId, s) {
     wireBookmarkButtons(app)
     
     
+    
     ;(function wireRun() {
       const btn = document.getElementById('runBtn')
       const panel = document.getElementById('runPanel')
@@ -209,16 +212,20 @@ function renderUnlockedDetail(app, shortId, s) {
 
       function showPanel() {
         panel.hidden = false
-        panel.style.display = 'block'
         panel.removeAttribute('hidden')
         panel.classList.add('run-panel-open')
       }
 
+      function setOut(text, isErr) {
+        out.textContent = text
+        out.classList.toggle('run-error', !!isErr)
+        out.scrollTop = out.scrollHeight
+      }
+
       btn.addEventListener('click', async () => {
         showPanel()
-        out.textContent = 'Running…'
-        out.classList.remove('run-error')
-        if (meta) meta.textContent = 'please wait'
+        setOut('Detecting modules…\n', false)
+        if (meta) meta.textContent = 'running'
         btn.disabled = true
         btn.classList.add('is-loading')
         try {
@@ -226,26 +233,32 @@ function renderUnlockedDetail(app, shortId, s) {
             method: 'POST',
             body: '{}'
           })
-          const parts = []
-          if (r.stdout) parts.push(r.stdout)
-          if (r.stderr) parts.push(r.stderr)
-          if (!parts.length) parts.push('(no output — use console.log(...) to print)')
-          out.textContent = parts.join('\n\n')
+          const lines = []
+          if (r.progress && r.progress.length) {
+            r.progress.forEach(p => lines.push('› ' + p))
+          }
+          if (r.moduleReport) {
+            const mr = r.moduleReport
+            if (mr.installed && mr.installed.length) lines.push('✓ Installed: ' + mr.installed.join(', '))
+            if (mr.alreadyHad && mr.alreadyHad.length) lines.push('· Available: ' + mr.alreadyHad.join(', '))
+            if (mr.failed && mr.failed.length) {
+              mr.failed.forEach(f => lines.push('✗ ' + f.name + ': ' + f.error))
+            }
+          }
+          if (lines.length) lines.push('─'.repeat(24))
+          if (r.stdout) lines.push(r.stdout)
+          if (r.stderr) lines.push(r.stderr)
+          if (!r.stdout && !r.stderr) lines.push('(no output — use console.log to print)')
+          setOut(lines.join('\n'), !!(r.stderr && r.exitCode))
           const bits = []
           if (r.engine) bits.push(r.engine)
-          if (r.modules) bits.push('modules: ' + r.modules.join(', '))
           if (r.timedOut) bits.push('timed out')
           else if (typeof r.exitCode === 'number') bits.push('exit ' + r.exitCode)
           if (meta) meta.textContent = bits.join(' · ')
-          if (r.stderr && r.exitCode) out.classList.add('run-error')
-          // scroll panel into view
-          panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
         } catch (e) {
           showPanel()
-          out.textContent = e.message || 'Run failed'
-          out.classList.add('run-error')
+          setOut(e.message || 'Run failed', true)
           if (meta) meta.textContent = 'error'
-          panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
         } finally {
           btn.disabled = false
           btn.classList.remove('is-loading')
@@ -256,7 +269,6 @@ function renderUnlockedDetail(app, shortId, s) {
         out.textContent = ''
         if (meta) meta.textContent = ''
         panel.hidden = true
-        panel.style.display = 'none'
         panel.classList.remove('run-panel-open')
       })
     })()
