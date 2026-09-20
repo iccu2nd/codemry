@@ -71,6 +71,7 @@ function renderUnlockedDetail(app, shortId, s) {
 
         <div class="cd-toolbar">
           <button class="cd-btn cd-btn-primary" id="copyBtn" type="button">${copyIconSvg()}<span>Copy</span></button>
+          ${isRunnableLang(s.language) ? `<button class="cd-btn cd-btn-run" id="runBtn" type="button">${playIconSvg()}<span>Run</span></button>` : ''}
           <button class="cd-btn" type="button" onclick="window.open('/raw/${s.shortId}','_blank')">${rawIconSvg()}<span>Raw</span></button>
           <button class="cd-btn" id="downloadBtn" type="button">${downloadIconSvg()}<span>Download</span></button>
           <div class="cd-more-wrap">
@@ -113,6 +114,16 @@ function renderUnlockedDetail(app, shortId, s) {
           </div>
           <pre class="code-view" id="codeViewPre"><code id="codeBlock" class="language-${hljsLang(s.language)}">${escapeHtml(s.content)}</code></pre>
         </div>
+
+        ${isRunnableLang(s.language) ? `
+        <div class="run-panel" id="runPanel" hidden>
+          <div class="run-panel-bar">
+            <span class="run-panel-title">Output</span>
+            <span class="run-panel-meta" id="runMeta"></span>
+            <button type="button" class="run-panel-clear" id="runClearBtn" title="Clear">Clear</button>
+          </div>
+          <pre class="run-output" id="runOutput"></pre>
+        </div>` : ''}
 
         <div class="cd-engage">
           <button type="button" class="like-btn like-btn-detail t-like ${s.likedByMe ? 'liked' : ''}" data-role="like" data-short="${s.shortId}" data-liked="${s.likedByMe ? 'true' : 'false'}">
@@ -187,6 +198,47 @@ function renderUnlockedDetail(app, shortId, s) {
     loadRelatedCodes(s)
     wireLikeButtons(app)
     wireBookmarkButtons(app)
+    
+    document.getElementById('runBtn')?.addEventListener('click', async () => {
+      const btn = document.getElementById('runBtn')
+      const panel = document.getElementById('runPanel')
+      const out = document.getElementById('runOutput')
+      const meta = document.getElementById('runMeta')
+      if (!panel || !out) return
+      panel.hidden = false
+      out.textContent = 'Running…'
+      if (meta) meta.textContent = ''
+      setBtnLoading(btn, true)
+      try {
+        const r = await api(`/codes/${encodeURIComponent(shortId)}/run`, { method: 'POST', body: '{}' })
+        const parts = []
+        if (r.stdout) parts.push(r.stdout)
+        if (r.stderr) parts.push(r.stderr)
+        if (!parts.length) parts.push('(no output)')
+        out.textContent = parts.join('\n')
+        const bits = []
+        if (r.engine) bits.push(r.engine)
+        if (r.timedOut) bits.push('timed out')
+        else if (typeof r.exitCode === 'number') bits.push('exit ' + r.exitCode)
+        if (meta) meta.textContent = bits.join(' · ')
+        out.classList.toggle('run-error', !!(r.stderr && r.exitCode))
+      } catch (e) {
+        out.textContent = e.message || 'Run failed'
+        out.classList.add('run-error')
+        if (meta) meta.textContent = 'error'
+      } finally {
+        setBtnLoading(btn, false)
+      }
+    })
+    document.getElementById('runClearBtn')?.addEventListener('click', () => {
+      const out = document.getElementById('runOutput')
+      const panel = document.getElementById('runPanel')
+      const meta = document.getElementById('runMeta')
+      if (out) out.textContent = ''
+      if (meta) meta.textContent = ''
+      if (panel) panel.hidden = true
+    })
+
     document.getElementById('copyBtn').onclick = () => { navigator.clipboard.writeText(s.content); toast('Copied!') }
 
     const moreBtn = document.getElementById('cdMoreBtn')
@@ -1166,3 +1218,11 @@ function editIconSvg() {
   return `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>`
 }
 
+
+function isRunnableLang(lang) {
+  const k = String(lang || '').toLowerCase()
+  return ['javascript','typescript','python','java','php','bash','shell','sh','c','cpp','c++','go','rust','ruby','kotlin','swift','csharp','c#'].includes(k)
+}
+function playIconSvg() {
+  return `<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M8 5.5v13l11-6.5L8 5.5z"/></svg>`
+}

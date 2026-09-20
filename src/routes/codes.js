@@ -3,11 +3,13 @@ import crypto from 'crypto'
 import { Snippets, Users, Views, Likes, Comments, Bookmarks, Notifications, Reports, Follows, REPORT_REASONS, DEV_USERNAME, avatarUrl, readBadges, badgeDisplay, hashPin, verifyPin, stripSnippetSecrets, lockedSnippetStub, isDeveloperUsername } from '../db.js'
 import { createGist, getGist, editGist, deleteGist, listGists } from '../github.js'
 import { createRateLimiter } from '../rate-limit.js'
+import { runCode, isRunnableLanguage } from '../runner.js'
 
 const router = Router()
 const PIN_RE = /^[a-zA-Z0-9]{4,8}$/
 const tooManyAttempts = createRateLimiter(8)
 const tooManyReports = createRateLimiter(5)
+const tooManyRuns = createRateLimiter(20)
 
 function requireAuth(req, res, next) {
     if (!req.username) return res.status(401).json({ error: 'Please sign in' })
@@ -430,6 +432,34 @@ router.delete('/:shortId', requireAuth, async (req, res) => {
         res.json({ ok: true })
     } catch (e) {
         res.status(500).json({ error: e.response?.data?.message || e.message })
+    }
+})
+
+
+router.post('/:shortId/run', async (req, res) => {
+    const key = `${req.ip || 'ip'}:${req.username || 'guest'}`
+    if (tooManyRuns(key)) return res.status(429).json({ error: 'Too many runs. Wait a few minutes.' })
+    try {
+        const snippet = await Snippets.findByShort(req.params.shortId)
+        if (!snippet) return res.status(404).json({ error: 'Not found' })
+        const isOwner = req.username && req.username === snippet.ownerUsername
+        if (snippet.isLocked && !isOwner) {
+            return res.status(403).json({ error: 'Unlock this code before running' })
+        }
+        if (!isRunnableLanguage(snippet.language)) {
+            return res.status(400).json({ error: 'This language cannot be run on the server' })
+        }
+        const gist = await getGist(snippet.id)
+        const file = gist.files?.[snippet.filename]
+        const content = file?.content || ''
+        const result = await runCode({ language: snippet.language, content })
+        res.json({
+            language: snippet.language,
+            filename: snippet.filename,
+            ...result
+        })
+    } catch (e) {
+        res.status(e.status || 500).json({ error: e.message || 'Run failed' })
     }
 })
 
