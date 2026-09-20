@@ -204,15 +204,15 @@ export const Views = {
     hashIp(ip) { return crypto.createHash('sha256').update(String(ip || 'unknown')).digest('hex') },
     async register(shortId, ip) {
         const ipHash = this.hashIp(ip)
-        // Dedupe per-IP per-hari (bukan permanen selamanya). Sebelumnya sekali
-        // sebuah IP kehitung, view snippet itu gak akan nambah lagi buat IP itu
-        // selama-lamanya - makanya kerasa "views-nya gak jalan" pas dicek ulang.
-        // Sekarang tiap IP bisa nambah 1 view per snippet per hari, jadi tetep
-        // kebendung dari spam-refresh tapi beneran nambah kalau ada yang balik lagi.
+        // Dedupe per-IP per-day to limit refresh spam but still count return visits.
         const dayBucket = Math.floor(Date.now() / 86400000)
+        const minDay = dayBucket - 90 // drop very old rows so views.json stays small
         await update('views.json', d => {
-            if (d.find(v => v.shortId === shortId && v.ipHash === ipHash && v.day === dayBucket)) return d
-            return [...d, { shortId, ipHash, day: dayBucket, at: Date.now() }]
+            let next = d
+            // Prune only when the file is getting large
+            if (d.length > 5000) next = d.filter(v => (v.day || 0) >= minDay)
+            if (next.find(v => v.shortId === shortId && v.ipHash === ipHash && v.day === dayBucket)) return next
+            return [...next, { shortId, ipHash, day: dayBucket, at: Date.now() }]
         }, `view ${shortId}`)
     },
     async count(shortId) {
@@ -482,11 +482,11 @@ export const Notifications = {
 
 export const REPORT_REASONS = ['vulgar', 'spam', 'plagiarism', 'malware', 'other']
 export const REPORT_REASON_LABELS = {
-    vulgar: 'Konten vulgar/tidak pantas',
-    spam: 'Spam/promosi',
-    plagiarism: 'Plagiat/klaim kode orang lain',
-    malware: 'Malware/kode berbahaya',
-    other: 'Lainnya'
+    vulgar: 'Inappropriate content',
+    spam: 'Spam / promotion',
+    plagiarism: 'Plagiarism',
+    malware: 'Malware / harmful code',
+    other: 'Other'
 }
 
 export const Reports = {
@@ -530,18 +530,36 @@ export const Snippets = {
     },
     async byUser(username) { const s = await this.all(); return s.filter(x => x.ownerUsername === username) },
 
+        // Fast path for feed/profile: trust snippets.json (no GitHub gist list).
+    // Deleted gists still 404 on the code page; periodic sync cleans the index.
+    async allPublic() {
+        const snippets = await this.all()
+        return snippets.filter(s => s.isPublic !== false)
+    },
     async allLive() {
-        const [snippets, gists] = await Promise.all([this.all(), listGists()])
-        const gistIds = new Set(gists.map(g => g.id))
-        const live = snippets.filter(s => gistIds.has(s.id))
-        if (live.length !== snippets.length) {
-            await update('snippets.json', d => d.filter(x => gistIds.has(x.id)), 'sync index dengan gist yang masih ada')
+        const snippets = await this.all()
+        // Avoid listing every gist on each request — that was the main feed lag.
+        // Soft-sync at most once per process every few minutes.
+        const now = Date.now()
+        if (!Snippets._lastGistSyncAt || now - Snippets._lastGistSyncAt > 180_000) {
+            Snippets._lastGistSyncAt = now
+            try {
+                const gists = await listGists()
+                const gistIds = new Set(gists.map(g => g.id))
+                const dead = snippets.filter(s => !gistIds.has(s.id))
+                if (dead.length) {
+                    update('snippets.json', d => d.filter(x => gistIds.has(x.id)), 'sync index with existing gists').catch(() => {})
+                    return snippets.filter(s => gistIds.has(s.id))
+                }
+            } catch {
+                // If GitHub is slow/down, still serve the index
+            }
         }
-        return live
+        return snippets
     },
     async byUserLive(username) {
-        const live = await this.allLive()
-        return live.filter(x => x.ownerUsername === username)
+        const all = await this.all()
+        return all.filter(x => x.ownerUsername === username)
     },
 
     async uniqueShortId() {

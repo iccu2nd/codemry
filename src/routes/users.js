@@ -13,9 +13,9 @@ function genApiKey() {
 }
 
 router.patch('/me', async (req, res) => {
-    if (!req.username) return res.status(401).json({ error: 'login dulu' })
+    if (!req.username) return res.status(401).json({ error: 'Please sign in' })
     const user = await Users.find(req.username)
-    if (!user) return res.status(401).json({ error: 'login dulu' })
+    if (!user) return res.status(401).json({ error: 'Please sign in' })
     const { bio, nickname, username, hideBadges, profileMusic } = req.body
 
     try {
@@ -39,14 +39,14 @@ router.patch('/me', async (req, res) => {
         if (typeof username === 'string' && username.trim() && username.trim().toLowerCase() !== req.username.toLowerCase()) {
             const newUsername = username.trim()
             if (!/^[a-zA-Z0-9_.]{3,20}$/.test(newUsername)) {
-                return res.status(400).json({ error: 'Username 3-20 karakter, cuma huruf/angka/_/. ya' })
+                return res.status(400).json({ error: 'Username must be 3–20 characters (letters, numbers, _ or .)' })
             }
             if (user.usernameChangedAt && Date.now() - user.usernameChangedAt < USERNAME_COOLDOWN_MS) {
                 const daysLeft = Math.ceil((USERNAME_COOLDOWN_MS - (Date.now() - user.usernameChangedAt)) / (24 * 60 * 60 * 1000))
-                return res.status(429).json({ error: `Baru bisa ganti username lagi dalam ${daysLeft} hari` })
+                return res.status(429).json({ error: `You can change username again in ${daysLeft} day(s)` })
             }
             if (await Users.find(newUsername)) {
-                return res.status(409).json({ error: 'username sudah dipakai' })
+                return res.status(409).json({ error: 'Username is taken' })
             }
             await renameUsername(req.username, newUsername)
             finalUsername = newUsername
@@ -65,14 +65,14 @@ router.patch('/me', async (req, res) => {
             usernameChangedAt: updated.usernameChangedAt || null
         })
     } catch (e) {
-        res.status(500).json({ error: e.response?.data?.message || e.message || 'Gagal update profil, coba lagi' })
+        res.status(500).json({ error: e.response?.data?.message || e.message || 'Could not update profile, try again' })
     }
 })
 
 router.post('/me/avatar', async (req, res) => {
-    if (!req.username) return res.status(401).json({ error: 'login dulu' })
+    if (!req.username) return res.status(401).json({ error: 'Please sign in' })
     const { imageBase64, ext } = req.body
-    if (!imageBase64) return res.status(400).json({ error: 'gambar wajib' })
+    if (!imageBase64) return res.status(400).json({ error: 'Image is required' })
     const safeExt = ALLOWED_IMAGE_EXT.has(String(ext || '').toLowerCase()) ? String(ext).toLowerCase() : 'jpg'
     try {
         const path = `avatars/${req.username}.${safeExt}`
@@ -86,9 +86,9 @@ router.post('/me/avatar', async (req, res) => {
 })
 
 router.post('/me/banner', async (req, res) => {
-    if (!req.username) return res.status(401).json({ error: 'login dulu' })
+    if (!req.username) return res.status(401).json({ error: 'Please sign in' })
     const { imageBase64, ext } = req.body
-    if (!imageBase64) return res.status(400).json({ error: 'gambar wajib' })
+    if (!imageBase64) return res.status(400).json({ error: 'Image is required' })
     const safeExt = ALLOWED_IMAGE_EXT.has(String(ext || '').toLowerCase()) ? String(ext).toLowerCase() : 'jpg'
     try {
         const path = `banners/${req.username}.${safeExt}`
@@ -106,10 +106,10 @@ router.post('/me/banner', async (req, res) => {
 // API Key" (lihat POST /me/apikey/generate di bawah). Ini penting biar key
 // gak otomatis kebuat cuma gara-gara user buka halaman API Docs.
 router.get('/me/apikey', async (req, res) => {
-    if (!req.username) return res.status(401).json({ error: 'login dulu' })
+    if (!req.username) return res.status(401).json({ error: 'Please sign in' })
     try {
         const user = await Users.find(req.username)
-        if (!user) return res.status(401).json({ error: 'login dulu' })
+        if (!user) return res.status(401).json({ error: 'Please sign in' })
         res.json({ apiKey: user.apiKey || null, createdAt: user.apiKeyCreatedAt || null })
     } catch (e) {
         res.status(500).json({ error: e.response?.data?.message || e.message })
@@ -120,11 +120,11 @@ router.get('/me/apikey', async (req, res) => {
 // Key" secara manual. Kalau user udah punya key, tolak dan arahkan buat
 // pakai endpoint regenerate (biar gak ke-generate ulang tanpa sadar/konfirmasi).
 router.post('/me/apikey/generate', async (req, res) => {
-    if (!req.username) return res.status(401).json({ error: 'login dulu' })
+    if (!req.username) return res.status(401).json({ error: 'Please sign in' })
     try {
         const user = await Users.find(req.username)
-        if (!user) return res.status(401).json({ error: 'login dulu' })
-        if (user.apiKey) return res.status(409).json({ error: 'Kamu udah punya API key. Pakai tombol Regenerate kalau mau ganti.' })
+        if (!user) return res.status(401).json({ error: 'Please sign in' })
+        if (user.apiKey) return res.status(409).json({ error: 'You already have an API key. Use Regenerate to change it.' })
         const apiKey = genApiKey()
         const stamp = Date.now()
         await Users.update(req.username, { apiKey, apiKeyCreatedAt: stamp })
@@ -137,7 +137,7 @@ router.post('/me/apikey/generate', async (req, res) => {
 // Ganti key lama dengan yang baru -- dipakai kalau user udah punya key dan
 // mau regenerate. Key lama langsung invalid begitu ini dipanggil.
 router.post('/me/apikey/regenerate', async (req, res) => {
-    if (!req.username) return res.status(401).json({ error: 'login dulu' })
+    if (!req.username) return res.status(401).json({ error: 'Please sign in' })
     try {
         const apiKey = genApiKey()
         const stamp = Date.now()
@@ -151,7 +151,7 @@ router.post('/me/apikey/regenerate', async (req, res) => {
 router.get('/leaderboard', async (req, res) => {
     try {
         const [users, snippets, follows, likes] = await Promise.all([
-            Users.all(), Snippets.allLive(), Follows.all(), Likes.all()
+            Users.all(), Snippets.allPublic(), Follows.all(), Likes.all()
         ])
         const publicSnippets = snippets.filter(s => s.isPublic)
         const likesByShortId = new Map()
@@ -198,7 +198,7 @@ router.get('/leaderboard', async (req, res) => {
 
 router.get('/:username', async (req, res) => {
     const user = await Users.find(req.params.username)
-    if (!user) return res.status(404).json({ error: 'user tidak ditemukan' })
+    if (!user) return res.status(404).json({ error: 'User not found' })
     const [followers, following, snippets] = await Promise.all([
         Follows.followers(user.username),
         Follows.following(user.username),
@@ -262,10 +262,10 @@ router.get('/:username/followers', async (req, res) => res.json(await withAvatar
 router.get('/:username/following', async (req, res) => res.json(await withAvatars(await Follows.following(req.params.username))))
 
 router.post('/:username/follow', async (req, res) => {
-    if (!req.username) return res.status(401).json({ error: 'login dulu' })
+    if (!req.username) return res.status(401).json({ error: 'Please sign in' })
     if (req.username === req.params.username) return res.status(400).json({ error: 'tidak bisa follow diri sendiri' })
     const target = await Users.find(req.params.username)
-    if (!target) return res.status(404).json({ error: 'user tidak ditemukan' })
+    if (!target) return res.status(404).json({ error: 'User not found' })
     await Follows.toggle(req.username, target.username)
     const following = await Follows.isFollowing(req.username, target.username)
     if (following) {

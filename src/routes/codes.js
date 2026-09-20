@@ -10,7 +10,7 @@ const tooManyAttempts = createRateLimiter(8)
 const tooManyReports = createRateLimiter(5)
 
 function requireAuth(req, res, next) {
-    if (!req.username) return res.status(401).json({ error: 'login dulu' })
+    if (!req.username) return res.status(401).json({ error: 'Please sign in' })
     next()
 }
 
@@ -159,7 +159,7 @@ router.post('/', requireAuth, async (req, res) => {
 
 router.get('/', async (req, res) => {
     try {
-        const [live, users] = await Promise.all([Snippets.allLive(), Users.all()])
+        const [live, users] = await Promise.all([Snippets.allPublic(), Users.all()])
         const avatarByUsername = new Map(users.map(u => [u.username, avatarUrl(u)]))
         const nicknameByUsername = new Map(users.map(u => [u.username, u.nickname || u.username]))
         const displayByUsername = new Map(users.map(u => [u.username, badgeDisplay(u, readBadges(u))]))
@@ -196,7 +196,7 @@ router.get('/', async (req, res) => {
 router.get('/liked', requireAuth, async (req, res) => {
     try {
         const likedIds = await Likes.likedShortIds(req.username)
-        const [live, users] = await Promise.all([Snippets.allLive(), Users.all()])
+        const [live, users] = await Promise.all([Snippets.allPublic(), Users.all()])
         const avatarByUsername = new Map(users.map(u => [u.username, avatarUrl(u)]))
         const nicknameByUsername = new Map(users.map(u => [u.username, u.nickname || u.username]))
         const displayByUsername = new Map(users.map(u => [u.username, badgeDisplay(u, readBadges(u))]))
@@ -230,7 +230,7 @@ router.get('/liked', requireAuth, async (req, res) => {
 router.get('/bookmarked', requireAuth, async (req, res) => {
     try {
         const savedIds = await Bookmarks.savedShortIds(req.username)
-        const [live, users] = await Promise.all([Snippets.allLive(), Users.all()])
+        const [live, users] = await Promise.all([Snippets.allPublic(), Users.all()])
         const avatarByUsername = new Map(users.map(u => [u.username, avatarUrl(u)]))
         const nicknameByUsername = new Map(users.map(u => [u.username, u.nickname || u.username]))
         const displayByUsername = new Map(users.map(u => [u.username, badgeDisplay(u, readBadges(u))]))
@@ -265,7 +265,7 @@ router.get('/bookmarked', requireAuth, async (req, res) => {
 
 router.get('/:shortId', async (req, res) => {
     const snippet = await Snippets.findByShort(req.params.shortId)
-    if (!snippet) return res.status(404).json({ error: 'tidak ditemukan' })
+    if (!snippet) return res.status(404).json({ error: 'Not found' })
     const isOwner = req.username && req.username === snippet.ownerUsername
     const owner = await Users.find(snippet.ownerUsername)
     const ownerDisplay = badgeDisplay(owner, owner ? readBadges(owner) : [])
@@ -331,10 +331,10 @@ router.get('/:shortId', async (req, res) => {
 
 router.post('/:shortId/unlock', async (req, res) => {
     const snippet = await Snippets.findByShort(req.params.shortId)
-    if (!snippet) return res.status(404).json({ error: 'tidak ditemukan' })
-    if (!snippet.isLocked) return res.status(400).json({ error: 'kode ini tidak dikunci' })
+    if (!snippet) return res.status(404).json({ error: 'Not found' })
+    if (!snippet.isLocked) return res.status(400).json({ error: 'This code is not locked' })
     const key = `${req.ip}:${snippet.shortId}`
-    if (tooManyAttempts(key)) return res.status(429).json({ error: 'Terlalu banyak percobaan, coba lagi nanti' })
+    if (tooManyAttempts(key)) return res.status(429).json({ error: 'Too many attempts, try again later' })
     const ok = await verifyPin(req.body.pin, snippet.pinHash)
     if (!ok) return res.status(403).json({ error: 'Wrong password' })
     try {
@@ -356,14 +356,14 @@ router.post('/:shortId/unlock', async (req, res) => {
             ownerBadges: ownerDisplay.badges, ownerAvatar: owner ? avatarUrl(owner) : null, ownerNickname: owner ? (owner.nickname || owner.username) : null, ownerRole: ownerDisplay.role, ownerIsDeveloper: ownerDisplay.isDeveloper
         })
     } catch (e) {
-        if (e.response?.status === 404) return res.status(404).json({ error: 'kode ini sudah dihapus dari gist' })
+        if (e.response?.status === 404) return res.status(404).json({ error: 'This code was deleted from GitHub Gist' })
         res.status(500).json({ error: e.response?.data?.message || e.message })
     }
 })
 
 router.patch('/:shortId', requireAuth, async (req, res) => {
     const snippet = await Snippets.findByShort(req.params.shortId)
-    if (!snippet) return res.status(404).json({ error: 'tidak ditemukan' })
+    if (!snippet) return res.status(404).json({ error: 'Not found' })
     if (snippet.ownerUsername !== req.username) return res.status(403).json({ error: 'bukan milikmu' })
 
     const { title, description, filename, language, content, isPublic, tags, pin, removePin } = req.body
@@ -411,7 +411,7 @@ router.patch('/:shortId', requireAuth, async (req, res) => {
 
 router.delete('/:shortId', requireAuth, async (req, res) => {
     const snippet = await Snippets.findByShort(req.params.shortId)
-    if (!snippet) return res.status(404).json({ error: 'tidak ditemukan' })
+    if (!snippet) return res.status(404).json({ error: 'Not found' })
     if (snippet.ownerUsername !== req.username) return res.status(403).json({ error: 'bukan milikmu' })
     try {
         await deleteGist(snippet.id)
@@ -428,7 +428,7 @@ router.delete('/:shortId', requireAuth, async (req, res) => {
 
 router.post('/:shortId/like', requireAuth, async (req, res) => {
     const snippet = await Snippets.findByShort(req.params.shortId)
-    if (!snippet) return res.status(404).json({ error: 'tidak ditemukan' })
+    if (!snippet) return res.status(404).json({ error: 'Not found' })
     const liked = await Likes.toggle(req.username, req.params.shortId)
     const likes = await Likes.count(req.params.shortId)
     if (liked) {
@@ -439,14 +439,14 @@ router.post('/:shortId/like', requireAuth, async (req, res) => {
 
 router.post('/:shortId/bookmark', requireAuth, async (req, res) => {
     const snippet = await Snippets.findByShort(req.params.shortId)
-    if (!snippet) return res.status(404).json({ error: 'tidak ditemukan' })
+    if (!snippet) return res.status(404).json({ error: 'Not found' })
     const saved = await Bookmarks.toggle(req.username, req.params.shortId)
     res.json({ saved })
 })
 
 router.post('/:shortId/fork', requireAuth, async (req, res) => {
     const snippet = await Snippets.findByShort(req.params.shortId)
-    if (!snippet) return res.status(404).json({ error: 'tidak ditemukan' })
+    if (!snippet) return res.status(404).json({ error: 'Not found' })
     if (!snippet.isPublic) return res.status(403).json({ error: 'kode privat tidak bisa di-fork' })
     if (snippet.isLocked && snippet.ownerUsername !== req.username) return res.status(403).json({ error: 'kode terkunci tidak bisa di-fork' })
     try {
@@ -484,12 +484,12 @@ router.post('/:shortId/fork', requireAuth, async (req, res) => {
 
 router.post('/:shortId/report', requireAuth, async (req, res) => {
     const snippet = await Snippets.findByShort(req.params.shortId)
-    if (!snippet) return res.status(404).json({ error: 'tidak ditemukan' })
-    if (snippet.ownerUsername === req.username) return res.status(400).json({ error: 'gak bisa melaporkan kode sendiri' })
+    if (!snippet) return res.status(404).json({ error: 'Not found' })
+    if (snippet.ownerUsername === req.username) return res.status(400).json({ error: 'You cannot report your own code' })
     const reason = String(req.body.reason || '')
-    if (!REPORT_REASONS.includes(reason)) return res.status(400).json({ error: 'alasan laporan tidak valid' })
-    if (tooManyReports(req.username)) return res.status(429).json({ error: 'Terlalu banyak laporan, coba lagi nanti' })
-    if (await Reports.hasPendingFrom(req.username, snippet.shortId)) return res.status(400).json({ error: 'kamu sudah melaporkan kode ini, tunggu ditinjau owner' })
+    if (!REPORT_REASONS.includes(reason)) return res.status(400).json({ error: 'Invalid report reason' })
+    if (tooManyReports(req.username)) return res.status(429).json({ error: 'Too many reports, try again later' })
+    if (await Reports.hasPendingFrom(req.username, snippet.shortId)) return res.status(400).json({ error: 'You already reported this code' })
     try {
         const detail = String(req.body.detail || '').trim().slice(0, 300)
         await Reports.create({ shortId: snippet.shortId, ownerUsername: snippet.ownerUsername, fromUsername: req.username, reason, detail })
@@ -516,7 +516,7 @@ function withAuthorIdentity(item, byUsername) {
 
 router.get('/:shortId/comments', async (req, res) => {
     const snippet = await Snippets.findByShort(req.params.shortId)
-    if (!snippet) return res.status(404).json({ error: 'tidak ditemukan' })
+    if (!snippet) return res.status(404).json({ error: 'Not found' })
     const [comments, users] = await Promise.all([Comments.forSnippet(req.params.shortId), Users.all()])
     const byUsername = new Map(users.map(u => [u.username, u]))
     res.json(comments.map(c => {
@@ -530,11 +530,11 @@ router.get('/:shortId/comments', async (req, res) => {
 
 router.post('/:shortId/comments', requireAuth, async (req, res) => {
     const snippet = await Snippets.findByShort(req.params.shortId)
-    if (!snippet) return res.status(404).json({ error: 'tidak ditemukan' })
+    if (!snippet) return res.status(404).json({ error: 'Not found' })
     const text = String(req.body.text || '').trim()
     const stickerUrl = req.body.stickerUrl ? String(req.body.stickerUrl).trim() : ''
-    if (stickerUrl && !isValidStickerUrl(stickerUrl)) return res.status(400).json({ error: 'stiker tidak valid' })
-    if (!text && !stickerUrl) return res.status(400).json({ error: 'komentar tidak boleh kosong' })
+    if (stickerUrl && !isValidStickerUrl(stickerUrl)) return res.status(400).json({ error: 'Invalid sticker' })
+    if (!text && !stickerUrl) return res.status(400).json({ error: 'Comment cannot be empty' })
     if (text.length > 500) return res.status(400).json({ error: 'komentar maksimal 500 karakter' })
     const comment = {
         id: crypto.randomBytes(6).toString('hex'),
@@ -577,14 +577,14 @@ router.delete('/:shortId/comments/:commentId', requireAuth, async (req, res) => 
 // buat nunjukin dia lagi membalas siapa persisnya.
 router.post('/:shortId/comments/:commentId/reply', requireAuth, async (req, res) => {
     const snippet = await Snippets.findByShort(req.params.shortId)
-    if (!snippet) return res.status(404).json({ error: 'tidak ditemukan' })
+    if (!snippet) return res.status(404).json({ error: 'Not found' })
     const comments = await Comments.forSnippet(req.params.shortId)
     const originalComment = comments.find(c => c.id === req.params.commentId)
     if (!originalComment) return res.status(404).json({ error: 'komentar tidak ditemukan' })
 
     const text = String(req.body.text || '').trim()
     const stickerUrl = req.body.stickerUrl ? String(req.body.stickerUrl).trim() : ''
-    if (stickerUrl && !isValidStickerUrl(stickerUrl)) return res.status(400).json({ error: 'stiker tidak valid' })
+    if (stickerUrl && !isValidStickerUrl(stickerUrl)) return res.status(400).json({ error: 'Invalid sticker' })
     if (!text && !stickerUrl) return res.status(400).json({ error: 'balasan tidak boleh kosong' })
     if (text.length > 500) return res.status(400).json({ error: 'balasan maksimal 500 karakter' })
 
@@ -621,7 +621,7 @@ router.post('/:shortId/comments/:commentId/reply', requireAuth, async (req, res)
 
 router.delete('/:shortId/comments/:commentId/reply/:replyId', requireAuth, async (req, res) => {
     const snippet = await Snippets.findByShort(req.params.shortId)
-    if (!snippet) return res.status(404).json({ error: 'tidak ditemukan' })
+    if (!snippet) return res.status(404).json({ error: 'Not found' })
     const comments = await Comments.forSnippet(req.params.shortId)
     const comment = comments.find(c => c.id === req.params.commentId)
     if (!comment) return res.status(404).json({ error: 'komentar tidak ditemukan' })

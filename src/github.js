@@ -71,7 +71,7 @@ export async function initGithub() {
 // tiap instance otomatis nyegat ulang data terbaru dalam hitungan detik --
 // tetep kerasa cepet buat request yang beruntun (gak nembak GitHub API tiap
 // kali), tapi gak nyimpen data basi lama-lama kalau nyasar ke instance lain.
-const DB_CACHE_TTL_MS = 5_000
+const DB_CACHE_TTL_MS = 12_000
 const dbCache = new Map()
 
 function cacheGetDb(path) {
@@ -117,7 +117,7 @@ export async function writeDbFile(path, data, sha, message) {
     }
 }
 
-const GIST_TTL_MS = 20_000
+const GIST_TTL_MS = 60_000
 const gistCache = new Map()
 let gistListCache = null
 
@@ -185,7 +185,7 @@ export async function editGist(id, files, description) {
 // (bisa berjam-jam). Fixnya sama polanya kayak `dbCache` di atas: kasih TTL
 // pendek, jadi tiap instance otomatis nyegat ulang isi file yang terbaru
 // dalam hitungan detik.
-const ASSET_TTL_MS = 5_000
+const ASSET_TTL_MS = 15_000
 const assetShaCache = new Map()
 const assetContentCache = new Map()
 

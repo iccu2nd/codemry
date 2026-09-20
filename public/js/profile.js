@@ -38,7 +38,7 @@ async function renderProfileCollections(p) {
 async function renderProfile() {
   const app = document.getElementById('app')
   const username = qs('u')
-  if (!username) { app.innerHTML = `<div class="card"><div class="empty-state">Profil tidak ditemukan.</div></div>`; return }
+  if (!username) { app.innerHTML = `<div class="card"><div class="empty-state">Profile not found.</div></div>`; return }
   app.innerHTML = skelProfileHeader()
   try {
     const p = await api(`/users/${username}`)
@@ -48,13 +48,13 @@ async function renderProfile() {
         <div class="profile-banner-wrap${p.banner ? '' : ' no-banner'}">
           <div class="profile-banner-img" id="bannerImg" style="${p.banner ? `background-image:url('${p.banner}')` : ''}"></div>
           <div class="profile-banner-fade"></div>
-          ${p.isMe ? `<button type="button" class="banner-pencil-btn" id="bannerBtn" aria-label="Ganti foto sampul">${cameraIconSvg()}</button>` : ''}
+          ${p.isMe ? `<button type="button" class="banner-pencil-btn" id="bannerBtn" aria-label="Change cover photo">${cameraIconSvg()}</button>` : ''}
         </div>
         ${p.isMe ? `<input type="file" id="bannerInput" accept="image/*" style="display:none">` : ''}
         <div class="profile-head">
           <div class="avatar-wrap">
             <img class="avatar avatar-circle" id="avatarImg" src="${p.avatar}">
-            ${p.isMe ? `<button type="button" class="avatar-pencil-btn" id="avatarBtn" aria-label="Ganti foto profil">${cameraIconSvg()}</button>` : ''}
+            ${p.isMe ? `<button type="button" class="avatar-pencil-btn" id="avatarBtn" aria-label="Change profile photo">${cameraIconSvg()}</button>` : ''}
             <input type="file" id="avatarInput" accept="image/*" style="display:none">
           </div>
           <div class="profile-names">

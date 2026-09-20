@@ -279,9 +279,13 @@ async function loadFeed() {
 }
 
 document.getElementById('refreshBtn')?.addEventListener('click', loadFeed)
+let feedSearchTimer = null
 document.getElementById('feedSearch')?.addEventListener('input', () => {
-  resetFeedPage()
-  renderFeed()
+  clearTimeout(feedSearchTimer)
+  feedSearchTimer = setTimeout(() => {
+    resetFeedPage()
+    renderFeed()
+  }, 180)
 })
 document.getElementById('feedSortTabs')?.querySelectorAll('.feed-tab').forEach(btn => {
   btn.onclick = async () => {

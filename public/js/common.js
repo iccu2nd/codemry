@@ -1155,7 +1155,20 @@ function openStickerPicker() {
 
 function highlightAllIn(selector) {
   if (!window.hljs) return
-  document.querySelectorAll(selector).forEach(el => hljs.highlightElement(el))
+  const nodes = Array.from(document.querySelectorAll(selector))
+  // Highlight in small batches so long feeds stay responsive on mobile
+  let i = 0
+  function step() {
+    const end = Math.min(i + 4, nodes.length)
+    for (; i < end; i++) {
+      try { hljs.highlightElement(nodes[i]) } catch {}
+    }
+    if (i < nodes.length) {
+      if (window.requestIdleCallback) requestIdleCallback(step, { timeout: 200 })
+      else setTimeout(step, 0)
+    }
+  }
+  step()
 }
 
 // Apply html lang attribute ASAP
