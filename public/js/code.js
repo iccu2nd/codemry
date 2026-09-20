@@ -98,8 +98,16 @@ function renderUnlockedDetail(app, shortId, s) {
               <span class="zoom-level" id="zoomLevel">100%</span>
               <button type="button" class="zoom-btn" id="zoomInBtn" title="Zoom in">+</button>
             </div>
+            <button type="button" class="code-expand-btn" id="codeGrepBtn" title="Find in code">${searchIconSvg()}</button>
             <button type="button" class="code-expand-btn" id="codeWrapBtn" title="Wrap lines">${wrapIconSvg()}</button>
             <button type="button" class="code-expand-btn" id="codeFullscreenBtn" title="Fullscreen">${expandIconSvg()}</button>
+          </div>
+          <div class="code-grep-bar" id="codeGrepBar" hidden>
+            <input type="text" class="code-grep-input" id="codeGrepInput" placeholder="Find in code..." autocomplete="off" spellcheck="false">
+            <span class="code-grep-count" id="codeGrepCount"></span>
+            <button type="button" class="code-grep-nav" id="codeGrepPrev" title="Previous">↑</button>
+            <button type="button" class="code-grep-nav" id="codeGrepNext" title="Next">↓</button>
+            <button type="button" class="code-grep-close" id="codeGrepClose" title="Close">${closeIconSvg()}</button>
           </div>
           <pre class="code-view" id="codeViewPre"><code id="codeBlock" class="language-${hljsLang(s.language)}">${escapeHtml(s.content)}</code></pre>
         </div>
@@ -382,6 +390,121 @@ function renderUnlockedDetail(app, shortId, s) {
       }
     }
     if (wrapBtn) wrapBtn.onclick = () => setWrap(!wrapOn)
+
+    // --- Find in code (grep) ---
+    const grepBtn = document.getElementById('codeGrepBtn')
+    const grepBar = document.getElementById('codeGrepBar')
+    const grepInput = document.getElementById('codeGrepInput')
+    const grepCount = document.getElementById('codeGrepCount')
+    const grepPrev = document.getElementById('codeGrepPrev')
+    const grepNext = document.getElementById('codeGrepNext')
+    const grepClose = document.getElementById('codeGrepClose')
+    const originalCodeHtml = codeBlock.innerHTML
+    let grepMatches = []
+    let grepIndex = -1
+
+    function clearGrepHighlights() {
+      codeBlock.innerHTML = originalCodeHtml
+      grepMatches = []
+      grepIndex = -1
+      if (grepCount) grepCount.textContent = ''
+    }
+
+    function runGrep(query) {
+      clearGrepHighlights()
+      if (!query) return
+      const text = codeBlock.textContent || ''
+      const lowerText = text.toLowerCase()
+      const lowerQ = query.toLowerCase()
+      const ranges = []
+      let pos = 0
+      while (true) {
+        const i = lowerText.indexOf(lowerQ, pos)
+        if (i < 0) break
+        ranges.push([i, i + query.length])
+        pos = i + Math.max(1, query.length)
+      }
+      if (!ranges.length) {
+        if (grepCount) grepCount.textContent = '0'
+        return
+      }
+      let out = ''
+      let last = 0
+      ranges.forEach(([start, end], idx) => {
+        out += escapeHtml(text.slice(last, start))
+        out += `<mark class="code-grep-hit" data-grep-i="${idx}">${escapeHtml(text.slice(start, end))}</mark>`
+        last = end
+      })
+      out += escapeHtml(text.slice(last))
+      codeBlock.innerHTML = out
+      grepMatches = Array.from(codeBlock.querySelectorAll('mark.code-grep-hit'))
+      grepIndex = 0
+      updateGrepNav()
+      scrollToGrepMatch(0)
+    }
+
+    function updateGrepNav() {
+      if (!grepCount) return
+      if (!grepMatches.length) {
+        grepCount.textContent = '0'
+        return
+      }
+      grepCount.textContent = `${grepIndex + 1}/${grepMatches.length}`
+      grepMatches.forEach((m, i) => m.classList.toggle('code-grep-current', i === grepIndex))
+    }
+
+    function scrollToGrepMatch(i) {
+      if (!grepMatches[i]) return
+      grepMatches[i].scrollIntoView({ block: 'center', behavior: 'smooth' })
+    }
+
+    function gotoGrep(delta) {
+      if (!grepMatches.length) return
+      grepIndex = (grepIndex + delta + grepMatches.length) % grepMatches.length
+      updateGrepNav()
+      scrollToGrepMatch(grepIndex)
+    }
+
+    function openGrep() {
+      if (!grepBar) return
+      grepBar.hidden = false
+      if (grepInput) {
+        grepInput.value = ''
+        grepInput.focus()
+      }
+      clearGrepHighlights()
+    }
+
+    function closeGrep() {
+      if (!grepBar) return
+      grepBar.hidden = true
+      clearGrepHighlights()
+    }
+
+    if (grepBtn) grepBtn.onclick = () => {
+      if (grepBar && !grepBar.hidden) closeGrep()
+      else openGrep()
+    }
+    if (grepClose) grepClose.onclick = closeGrep
+    if (grepPrev) grepPrev.onclick = () => gotoGrep(-1)
+    if (grepNext) grepNext.onclick = () => gotoGrep(1)
+    if (grepInput) {
+      let grepTimer = null
+      grepInput.addEventListener('input', () => {
+        clearTimeout(grepTimer)
+        grepTimer = setTimeout(() => runGrep(grepInput.value.trim()), 120)
+      })
+      grepInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault()
+          if (e.shiftKey) gotoGrep(-1)
+          else gotoGrep(1)
+        } else if (e.key === 'Escape') {
+          e.preventDefault()
+          closeGrep()
+        }
+      })
+    }
 
     let pinchStartDist = 0, pinchStartZoom = 100
     function touchDist(touches) {
