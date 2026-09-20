@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none" aria-hidden="true">
+  <style>
+    .b { fill: currentColor; opacity: 0.1; }
+    .s { stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; opacity: 0.8; }
+    .f { fill: currentColor; opacity: 0.8; }
+    .a { stroke: currentColor; stroke-width: 2; stroke-linecap: round; opacity: 0.4; }
+    .d { fill: currentColor; opacity: 0.55; }
+  </style>
+
+  <ellipse cx="100" cy="180" rx="46" ry="7" class="b"/>
+  <rect x="56" y="54" width="88" height="102" rx="30" class="s"/>
+  <rect x="56" y="54" width="88" height="102" rx="30" class="b"/>
+  <path d="M56 74h88" class="a"/>
+  <circle cx="72" cy="65" r="3.2" class="d"/>
+  <circle cx="84" cy="65" r="3.2" class="d"/>
+  <circle cx="96" cy="65" r="3.2" class="d"/>
+  <!-- hard hat -->
+  <path d="M72 54a28 17 0 0 1 56 0z" class="s"/>
+  <path d="M68 54h64" class="a"/>
+  <!-- determined eyes -->
+  <path d="M80 104h10" class="s" stroke-width="3"/>
+  <path d="M112 104h10" class="s" stroke-width="3"/>
+  <path d="M92 124h16" class="s"/>
+  <!-- wrench -->
+  <path d="M36 34l14 14-8 8-4-4-10 10-8-8 10-10-4-4z" class="s"/>
+  <!-- gear -->
+  <circle cx="168" cy="126" r="13" class="a"/>
+  <circle cx="168" cy="126" r="5" class="d"/>
+  <path d="M168 110v6M168 136v6M152 126h6M178 126h6M156 114l4 4M180 138l4 4M180 114l-4 4M156 138l-4 4" class="a" stroke-width="1.6"/>
+  <!-- arms working -->
+  <path d="M56 116c-10 4-14 12-10 20" class="s"/>
+  <path d="M144 112c12 6 16 16 10 26" class="s"/>
+  <!-- progress bar -->
+  <rect x="70" y="182" width="60" height="6" rx="3" class="a"/>
+  <rect x="70" y="182" width="30" height="6" rx="3" class="d"/>
+  <path d="M78 150v14M122 150v14" class="s"/>
+  <path d="M70 164h16M114 164h16" class="s"/>
+</svg>

@@ -1269,17 +1269,17 @@ document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal
 
 /* ---- Codery mascots (empty / error / success states) ---- */
 const MASCOT = {
-  search: '/mascots/search.png',
-  noResults: '/mascots/no-results.png',
-  emptyFeed: '/mascots/empty-feed.png',
-  emptyNotifications: '/mascots/empty-notifications.png',
-  emptyProfile: '/mascots/empty-profile.png',
-  upload: '/mascots/upload.png',
-  success: '/mascots/success.png',
-  error: '/mascots/error.png',
-  notFound: '/mascots/not-found.png',
-  comingSoon: '/mascots/coming-soon.png',
-  noCode: '/mascots/no-code.png'
+  search: '/mascots/search.svg',
+  noResults: '/mascots/no-results.svg',
+  emptyFeed: '/mascots/empty-feed.svg',
+  emptyNotifications: '/mascots/empty-notifications.svg',
+  emptyProfile: '/mascots/empty-profile.svg',
+  upload: '/mascots/upload.svg',
+  success: '/mascots/success.svg',
+  error: '/mascots/error.svg',
+  notFound: '/mascots/not-found.svg',
+  comingSoon: '/mascots/coming-soon.svg',
+  noCode: '/mascots/no-code.svg'
 }
 
 function mascotHtml(key, size = 140) {

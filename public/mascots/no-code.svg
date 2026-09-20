@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none" aria-hidden="true">
+  <style>
+    .b { fill: currentColor; opacity: 0.1; }
+    .s { stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; opacity: 0.8; }
+    .f { fill: currentColor; opacity: 0.8; }
+    .a { stroke: currentColor; stroke-width: 2; stroke-linecap: round; opacity: 0.4; }
+    .d { fill: currentColor; opacity: 0.55; }
+  </style>
+
+  <ellipse cx="100" cy="180" rx="46" ry="7" class="b"/>
+  <rect x="56" y="54" width="88" height="102" rx="30" class="s"/>
+  <rect x="56" y="54" width="88" height="102" rx="30" class="b"/>
+  <path d="M56 74h88" class="a"/>
+  <circle cx="72" cy="65" r="3.2" class="d"/>
+  <circle cx="84" cy="65" r="3.2" class="d"/>
+  <circle cx="96" cy="65" r="3.2" class="d"/>
+  <!-- soft patient eyes, slight tilt -->
+  <circle cx="85" cy="102" r="4.5" class="f"/>
+  <circle cx="115" cy="100" r="4.5" class="f"/>
+  <path d="M91 120c4 4 13 4 17 0" class="s"/>
+  <!-- empty code tag hugged close -->
+  <rect x="76" y="108" width="48" height="32" rx="9" class="a"/>
+  <path d="M90 116l-7 8 7 8M110 116l7 8-7 8M102 114l-5 20" class="s" stroke-width="2.2"/>
+  <!-- hugging arms -->
+  <path d="M56 116c2 12 12 18 20 18" class="s"/>
+  <path d="M144 116c-2 12-12 18-20 18" class="s"/>
+  <path d="M78 150v14M122 150v14" class="s"/>
+  <path d="M70 164h16M114 164h16" class="s"/>
+</svg>

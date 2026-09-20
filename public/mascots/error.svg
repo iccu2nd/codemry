@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none" aria-hidden="true">
+  <style>
+    .b { fill: currentColor; opacity: 0.1; }
+    .s { stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; opacity: 0.8; }
+    .f { fill: currentColor; opacity: 0.8; }
+    .a { stroke: currentColor; stroke-width: 2; stroke-linecap: round; opacity: 0.4; }
+    .d { fill: currentColor; opacity: 0.55; }
+  </style>
+
+  <ellipse cx="100" cy="180" rx="46" ry="7" class="b"/>
+  <rect x="56" y="54" width="88" height="102" rx="30" class="s"/>
+  <rect x="56" y="54" width="88" height="102" rx="30" class="b"/>
+  <path d="M56 74h88" class="a"/>
+  <circle cx="72" cy="65" r="3.2" class="d"/>
+  <circle cx="84" cy="65" r="3.2" class="d"/>
+  <circle cx="96" cy="65" r="3.2" class="d"/>
+  <!-- X eyes -->
+  <path d="M80 100l8 8M88 100l-8 8" class="s"/>
+  <path d="M112 100l8 8M120 100l-8 8" class="s"/>
+  <path d="M90 126c4-4 16-4 20 0" class="s"/>
+  <!-- alert triangle -->
+  <path d="M158 26l16 26h-32z" class="s"/>
+  <path d="M158 37v8" class="s" stroke-width="3"/>
+  <circle cx="158" cy="50" r="1.8" class="f"/>
+  <!-- cracked card -->
+  <rect x="26" y="36" width="32" height="24" rx="5" class="a"/>
+  <path d="M32 40l6 8-7 6 9 4" class="s" stroke-width="1.8"/>
+  <!-- worried arms -->
+  <path d="M56 118c-12 8-16 20-8 28" class="s"/>
+  <path d="M144 118c12 8 16 20 8 28" class="s"/>
+  <path d="M78 150v14M122 150v14" class="s"/>
+  <path d="M70 164h16M114 164h16" class="s"/>
+</svg>

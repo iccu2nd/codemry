@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none" aria-hidden="true">
+  <style>
+    .b { fill: currentColor; opacity: 0.1; }
+    .s { stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; opacity: 0.8; }
+    .f { fill: currentColor; opacity: 0.8; }
+    .a { stroke: currentColor; stroke-width: 2; stroke-linecap: round; opacity: 0.4; }
+    .d { fill: currentColor; opacity: 0.55; }
+  </style>
+
+  <ellipse cx="100" cy="180" rx="46" ry="7" class="b"/>
+  <rect x="56" y="54" width="88" height="102" rx="30" class="s"/>
+  <rect x="56" y="54" width="88" height="102" rx="30" class="b"/>
+  <path d="M56 74h88" class="a"/>
+  <circle cx="72" cy="65" r="3.2" class="d"/>
+  <circle cx="84" cy="65" r="3.2" class="d"/>
+  <circle cx="96" cy="65" r="3.2" class="d"/>
+  <!-- flat unimpressed eyes -->
+  <path d="M80 104h8" class="s" stroke-width="2.8"/>
+  <path d="M112 104h8" class="s" stroke-width="2.8"/>
+  <path d="M90 124c4-3 16-3 20 0" class="s"/>
+  <!-- magnifier with X -->
+  <circle cx="142" cy="120" r="19" class="s"/>
+  <path d="M134 112l16 16M150 112l-16 16" class="s"/>
+  <path d="M155 133l14 14" class="s" stroke-width="3"/>
+  <path d="M58 116c-10 4-14 14-8 24" class="s"/>
+  <path d="M144 110c8 4 12 12 10 20" class="s"/>
+  <path d="M78 150v14M122 150v14" class="s"/>
+  <path d="M70 164h16M114 164h16" class="s"/>
+</svg>

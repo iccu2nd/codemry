@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none" aria-hidden="true">
+  <style>
+    .b { fill: currentColor; opacity: 0.1; }
+    .s { stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; opacity: 0.8; }
+    .f { fill: currentColor; opacity: 0.8; }
+    .a { stroke: currentColor; stroke-width: 2; stroke-linecap: round; opacity: 0.4; }
+    .d { fill: currentColor; opacity: 0.55; }
+  </style>
+
+  <ellipse cx="100" cy="180" rx="46" ry="7" class="b"/>
+  <rect x="62" y="54" width="88" height="102" rx="30" class="s"/>
+  <rect x="62" y="54" width="88" height="102" rx="30" class="b"/>
+  <path d="M62 74h88" class="a"/>
+  <circle cx="78" cy="65" r="3.2" class="d"/>
+  <circle cx="90" cy="65" r="3.2" class="d"/>
+  <circle cx="102" cy="65" r="3.2" class="d"/>
+  <!-- calm patient face -->
+  <circle cx="92" cy="100" r="4.5" class="f"/>
+  <circle cx="120" cy="100" r="4.5" class="f"/>
+  <path d="M98 120c4 3 12 3 16 0" class="s"/>
+  <!-- id card, clear to the left -->
+  <rect x="16" y="98" width="52" height="40" rx="9" class="s"/>
+  <circle cx="33" cy="115" r="7" class="a"/>
+  <path d="M24 130c2-5 7-7 9-7s7 2 9 7" class="a"/>
+  <path d="M48 110h14M48 118h10" class="a"/>
+  <path d="M62 118c-6 3-9 8-9 14" class="s"/>
+  <path d="M150 112c12 8 16 20 8 30" class="s"/>
+  <path d="M84 150v14M128 150v14" class="s"/>
+  <path d="M76 164h16M120 164h16" class="s"/>
+</svg>
