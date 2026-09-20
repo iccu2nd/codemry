@@ -1266,59 +1266,133 @@ document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal
 })()
 
 // --- Skeleton loading: dipakai buat gantiin teks "Memuat..." di semua halaman ---
-function skelLine(w = '100%', h = 12) { return `<div class="skeleton skel-line" style="width:${w};height:${h}px"></div>` }
-function skelAvatar(size = 38) { return `<div class="skeleton skel-avatar" style="width:${size}px;height:${size}px"></div>` }
-function skelBlock(h = 120, radius = 14) { return `<div class="skeleton skel-block" style="height:${h}px;border-radius:${radius}px"></div>` }
-
-function skelSnippetCard() {
-  return `<div class="skel-card">
-    <div class="skel-row">
-      ${skelAvatar(38)}
-      <div class="skel-col">${skelLine('42%', 13)}${skelLine('26%', 10)}</div>
-    </div>
-    ${skelLine('72%', 18)}
-    <div class="skel-col" style="margin:10px 0 0">${skelLine('100%', 13)}${skelLine('85%', 13)}</div>
-    ${skelBlock(120, 14)}
-    <div class="skel-tags">${skelLine('54px', 22)}${skelLine('70px', 22)}</div>
-  </div>`
+function skelLine(w = '100%', h = 12, extraClass = '') {
+  return `<div class="skeleton skel-line ${extraClass}" style="width:${w};height:${h}px"></div>`
 }
-function skelFeedList(n = 3) { return Array.from({ length: n }, skelSnippetCard).join('') }
+function skelAvatar(size = 36) {
+  return `<div class="skeleton skel-avatar" style="width:${size}px;height:${size}px;border-radius:50%"></div>`
+}
+function skelBlock(h = 120, radius = 10) {
+  return `<div class="skeleton skel-block" style="height:${h}px;border-radius:${radius}px"></div>`
+}
+function skelPill(w = '64px', h = 28) {
+  return `<div class="skeleton skel-pill" style="width:${w};height:${h}px"></div>`
+}
+
+// Realistic feed card skeleton — mirrors snippet-card structure & spacing
+const SKEL_FEED_VARIANTS = [
+  { name: '38%', meta: '52%', title: '68%', desc: [true, '92%', '58%'], tags: 2, preview: 118, actions: true },
+  { name: '44%', meta: '40%', title: '82%', desc: [false], tags: 3, preview: 132, actions: true },
+  { name: '32%', meta: '48%', title: '55%', desc: [true, '78%'], tags: 1, preview: 110, actions: true },
+  { name: '50%', meta: '36%', title: '74%', desc: [true, '88%', '42%'], tags: 2, preview: 124, actions: true }
+]
+
+function skelSnippetCard(variantIndex = 0) {
+  const v = SKEL_FEED_VARIANTS[variantIndex % SKEL_FEED_VARIANTS.length]
+  const descHtml = v.desc[0]
+    ? `<div class="skel-sc-desc">${v.desc.slice(1).map((w, i) => skelLine(w, 12)).join('')}</div>`
+    : ''
+  const tagsHtml = v.tags
+    ? `<div class="skel-sc-tags">${Array.from({ length: v.tags }, (_, i) => skelPill(i === 0 ? '52px' : i === 1 ? '64px' : '44px', 22)).join('')}</div>`
+    : ''
+  return `
+  <article class="skel-card skel-snippet-card" aria-hidden="true">
+    <header class="skel-sc-head">
+      ${skelAvatar(36)}
+      <div class="skel-sc-who">
+        ${skelLine(v.name, 13)}
+        ${skelLine(v.meta, 11)}
+      </div>
+    </header>
+    <div class="skel-sc-body">
+      ${skelLine(v.title, 17, 'skel-title')}
+      ${descHtml}
+    </div>
+    ${tagsHtml}
+    <div class="skel-sc-preview">
+      <div class="skel-sc-preview-bar">
+        ${skelLine('28%', 10)}
+        ${skelLine('18%', 10)}
+      </div>
+      ${skelBlock(v.preview, 0)}
+    </div>
+    <footer class="skel-sc-foot">
+      <div class="skel-sc-actions">
+        ${skelPill('36px', 28)}
+        ${skelPill('28px', 28)}
+        ${skelPill('28px', 28)}
+      </div>
+      ${skelPill('64px', 32)}
+    </footer>
+  </article>`
+}
+
+function skelFeedList(n = 3) {
+  return Array.from({ length: n }, (_, i) => skelSnippetCard(i)).join('')
+}
 
 function skelRow(avatarSize = 34) {
-  return `<div class="skel-card" style="display:flex;align-items:center;gap:12px;padding:14px 16px;margin-bottom:10px">
+  return `<div class="skel-card skel-row-card">
     ${skelAvatar(avatarSize)}
-    <div class="skel-col">${skelLine('50%', 13)}${skelLine('30%', 10)}</div>
+    <div class="skel-sc-who">${skelLine('48%', 13)}${skelLine('30%', 11)}</div>
   </div>`
 }
-function skelRowList(n = 4, avatarSize = 34) { return Array.from({ length: n }, () => skelRow(avatarSize)).join('') }
+function skelRowList(n = 4, avatarSize = 34) {
+  return Array.from({ length: n }, () => skelRow(avatarSize)).join('')
+}
 
 function skelProfileHeader() {
-  return `<div class="skel-card skel-card-plain">
-    <div class="skel-row">
-      ${skelAvatar(64)}
-      <div class="skel-col">${skelLine('55%', 20)}${skelLine('35%', 12)}</div>
+  return `<div class="skel-card skel-card-plain skel-profile">
+    <div class="skel-profile-banner skeleton"></div>
+    <div class="skel-sc-head skel-profile-head">
+      ${skelAvatar(72)}
+      <div class="skel-sc-who">${skelLine('48%', 18)}${skelLine('28%', 12)}</div>
     </div>
-    <div class="skel-tags" style="margin-top:18px">${skelLine('18%', 32)}${skelLine('18%', 32)}${skelLine('18%', 32)}${skelLine('18%', 32)}</div>
-    <div class="skel-col" style="margin-top:16px">${skelLine('100%', 12)}${skelLine('80%', 12)}</div>
+    <div class="skel-sc-desc" style="padding:0 16px 12px">
+      ${skelLine('100%', 12)}${skelLine('72%', 12)}
+    </div>
+    <div class="skel-sc-tags" style="padding:0 16px 16px">
+      ${skelPill('20%', 36)}${skelPill('20%', 36)}${skelPill('20%', 36)}${skelPill('20%', 36)}
+    </div>
   </div>`
 }
 
 function skelCodeDetail() {
-  return `<div class="skel-card skel-card-plain">
-    <div class="skel-row">${skelAvatar(34)}<div class="skel-col">${skelLine('40%', 13)}${skelLine('25%', 10)}</div></div>
-    ${skelLine('60%', 20)}
-    ${skelBlock(220, 18)}
-    <div class="skel-tags">${skelLine('90px', 40)}${skelLine('90px', 40)}</div>
+  return `<div class="skel-card skel-card-plain skel-code-detail" aria-hidden="true">
+    <header class="skel-sc-head">
+      ${skelAvatar(34)}
+      <div class="skel-sc-who">${skelLine('36%', 13)}${skelLine('24%', 11)}</div>
+    </header>
+    <div class="skel-sc-body">
+      ${skelLine('58%', 20, 'skel-title')}
+      ${skelLine('84%', 12)}
+    </div>
+    <div class="skel-sc-tags">
+      ${skelPill('88px', 36)}${skelPill('72px', 36)}${skelPill('72px', 36)}
+    </div>
+    <div class="skel-sc-preview skel-code-preview">
+      <div class="skel-sc-preview-bar">${skelLine('30%', 10)}${skelLine('14%', 10)}</div>
+      ${skelBlock(200, 0)}
+    </div>
+    <footer class="skel-sc-foot">
+      <div class="skel-sc-actions">${skelPill('72px', 34)}${skelPill('34px', 34)}</div>
+    </footer>
   </div>`
 }
 
 function skelCommentItem() {
-  return `<div class="skel-row" style="align-items:flex-start">
+  return `<div class="skel-sc-head skel-comment" style="align-items:flex-start;margin-bottom:14px">
     ${skelAvatar(30)}
-    <div class="skel-col">${skelLine('35%', 11)}${skelLine('90%', 13)}${skelLine('60%', 13)}</div>
+    <div class="skel-sc-who" style="gap:6px">
+      ${skelLine('32%', 11)}
+      ${skelLine('88%', 12)}
+      ${skelLine('55%', 12)}
+    </div>
   </div>`
 }
-function skelCommentList(n = 2) { return Array.from({ length: n }, skelCommentItem).join('') }
+function skelCommentList(n = 2) {
+  return Array.from({ length: n }, skelCommentItem).join('')
+}
 
 // PENTING: dulu fungsi ini bungkus kotak-kotak skeletonnya di dalam SATU div
 // `display:grid` sendiri, terus div itu ditaro sebagai satu-satunya isi dari

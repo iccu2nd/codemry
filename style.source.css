@@ -2601,24 +2601,147 @@ html:not(.light) .theme-switch input:checked ~ .theme-switch-text-dark {
    tiap kotak jadi layer GPU sendiri -- kalau ada puluhan sekaligus di satu
    halaman jadi berat banget pas scroll di HP low-end). Cukup 1 elemen per
    kotak, animasi background-position doang, gak ada layer tambahan. */
+/* Content-aware skeleton — mirrors feed card hierarchy */
 .skeleton {
-  background: linear-gradient(90deg, var(--bg-muted) 0%, var(--border) 50%, var(--bg-muted) 100%);
-  background-size: 200% 100%;
-  animation: skeleton-shimmer 1.6s ease-in-out infinite;
-  border-radius: 8px;
+  /* Dark default (app is dark-first) */
+  --skel-base: #1c1c1c;
+  --skel-shine: #2a2a2a;
+  background: linear-gradient(
+    105deg,
+    var(--skel-base) 0%,
+    var(--skel-base) 38%,
+    var(--skel-shine) 50%,
+    var(--skel-base) 62%,
+    var(--skel-base) 100%
+  );
+  background-size: 220% 100%;
+  animation: skeleton-shimmer 1.9s ease-in-out infinite;
+  border-radius: 6px;
 }
-@keyframes skeleton-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -50% 0; } }
-@media (prefers-reduced-motion: reduce) { .skeleton { animation: none; background: var(--bg-muted); } }
+html.light .skeleton {
+  --skel-base: #e8e8e8;
+  --skel-shine: #f3f3f3;
+}
 
-.skel-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 16px; margin-bottom: 12px; }
-.skel-card.skel-card-plain { border-radius: 28px; padding: 24px; }
+@keyframes skeleton-shimmer {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeleton { animation: none; background: var(--skel-base, var(--bg-muted)); }
+}
+
+.skel-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 0;
+  margin-bottom: 12px;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+.skel-card.skel-card-plain { border-radius: 16px; }
 .skel-row { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
-.skel-avatar { flex-shrink: 0; border-radius: 50%; }
+.skel-avatar { flex-shrink: 0; border-radius: 50% !important; }
 .skel-col { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
-.skel-line { height: 12px; border-radius: 6px; }
-.skel-block { border-radius: 14px; }
+.skel-line { border-radius: 5px; max-width: 100%; }
+.skel-line.skel-title { border-radius: 6px; }
+.skel-block { border-radius: 0; width: 100%; }
+.skel-pill { border-radius: 999px; flex-shrink: 0; }
 .skel-tags { display: flex; gap: 8px; margin-top: 12px; }
 .skel-tags .skel-line { border-radius: 999px; }
+
+/* Feed card skeleton layout (matches .snippet-card / .sc-*) */
+.skel-snippet-card { content-visibility: auto; }
+.skel-sc-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px 0;
+}
+.skel-sc-who {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.skel-sc-body {
+  padding: 10px 16px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.skel-sc-desc {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 2px;
+}
+.skel-sc-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 10px 16px 0;
+}
+.skel-sc-preview {
+  margin: 12px 16px 0;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+  background: color-mix(in srgb, var(--bg-muted) 40%, transparent);
+}
+.skel-sc-preview-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 7px 10px;
+  background: color-mix(in srgb, var(--bg-muted) 70%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+}
+.skel-sc-preview .skel-block {
+  opacity: .85;
+}
+.skel-sc-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 16px 14px;
+}
+.skel-sc-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.skel-row-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  border-radius: 14px;
+}
+.skel-profile-banner {
+  height: 96px;
+  width: 100%;
+  border-radius: 0 !important;
+}
+.skel-profile-head { padding: 12px 16px 8px; }
+.skel-code-preview { margin: 12px 0 0; border-radius: 12px; }
+.skel-code-detail .skel-sc-tags { padding-left: 0; padding-right: 0; }
+.skel-code-detail .skel-sc-foot { padding-left: 0; padding-right: 0; }
+.skel-code-detail .skel-sc-body { padding-left: 0; padding-right: 0; }
+.skel-code-detail .skel-sc-head { padding-left: 0; padding-right: 0; }
+
+@media (max-width: 480px) {
+  .skel-sc-head { padding: 12px 14px 0; }
+  .skel-sc-body { padding: 8px 14px 0; }
+  .skel-sc-tags { padding: 8px 14px 0; }
+  .skel-sc-preview { margin: 10px 14px 0; }
+  .skel-sc-foot { padding: 10px 14px 12px; }
+}
 
 .feed-toolbar { padding: 14px 16px; margin-bottom: 4px; }
 .feed-toolbar-inner { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
@@ -3212,9 +3335,6 @@ html.light .toast {
   margin: 0 0 8px;
 }
 /* skeleton never pure white */
-.skeleton, .skel-line, .skel-block, .skel-avatar {
-  background-color: var(--bg-muted) !important;
-}
 
 
 /* Related Code — horizontal mini cards */

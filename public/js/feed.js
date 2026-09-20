@@ -257,7 +257,7 @@ async function loadFollowing() {
 
 async function loadFeed() {
   const list = document.getElementById('feedList')
-  list.innerHTML = skelFeedList(3)
+  list.innerHTML = skelFeedList(4)
   try {
     await refreshAuth()
     const [codes] = await Promise.all([
