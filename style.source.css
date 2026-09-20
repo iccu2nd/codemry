@@ -3550,3 +3550,14 @@ html.light .toast {
   font-size: 11px; font-weight: 600; color: var(--text-muted);
   text-transform: lowercase;
 }
+
+.upload-draft-note {
+  margin: 8px 0 4px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: var(--bg-muted);
+  border: 1px solid var(--border);
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.upload-draft-note .link-btn-inline { font-size: 13px; }

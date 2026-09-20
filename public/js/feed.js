@@ -195,14 +195,16 @@ function renderFeed(opts = {}) {
   const query = (document.getElementById('feedSearch')?.value || '').trim().toLowerCase()
 
   let items = feedAll.filter(s => {
-    if (feedSort === 'following' && followingSet.size) {
+    if (feedSort === 'following') {
+      // Empty following list => show nothing (not the whole feed)
+      if (!followingSet.size) return false
       if (!followingSet.has((s.ownerUsername || '').toLowerCase())) return false
     }
     if (feedActiveTag && !(s.tags || []).includes(feedActiveTag)) return false
     if (feedActiveLang && (s.language || '').toLowerCase() !== feedActiveLang) return false
     if (!query) return true
     const haystack = [
-      s.title, s.description, s.language, s.filename,
+      s.title, s.description, s.language, s.filename, s.preview,
       s.ownerUsername, s.ownerNickname, ...(s.tags || [])
     ].join(' ').toLowerCase()
     return haystack.includes(query)
@@ -215,7 +217,7 @@ function renderFeed(opts = {}) {
   if (!items.length) {
     let msg = 'No public code yet. Be the first!'
     if (feedAll.length) {
-      if (feedSort === 'following') msg = followingSet.size ? 'No posts from people you follow yet.' : 'Follow someone to see their posts here.'
+      if (feedSort === 'following') msg = !me ? 'Sign in to see posts from people you follow.' : (followingSet.size ? 'No posts from people you follow yet.' : 'Follow someone to see their posts here.')
       else msg = 'No matches. Try another keyword.'
     }
     list.innerHTML = `<div class="empty-state">${msg}</div>`

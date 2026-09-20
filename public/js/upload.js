@@ -97,6 +97,7 @@ async function init() {
           </div>
           <div class="upload-panel-title">${t('yourCode')}</div>
           <div class="upload-panel-sub">${t('yourCodeSub')}</div>
+          ${draft && draft.content ? `<div class="upload-draft-note">Draft restored from this device. <button type="button" class="link-btn-inline" id="clearDraftBtn">Discard draft</button></div>` : ''}
           <div class="upload-source-row">
             <button type="button" class="btn btn-white btn-block" id="pickFileBtn">${uploadIconSvg()} ${t('chooseFile')}</button>
             <input type="file" id="fileInput" style="display:none" accept=".js,.jsx,.ts,.tsx,.py,.html,.htm,.css,.json,.java,.php,.sh,.md,.txt,.c,.cpp,.go,.rb,.rs,.kt,.swift,.xml,.yml,.yaml,.sql,.env">
@@ -315,6 +316,12 @@ async function init() {
     })
     document.getElementById('back2')?.addEventListener('click', () => { step = 1; render() })
     document.getElementById('back3')?.addEventListener('click', () => { step = 2; render() })
+
+    document.getElementById('clearDraftBtn')?.addEventListener('click', () => {
+      clearDraft()
+      toast('Draft discarded')
+      location.reload()
+    })
 
     form.onsubmit = async (e) => {
       e.preventDefault()

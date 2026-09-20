@@ -77,6 +77,7 @@ function renderUnlockedDetail(app, shortId, s) {
             <button type="button" class="cd-btn cd-more-btn" id="cdMoreBtn" aria-label="More" aria-expanded="false">${moreDotsSvg()}</button>
             <div class="cd-more-menu" id="cdMoreMenu" hidden>
               <button type="button" class="cd-more-item" id="shareBtn">${shareIconSvg()}<span>Share link</span></button>
+              <button type="button" class="cd-more-item" id="copyMdBtn">${markdownIconSvg()}<span>Copy as Markdown</span></button>
               <button type="button" class="cd-more-item" id="embedBtn">${embedIconSvg()}<span>Embed</span></button>
               <button type="button" class="cd-more-item" id="qrBtn">${qrIconSvg()}<span>QR code</span></button>
               ${!me || me.username !== s.ownerUsername ? `<button type="button" class="cd-more-item" id="forkBtn">${forkIconSvg()}<span>Fork</span></button>` : ''}
@@ -206,6 +207,13 @@ function renderUnlockedDetail(app, shortId, s) {
     }
 
     document.getElementById('shareBtn').onclick = () => { navigator.clipboard.writeText(location.href); toast('Link copied!') }
+    document.getElementById('copyMdBtn').onclick = () => {
+      const lang = (s.language || 'text').toLowerCase()
+      const title = s.title || s.filename || 'Code'
+      const body = s.content || ''
+      const md = `# ${title}\n\n\`\`\`${lang}\n${body}\n\`\`\`\n`
+      navigator.clipboard.writeText(md).then(() => toast('Markdown copied!')).catch(() => toast('Could not copy'))
+    }
 
     document.getElementById('embedBtn')?.addEventListener('click', () => {
       const url = location.origin + '/code?id=' + encodeURIComponent(s.shortId)
@@ -632,6 +640,40 @@ function renderUnlockedDetail(app, shortId, s) {
       if (e.key === 'Escape' && codeWindow.classList.contains('fullscreen')) fullscreenBtn.click()
     })
 
+    // Keyboard shortcuts (ignore when typing in inputs)
+    document.addEventListener('keydown', function codeShortcuts(e) {
+      const tag = (e.target && e.target.tagName || '').toLowerCase()
+      const typing = tag === 'input' || tag === 'textarea' || e.target?.isContentEditable
+      if (typing && e.key !== 'Escape') return
+      if (e.ctrlKey || e.metaKey || e.altKey) {
+        if ((e.key === 'f' || e.key === 'F') && !typing) {
+          e.preventDefault()
+          document.getElementById('codeGrepBtn')?.click()
+        }
+        return
+      }
+      if (e.key === '/' && !typing) {
+        e.preventDefault()
+        document.getElementById('codeGrepBtn')?.click()
+        return
+      }
+      if (typing) return
+      const k = e.key.toLowerCase()
+      if (k === 'w') {
+        e.preventDefault()
+        document.getElementById('codeWrapBtn')?.click()
+      } else if (k === 'f') {
+        e.preventDefault()
+        document.getElementById('codeFullscreenBtn')?.click()
+      } else if (k === 'c' && !e.shiftKey) {
+        // don't steal browser copy when selection exists
+        const sel = window.getSelection && String(window.getSelection())
+        if (sel && sel.length) return
+        e.preventDefault()
+        document.getElementById('copyBtn')?.click()
+      }
+    })
+
     const delBtn = document.getElementById('delBtn')
     if (delBtn) delBtn.onclick = async () => {
       if (!confirm('Delete this code?')) return
@@ -798,6 +840,9 @@ function qrIconSvg() {
   return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><path d="M13.5 13.5h3.2v3.2h-3.2z"/><path d="M18.5 13.5h2v2h-2z"/><path d="M13.5 18.5h2v2h-2z"/><path d="M18.5 18.5h2v2h-2z"/></svg>`
 }
 
+function markdownIconSvg() {
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.5h16v11H4z"/><path d="M7 15V9l2.5 3L12 9v6"/><path d="M15.5 12.5 17 15l1.5-2.5"/><path d="M17 9v6"/></svg>`
+}
 function wrapIconSvg() {
   return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h12"/><path d="M4 12h16"/><path d="M4 17h8"/><path d="M15 15l3 3-3 3"/><path d="M18 18h2a2 2 0 0 0 0-4h-1"/></svg>`
 }
