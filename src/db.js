@@ -364,6 +364,87 @@ export const Bookmarks = {
     }
 }
 
+
+export const Collections = {
+    async all() { return (await readDbFile('collections.json')).data },
+    async forUser(username, { includePrivate = false } = {}) {
+        const uname = String(username || '').toLowerCase()
+        const d = await this.all()
+        return d.filter(c => {
+            if (String(c.username || '').toLowerCase() !== uname) return false
+            if (!includePrivate && c.isPublic === false) return false
+            return true
+        }).sort((a, b) => (b.updatedAt || b.createdAt || 0) - (a.updatedAt || a.createdAt || 0))
+    },
+    async find(id) {
+        const d = await this.all()
+        return d.find(c => c.id === id)
+    },
+    async create({ username, name, description = '', isPublic = true }) {
+        const entry = {
+            id: crypto.randomUUID(),
+            username,
+            name: String(name || '').trim().slice(0, 60) || 'Untitled',
+            description: String(description || '').trim().slice(0, 200),
+            shortIds: [],
+            isPublic: !!isPublic,
+            createdAt: Date.now(),
+            updatedAt: Date.now()
+        }
+        await update('collections.json', d => [entry, ...d], `create collection ${entry.id} by ${username}`)
+        return entry
+    },
+    async update(id, username, patch) {
+        const uname = String(username || '').toLowerCase()
+        const updated = await update('collections.json', d => d.map(c => {
+            if (c.id !== id || String(c.username || '').toLowerCase() !== uname) return c
+            const next = { ...c, updatedAt: Date.now() }
+            if (typeof patch.name === 'string' && patch.name.trim()) next.name = patch.name.trim().slice(0, 60)
+            if (typeof patch.description === 'string') next.description = patch.description.trim().slice(0, 200)
+            if (typeof patch.isPublic === 'boolean') next.isPublic = patch.isPublic
+            if (Array.isArray(patch.shortIds)) {
+                const ids = [...new Set(patch.shortIds.map(String))].slice(0, 100)
+                next.shortIds = ids
+            }
+            return next
+        }), `update collection ${id}`)
+        return updated.find(c => c.id === id)
+    },
+    async addSnippet(id, username, shortId) {
+        const uname = String(username || '').toLowerCase()
+        const sid = String(shortId || '')
+        if (!sid) return null
+        const updated = await update('collections.json', d => d.map(c => {
+            if (c.id !== id || String(c.username || '').toLowerCase() !== uname) return c
+            if ((c.shortIds || []).includes(sid)) return c
+            const shortIds = [sid, ...(c.shortIds || [])].slice(0, 100)
+            return { ...c, shortIds, updatedAt: Date.now() }
+        }), `add ${sid} to collection ${id}`)
+        return updated.find(c => c.id === id)
+    },
+    async removeSnippet(id, username, shortId) {
+        const uname = String(username || '').toLowerCase()
+        const sid = String(shortId || '')
+        const updated = await update('collections.json', d => d.map(c => {
+            if (c.id !== id || String(c.username || '').toLowerCase() !== uname) return c
+            return { ...c, shortIds: (c.shortIds || []).filter(x => x !== sid), updatedAt: Date.now() }
+        }), `remove ${sid} from collection ${id}`)
+        return updated.find(c => c.id === id)
+    },
+    async remove(id, username) {
+        const uname = String(username || '').toLowerCase()
+        await update('collections.json', d => d.filter(c => !(c.id === id && String(c.username || '').toLowerCase() === uname)), `delete collection ${id}`)
+    },
+    async removeSnippetEverywhere(shortId) {
+        const sid = String(shortId || '')
+        if (!sid) return
+        await update('collections.json', d => d.map(c => {
+            if (!(c.shortIds || []).includes(sid)) return c
+            return { ...c, shortIds: c.shortIds.filter(x => x !== sid), updatedAt: Date.now() }
+        }), `remove deleted snippet ${sid} from collections`)
+    }
+}
+
 export const NOTIF_TYPES = ['like', 'comment', 'reply', 'follow', 'fork', 'report', 'upload']
 
 export const Notifications = {

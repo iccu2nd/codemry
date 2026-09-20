@@ -78,6 +78,7 @@ function renderUnlockedDetail(app, shortId, s) {
             <div class="cd-more-menu" id="cdMoreMenu" hidden>
               <button type="button" class="cd-more-item" id="shareBtn">${shareIconSvg()}<span>Share link</span></button>
               <button type="button" class="cd-more-item" id="copyMdBtn">${markdownIconSvg()}<span>Copy as Markdown</span></button>
+              ${me ? `<button type="button" class="cd-more-item" id="addToCollectionBtn">${collectionIconSvg()}<span>Add to collection</span></button>` : ''}
               <button type="button" class="cd-more-item" id="embedBtn">${embedIconSvg()}<span>Embed</span></button>
               <button type="button" class="cd-more-item" id="qrBtn">${qrIconSvg()}<span>QR code</span></button>
               ${!me || me.username !== s.ownerUsername ? `<button type="button" class="cd-more-item" id="forkBtn">${forkIconSvg()}<span>Fork</span></button>` : ''}
@@ -214,6 +215,52 @@ function renderUnlockedDetail(app, shortId, s) {
       const md = `# ${title}\n\n\`\`\`${lang}\n${body}\n\`\`\`\n`
       navigator.clipboard.writeText(md).then(() => toast('Markdown copied!')).catch(() => toast('Could not copy'))
     }
+
+    document.getElementById('addToCollectionBtn')?.addEventListener('click', async () => {
+      if (!me) { toast('Sign in first'); return }
+      try {
+        const list = await api('/collections/mine')
+        openModal(`
+          <div class="modal-head">
+            <div class="modal-head-title">Add to collection</div>
+            <button class="modal-close-btn" onclick="closeModal()">${closeIconSvg()}</button>
+          </div>
+          <div class="modal-body">
+            <div class="field">
+              <label>Choose collection</label>
+              <select id="collectionPick">
+                ${list.length ? list.map(c => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)} (${c.count || 0})</option>`).join('') : '<option value="">No collections yet</option>'}
+              </select>
+            </div>
+            <div class="field">
+              <label>Or create new</label>
+              <input id="collectionNewName" placeholder="Collection name" maxlength="60">
+            </div>
+            <div class="modal-actions" style="margin-top:12px">
+              <button class="btn btn-primary" type="button" id="confirmAddCollection">Save</button>
+            </div>
+          </div>
+        `)
+        document.getElementById('confirmAddCollection').onclick = async () => {
+          const newName = (document.getElementById('collectionNewName')?.value || '').trim()
+          let collectionId = document.getElementById('collectionPick')?.value || ''
+          try {
+            if (newName) {
+              const created = await api('/collections', { method: 'POST', body: JSON.stringify({ name: newName, isPublic: true }) })
+              collectionId = created.id
+            }
+            if (!collectionId) { toast('Create or choose a collection'); return }
+            await api(`/collections/${encodeURIComponent(collectionId)}/items`, {
+              method: 'POST',
+              body: JSON.stringify({ shortId: s.shortId })
+            })
+            toast('Added to collection')
+            closeModal()
+          } catch (e) { toast(e.message) }
+        }
+      } catch (e) { toast(e.message) }
+    })
+
 
     document.getElementById('embedBtn')?.addEventListener('click', () => {
       const url = location.origin + '/code?id=' + encodeURIComponent(s.shortId)
@@ -840,6 +887,9 @@ function qrIconSvg() {
   return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><path d="M13.5 13.5h3.2v3.2h-3.2z"/><path d="M18.5 13.5h2v2h-2z"/><path d="M13.5 18.5h2v2h-2z"/><path d="M18.5 18.5h2v2h-2z"/></svg>`
 }
 
+function collectionIconSvg() {
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5h7.5v13H4z"/><path d="M12.5 5.5H20v13h-7.5z"/><path d="M7 9h1.5M7 12h1.5M15.5 9H17M15.5 12H17"/></svg>`
+}
 function markdownIconSvg() {
   return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.5h16v11H4z"/><path d="M7 15V9l2.5 3L12 9v6"/><path d="M15.5 12.5 17 15l1.5-2.5"/><path d="M17 9v6"/></svg>`
 }
