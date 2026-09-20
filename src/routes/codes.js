@@ -446,13 +446,22 @@ router.post('/:shortId/run', async (req, res) => {
         if (snippet.isLocked && !isOwner) {
             return res.status(403).json({ error: 'Unlock this code before running' })
         }
-        if (!isRunnableLanguage(snippet.language)) {
+        let lang = snippet.language
+        const fn = String(snippet.filename || '').toLowerCase()
+        if (!isRunnableLanguage(lang)) {
+            if (/\.js$|\.mjs$|\.cjs$/.test(fn)) lang = 'javascript'
+            else if (/\.ts$/.test(fn)) lang = 'typescript'
+            else if (/\.py$/.test(fn)) lang = 'python'
+            else if (/\.php$/.test(fn)) lang = 'php'
+            else if (/\.sh$|\.bash$/.test(fn)) lang = 'bash'
+        }
+        if (!isRunnableLanguage(lang)) {
             return res.status(400).json({ error: 'This language cannot be run on the server' })
         }
         const gist = await getGist(snippet.id)
         const file = gist.files?.[snippet.filename]
         const content = file?.content || ''
-        const result = await runCode({ language: snippet.language, content })
+        const result = await runCode({ language: lang, content })
         res.json({
             language: snippet.language,
             filename: snippet.filename,

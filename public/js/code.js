@@ -71,7 +71,7 @@ function renderUnlockedDetail(app, shortId, s) {
 
         <div class="cd-toolbar">
           <button class="cd-btn cd-btn-primary" id="copyBtn" type="button">${copyIconSvg()}<span>Copy</span></button>
-          ${isRunnableLang(s.language) ? `<button class="cd-btn cd-btn-run" id="runBtn" type="button">${playIconSvg()}<span>Run</span></button>` : ''}
+          ${isRunnableLang(s.language, s.filename) ? `<button class="cd-btn cd-btn-run" id="runBtn" type="button">${playIconSvg()}<span>Run</span></button>` : ''}
           <button class="cd-btn" type="button" onclick="window.open('/raw/${s.shortId}','_blank')">${rawIconSvg()}<span>Raw</span></button>
           <button class="cd-btn" id="downloadBtn" type="button">${downloadIconSvg()}<span>Download</span></button>
           <div class="cd-more-wrap">
@@ -115,7 +115,7 @@ function renderUnlockedDetail(app, shortId, s) {
           <pre class="code-view" id="codeViewPre"><code id="codeBlock" class="language-${hljsLang(s.language)}">${escapeHtml(s.content)}</code></pre>
         </div>
 
-        ${isRunnableLang(s.language) ? `
+        ${isRunnableLang(s.language, s.filename) ? `
         <div class="run-panel" id="runPanel" hidden>
           <div class="run-panel-bar">
             <span class="run-panel-title">Output</span>
@@ -199,45 +199,67 @@ function renderUnlockedDetail(app, shortId, s) {
     wireLikeButtons(app)
     wireBookmarkButtons(app)
     
-    document.getElementById('runBtn')?.addEventListener('click', async () => {
+    
+    ;(function wireRun() {
       const btn = document.getElementById('runBtn')
       const panel = document.getElementById('runPanel')
       const out = document.getElementById('runOutput')
       const meta = document.getElementById('runMeta')
-      if (!panel || !out) return
-      panel.hidden = false
-      out.textContent = 'Running…'
-      if (meta) meta.textContent = ''
-      setBtnLoading(btn, true)
-      try {
-        const r = await api(`/codes/${encodeURIComponent(shortId)}/run`, { method: 'POST', body: '{}' })
-        const parts = []
-        if (r.stdout) parts.push(r.stdout)
-        if (r.stderr) parts.push(r.stderr)
-        if (!parts.length) parts.push('(no output)')
-        out.textContent = parts.join('\n')
-        const bits = []
-        if (r.engine) bits.push(r.engine)
-        if (r.timedOut) bits.push('timed out')
-        else if (typeof r.exitCode === 'number') bits.push('exit ' + r.exitCode)
-        if (meta) meta.textContent = bits.join(' · ')
-        out.classList.toggle('run-error', !!(r.stderr && r.exitCode))
-      } catch (e) {
-        out.textContent = e.message || 'Run failed'
-        out.classList.add('run-error')
-        if (meta) meta.textContent = 'error'
-      } finally {
-        setBtnLoading(btn, false)
+      if (!btn || !panel || !out) return
+
+      function showPanel() {
+        panel.hidden = false
+        panel.style.display = 'block'
+        panel.removeAttribute('hidden')
+        panel.classList.add('run-panel-open')
       }
-    })
-    document.getElementById('runClearBtn')?.addEventListener('click', () => {
-      const out = document.getElementById('runOutput')
-      const panel = document.getElementById('runPanel')
-      const meta = document.getElementById('runMeta')
-      if (out) out.textContent = ''
-      if (meta) meta.textContent = ''
-      if (panel) panel.hidden = true
-    })
+
+      btn.addEventListener('click', async () => {
+        showPanel()
+        out.textContent = 'Running…'
+        out.classList.remove('run-error')
+        if (meta) meta.textContent = 'please wait'
+        btn.disabled = true
+        btn.classList.add('is-loading')
+        try {
+          const r = await api(`/codes/${encodeURIComponent(shortId)}/run`, {
+            method: 'POST',
+            body: '{}'
+          })
+          const parts = []
+          if (r.stdout) parts.push(r.stdout)
+          if (r.stderr) parts.push(r.stderr)
+          if (!parts.length) parts.push('(no output — use console.log(...) to print)')
+          out.textContent = parts.join('\n\n')
+          const bits = []
+          if (r.engine) bits.push(r.engine)
+          if (r.modules) bits.push('modules: ' + r.modules.join(', '))
+          if (r.timedOut) bits.push('timed out')
+          else if (typeof r.exitCode === 'number') bits.push('exit ' + r.exitCode)
+          if (meta) meta.textContent = bits.join(' · ')
+          if (r.stderr && r.exitCode) out.classList.add('run-error')
+          // scroll panel into view
+          panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+        } catch (e) {
+          showPanel()
+          out.textContent = e.message || 'Run failed'
+          out.classList.add('run-error')
+          if (meta) meta.textContent = 'error'
+          panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+        } finally {
+          btn.disabled = false
+          btn.classList.remove('is-loading')
+        }
+      })
+
+      document.getElementById('runClearBtn')?.addEventListener('click', () => {
+        out.textContent = ''
+        if (meta) meta.textContent = ''
+        panel.hidden = true
+        panel.style.display = 'none'
+        panel.classList.remove('run-panel-open')
+      })
+    })()
 
     document.getElementById('copyBtn').onclick = () => { navigator.clipboard.writeText(s.content); toast('Copied!') }
 
@@ -1219,9 +1241,11 @@ function editIconSvg() {
 }
 
 
-function isRunnableLang(lang) {
+function isRunnableLang(lang, filename) {
   const k = String(lang || '').toLowerCase()
-  return ['javascript','typescript','python','java','php','bash','shell','sh','c','cpp','c++','go','rust','ruby','kotlin','swift','csharp','c#'].includes(k)
+  if (['javascript','typescript','python','java','php','bash','shell','sh','c','cpp','c++','go','rust','ruby','kotlin','swift','csharp','c#'].includes(k)) return true
+  const f = String(filename || '').toLowerCase()
+  return /\.(js|mjs|cjs|ts|py|java|php|sh|bash|c|cpp|go|rs|rb)$/.test(f)
 }
 function playIconSvg() {
   return `<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M8 5.5v13l11-6.5L8 5.5z"/></svg>`

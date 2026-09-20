@@ -3586,6 +3586,9 @@ html.light .toast {
 .cd-btn-run:hover {
   background: color-mix(in srgb, #22c55e 28%, var(--bg-card));
 }
+.run-panel[hidden] { display: none !important; }
+.run-panel.run-panel-open { display: block !important; }
+.cd-btn-run.is-loading { opacity: .7; pointer-events: none; }
 .run-panel {
   margin: 10px 0 0;
   border-radius: 12px;
