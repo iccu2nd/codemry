@@ -181,7 +181,7 @@ export async function deleteUserAccount(username, deleteGistFn) {
     await update('comments.json', d => d.filter(c => c.username !== username && !shortIds.has(c.shortId)), `remove comments for ${username}`)
     await update('notifications.json', d => d.filter(n => n.username !== username && n.fromUsername !== username), `remove notifications for ${username}`)
     await update('reports.json', d => d.filter(r => r.fromUsername !== username && r.ownerUsername !== username), `remove reports for ${username}`)
-    await update('collections.json', d => d.filter(c => c.ownerUsername.toLowerCase() !== uname), `remove collections for ${username}`)
+    await update('collections.json', d => d.filter(c => String(c.ownerUsername || '').toLowerCase() !== uname), `remove collections for ${username}`)
     await Users.remove(username)
 }
 
@@ -519,7 +519,7 @@ export const Collections = {
     async byUser(username) {
         const all = await this.all()
         return all
-            .filter(c => c.ownerUsername.toLowerCase() === String(username || '').toLowerCase())
+            .filter(c => String(c.ownerUsername || '').toLowerCase() === String(username || '').toLowerCase())
             .sort((a, b) => (b.updatedAt || b.createdAt || 0) - (a.updatedAt || a.createdAt || 0))
     },
 

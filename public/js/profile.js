@@ -229,8 +229,8 @@ async function renderProfile() {
         const file = avatarInput.files[0]
         if (!file) return
         try {
-          // 256px + JPEG 0.82 ≈ 12–25 KB (cukup tajam di layar HP/retina)
-          const base64 = await openImageCropper(file, { outW: 256, outH: 256, shape: 'circle', quality: 0.82 })
+          // 256px + WebP 0.82 -- lebih kecil & lebih cepat didownload dari JPEG
+          const { base64, mime, ext } = await openImageCropper(file, { outW: 256, outH: 256, shape: 'circle', quality: 0.82 })
           // FIX "kedip balik ke foto lama": sebelumnya kita nunggu response
           // server dulu baru ganti src avatar ke URL server (`/avatar/user?v=...`).
           // Ganti-ke-URL itu artinya browser harus request ulang ke server, dan
@@ -242,7 +242,7 @@ async function renderProfile() {
           // (data URL) -- ini PERSIS byte yang bakal diupload, jadi user
           // gak pernah lihat apa pun selain hasil crop barunya, gak ada
           // celah waktu buat foto lama nongol lagi.
-          const previewUrl = `data:image/jpeg;base64,${base64}`
+          const previewUrl = `data:${mime};base64,${base64}`
           const avatarImgEl = document.getElementById('avatarImg')
           avatarImgEl.src = previewUrl
           document.querySelectorAll('#profileSnippets .avatar-circle').forEach(img => { img.src = previewUrl })
@@ -252,7 +252,7 @@ async function renderProfile() {
           avatarBtn.disabled = true
           addUploadingSpinner(avatarBtn)
           toast('Mengupload foto...')
-          await api('/users/me/avatar', { method: 'POST', body: JSON.stringify({ imageBase64: base64, ext: 'jpg' }) })
+          await api('/users/me/avatar', { method: 'POST', body: JSON.stringify({ imageBase64: base64, ext }) })
           // Sengaja TIDAK ganti src lagi ke URL server sesudah ini -- preview
           // lokal di atas udah identik sama yang barusan diupload. Reload
           // halaman berikutnya bakal otomatis pakai URL server yang baru
@@ -276,13 +276,13 @@ async function renderProfile() {
         const file = bannerInput.files[0]
         if (!file) return
         try {
-          // 800×333 + JPEG 0.78 ≈ 25–55 KB — cukup lebar di mobile, hemat kuota
-          const base64 = await openImageCropper(file, { outW: 800, outH: 333, shape: 'rect', quality: 0.78 })
+          // 800×333 + WebP 0.78 -- cukup lebar di mobile, lebih hemat kuota dari JPEG
+          const { base64, mime, ext } = await openImageCropper(file, { outW: 800, outH: 333, shape: 'rect', quality: 0.78 })
           // Sama kayak avatar: pasang preview lokal (data URL hasil crop)
           // LANGSUNG duluan, biar gak ada celah waktu di mana banner sempat
           // kelihatan balik ke yang lama pas nunggu response server / URL
           // server di-refetch.
-          const previewUrl = `data:image/jpeg;base64,${base64}`
+          const previewUrl = `data:${mime};base64,${base64}`
           const bannerImgEl = document.getElementById('bannerImg')
           bannerImgEl.style.backgroundImage = `url('${previewUrl}')`
           bannerImgEl.closest('.profile-banner-wrap').classList.remove('no-banner')
@@ -291,7 +291,7 @@ async function renderProfile() {
           bannerBtn.disabled = true
           addUploadingSpinner(bannerBtn)
           toast('Mengupload foto sampul...')
-          await api('/users/me/banner', { method: 'POST', body: JSON.stringify({ imageBase64: base64, ext: 'jpg' }) })
+          await api('/users/me/banner', { method: 'POST', body: JSON.stringify({ imageBase64: base64, ext }) })
           // Gak perlu ganti background-image lagi ke URL server -- preview
           // lokal di atas udah sama persis sama yang barusan diupload.
           toast('Foto sampul diperbarui!')
@@ -490,9 +490,15 @@ function openImageCropper(file, { outW, outH, shape = 'rect', quality = 0.82 }) 
             (offX - boxX) * factor, (offY - boxY) * factor,
             img.width * scale * factor, img.height * scale * factor
           )
-          const dataUrl = outCanvas.toDataURL('image/jpeg', quality)
+          // WebP dulu (jauh lebih kecil dari JPEG di kualitas yang sama).
+          // Kalau browser gak support encode WebP lewat canvas, toDataURL
+          // otomatis fallback ke PNG -- makanya mime & ext dibaca dari hasil
+          // asli dataUrl-nya, bukan di-hardcode, biar gak salah label.
+          const dataUrl = outCanvas.toDataURL('image/webp', quality)
           cleanup()
-          resolve(dataUrl.split(',')[1])
+          const mime = dataUrl.slice(5, dataUrl.indexOf(';'))
+          const ext = mime === 'image/webp' ? 'webp' : (mime === 'image/png' ? 'png' : 'jpg')
+          resolve({ base64: dataUrl.split(',')[1], mime, ext })
         }
       }
       img.src = reader.result
