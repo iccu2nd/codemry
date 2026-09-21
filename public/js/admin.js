@@ -99,6 +99,11 @@ function renderAdminTab() {
         </div>
       </div>
       <div class="admin-card">
+        <div class="admin-card-title">Info bar pengumuman</div>
+        <p class="admin-hint">Teks ini muncul di paling atas semua halaman (siapa aja bisa lihat, bukan cuma yang login). User bisa nutupnya sendiri pakai tombol X, dan gak akan muncul lagi buat dia -- sampai kamu ganti teksnya di sini.</p>
+        <div id="devBannerFields">${skelBlock(70, 16)}${skelBlock(70, 80)}</div>
+      </div>
+      <div class="admin-card">
         <div class="admin-card-title">Delete code by ID</div>
         <p class="admin-hint">Remove any code using its short ID (from /code?id=…).</p>
         <div class="admin-inline-row">
@@ -108,6 +113,7 @@ function renderAdminTab() {
       </div>
     `
     loadDevStats()
+    loadDevBannerSettings()
     wireDeleteSnippet()
     el.querySelectorAll('[data-goto]').forEach(btn => {
       btn.onclick = () => {
@@ -154,6 +160,39 @@ function renderAdminTab() {
     document.getElementById('devUserSearch').addEventListener('input', (e) => {
       renderDevUserList(e.target.value.trim().toLowerCase())
     })
+  }
+}
+
+async function loadDevBannerSettings() {
+  const wrap = document.getElementById('devBannerFields')
+  if (!wrap) return
+  try {
+    const settings = await api('/dev/settings')
+    const ib = settings.infoBanner || { enabled: false, text: '' }
+    wrap.innerHTML = `
+      <label class="checkbox-row">
+        <input type="checkbox" id="devBannerEnabled" ${ib.enabled ? 'checked' : ''}>
+        Aktifkan info bar
+      </label>
+      <div class="field">
+        <textarea id="devBannerText" placeholder="Tulis pengumumannya di sini…" maxlength="500" style="min-height:70px">${escapeHtml(ib.text || '')}</textarea>
+        <div class="field-hint">Ganti kalimatnya bikin banner ini muncul lagi buat user yang udah pernah nutup versi lama.</div>
+      </div>
+      <button class="btn btn-primary btn-sm" id="devBannerSaveBtn">Simpan</button>
+    `
+    document.getElementById('devBannerSaveBtn').onclick = async () => {
+      const btn = document.getElementById('devBannerSaveBtn')
+      const text = document.getElementById('devBannerText').value
+      const enabled = document.getElementById('devBannerEnabled').checked
+      setBtnLoading(btn, true)
+      try {
+        await api('/dev/settings/info-banner', { method: 'POST', body: JSON.stringify({ text, enabled }) })
+        toast('Info bar diperbarui')
+      } catch (e) { toast(e.message) }
+      finally { setBtnLoading(btn, false) }
+    }
+  } catch (e) {
+    wrap.innerHTML = emptyStateHtml({ title: escapeHtml(e.message) })
   }
 }
 

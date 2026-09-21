@@ -53,7 +53,7 @@ router.get('/user/:username', async (req, res) => {
     try {
         const list = await Collections.publicByUser(req.params.username)
         // If requester is the owner, also include private ones
-        if (req.username && req.username.toLowerCase() === req.params.username.toLowerCase()) {
+        if (req.username && req.username.toLowerCase() === String(req.params.username || '').toLowerCase()) {
             const all = await Collections.byUser(req.params.username)
             return res.json(all.map(publicView))
         }
@@ -68,7 +68,7 @@ router.get('/:shortId', async (req, res) => {
     try {
         const col = await Collections.findByShort(req.params.shortId)
         if (!col) return res.status(404).json({ error: 'Collection not found' })
-        const isOwner = req.username && req.username.toLowerCase() === col.ownerUsername.toLowerCase()
+        const isOwner = req.username && req.username.toLowerCase() === String(col.ownerUsername || '').toLowerCase()
         if (col.isPublic === false && !isOwner) {
             return res.status(403).json({ error: 'This collection is private' })
         }
@@ -150,7 +150,7 @@ router.patch('/:shortId', requireAuth, async (req, res) => {
         if (tooManyWrites(req.username)) return res.status(429).json({ error: 'Too many requests, slow down' })
         const col = await Collections.findByShort(req.params.shortId)
         if (!col) return res.status(404).json({ error: 'Collection not found' })
-        if (col.ownerUsername.toLowerCase() !== req.username.toLowerCase()) {
+        if (String(col.ownerUsername || '').toLowerCase() !== req.username.toLowerCase()) {
             return res.status(403).json({ error: 'Not your collection' })
         }
         const patch = {}
@@ -173,7 +173,7 @@ router.delete('/:shortId', requireAuth, async (req, res) => {
     try {
         const col = await Collections.findByShort(req.params.shortId)
         if (!col) return res.status(404).json({ error: 'Collection not found' })
-        if (col.ownerUsername.toLowerCase() !== req.username.toLowerCase()) {
+        if (String(col.ownerUsername || '').toLowerCase() !== req.username.toLowerCase()) {
             return res.status(403).json({ error: 'Not your collection' })
         }
         await Collections.remove(col.shortId)
@@ -189,7 +189,7 @@ router.post('/:shortId/codes', requireAuth, async (req, res) => {
         if (tooManyWrites(req.username)) return res.status(429).json({ error: 'Too many requests, slow down' })
         const col = await Collections.findByShort(req.params.shortId)
         if (!col) return res.status(404).json({ error: 'Collection not found' })
-        if (col.ownerUsername.toLowerCase() !== req.username.toLowerCase()) {
+        if (String(col.ownerUsername || '').toLowerCase() !== req.username.toLowerCase()) {
             return res.status(403).json({ error: 'Not your collection' })
         }
         const codeId = String(req.body?.shortId || '').trim()
@@ -217,7 +217,7 @@ router.delete('/:shortId/codes/:codeId', requireAuth, async (req, res) => {
     try {
         const col = await Collections.findByShort(req.params.shortId)
         if (!col) return res.status(404).json({ error: 'Collection not found' })
-        if (col.ownerUsername.toLowerCase() !== req.username.toLowerCase()) {
+        if (String(col.ownerUsername || '').toLowerCase() !== req.username.toLowerCase()) {
             return res.status(403).json({ error: 'Not your collection' })
         }
         const ids = (Array.isArray(col.shortIds) ? col.shortIds : []).filter(id => id !== req.params.codeId)

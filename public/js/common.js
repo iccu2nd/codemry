@@ -612,6 +612,45 @@ function injectDarkModeToggle() {
   })
 }
 
+// Info bar di paling atas halaman -- teks & on/off-nya sekarang diatur
+// developer lewat Admin > Overview > Info bar (disimpan di server, bukan lagi
+// hardcode di config.js), jadi bisa diubah kapan aja tanpa perlu deploy ulang.
+// Sekali di-close (tombol X), disimpan ke localStorage biar gak muncul lagi
+// di kunjungan berikutnya, di halaman manapun -- sampai developer ganti
+// kalimatnya (itu otomatis naikin "version" di server, jadi dismiss lama
+// dianggap basi & banner nongol lagi buat semua orang).
+async function initInfoBanner() {
+  let settings
+  try {
+    settings = await api('/site-settings')
+  } catch (e) { return } // gagal fetch (offline dll) -- diemin, gak usah tampilin apa-apa
+
+  const ib = settings && settings.infoBanner
+  if (!ib || !ib.enabled || !ib.text) return
+
+  const storageKey = `infoBannerDismissed_v${ib.version}`
+  try {
+    if (localStorage.getItem(storageKey) === '1') return
+  } catch (e) { /* localStorage gak tersedia (mode privat dll) -- tetep tampilin banner */ }
+
+  if (document.getElementById('siteInfoBanner')) return
+
+  const bar = document.createElement('div')
+  bar.className = 'info-banner'
+  bar.id = 'siteInfoBanner'
+  bar.innerHTML = `
+    <span class="info-banner-text">${escapeHtml(ib.text)}</span>
+    <button type="button" class="info-banner-close" aria-label="Tutup pengumuman">${closeIconSvg()}</button>
+  `
+  document.body.insertBefore(bar, document.body.firstChild)
+
+  bar.querySelector('.info-banner-close').addEventListener('click', () => {
+    bar.classList.add('info-banner-hide')
+    try { localStorage.setItem(storageKey, '1') } catch (e) { /* diemin aja kalau gagal disimpan */ }
+    setTimeout(() => bar.remove(), 200)
+  })
+}
+
 function initHamburger() {
   injectDarkModeToggle()
 
@@ -1184,6 +1223,7 @@ function highlightAllIn(selector) {
 // Apply html lang attribute ASAP
 try { document.documentElement.lang = 'en' } catch {}
 
+document.addEventListener('DOMContentLoaded', initInfoBanner)
 document.addEventListener('DOMContentLoaded', initHamburger)
 document.addEventListener('DOMContentLoaded', initBottomNav)
 document.addEventListener('DOMContentLoaded', initBackButton)

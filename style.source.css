@@ -120,6 +120,48 @@ h1, h2, h3, .hero-title, .snippet-title, .brand, .modal-head-title {
   border-bottom: 1px solid var(--border);
 }
 
+/* Info bar pengumuman, paling atas halaman (di atas topbar, ikut scroll --
+   bukan sticky, biar gak makan tempat terus abis dibaca). Disuntik lewat JS
+   (initInfoBanner di common.js), muncul di semua halaman sampai di-close. */
+.info-banner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 10px 42px 10px 16px;
+  background: var(--accent-bg);
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.4;
+  text-align: center;
+}
+.info-banner-text { min-width: 0; }
+.info-banner-close {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background .15s ease, color .15s ease;
+}
+.info-banner-close:hover { background: var(--accent-bg-hover); color: var(--text); }
+.info-banner-hide { opacity: 0; transform: translateY(-6px); transition: opacity .18s ease, transform .18s ease; }
+@media (max-width: 480px) {
+  .info-banner { font-size: 12.5px; padding: 9px 38px 9px 12px; }
+}
+
 .brand { font-size: 17px; font-weight: 700; letter-spacing: -.3px; display: flex; align-items: center; gap: 8px; color: var(--text); }
 
 /* Halaman dengan tombol back (mis. view code): tombol back digabung jadi satu

@@ -567,3 +567,52 @@ export const Collections = {
         }, `remove snippet ${shortId} from collections`)
     }
 }
+
+// Pengaturan situs yang bisa diubah developer lewat admin panel (mis. info
+// bar pengumuman di atas semua halaman). Disimpan di settings.json. File ini
+// belum pernah ada sebelum developer nyimpen sekali, jadi readDbFile bakal
+// balikin [] (default kosong buat file yang gak ada) -- makanya di sini kita
+// normalize array/objek kosong itu jadi bentuk default yang aman dipakai.
+const DEFAULT_SETTINGS = {
+    infoBanner: { enabled: false, text: '', version: 1 }
+}
+
+function normalizeSettings(raw) {
+    if (!raw || Array.isArray(raw) || typeof raw !== 'object') return { infoBanner: { ...DEFAULT_SETTINGS.infoBanner } }
+    const ib = raw.infoBanner && typeof raw.infoBanner === 'object' ? raw.infoBanner : {}
+    return {
+        infoBanner: {
+            enabled: !!ib.enabled,
+            text: typeof ib.text === 'string' ? ib.text : '',
+            version: Number.isFinite(ib.version) ? ib.version : 1
+        }
+    }
+}
+
+export const Settings = {
+    async get() {
+        const { data } = await readDbFile('settings.json')
+        return normalizeSettings(data)
+    },
+
+    // Naikin version cuma kalau teksnya beneran berubah -- biar orang yang
+    // udah nutup pengumuman lama gak dipaksa lihat lagi cuma gara-gara
+    // developer toggle enable/disable doang tanpa ganti kalimatnya.
+    async updateInfoBanner({ text, enabled }) {
+        const updated = await update('settings.json', raw => {
+            const current = normalizeSettings(raw)
+            const nextText = typeof text === 'string' ? text.trim().slice(0, 500) : current.infoBanner.text
+            const nextEnabled = typeof enabled === 'boolean' ? enabled : current.infoBanner.enabled
+            const textChanged = nextText !== current.infoBanner.text
+            return {
+                ...current,
+                infoBanner: {
+                    enabled: nextEnabled,
+                    text: nextText,
+                    version: textChanged ? current.infoBanner.version + 1 : current.infoBanner.version
+                }
+            }
+        }, 'update info banner settings')
+        return normalizeSettings(updated)
+    }
+}

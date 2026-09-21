@@ -15,7 +15,7 @@ import tenorRoutes from './src/routes/tenor.js'
 import publicApiRoutes from './src/routes/public-api.js'
 import collectionRoutes from './src/routes/collections.js'
 import { initGithub, getAssetContent } from './src/github.js'
-import { Snippets, Users, Views, Likes, Follows, ensureSessionSecret, isDeveloperUsername, isModeratorUser, ensureNickname, readBadges, badgeDisplay } from './src/db.js'
+import { Snippets, Users, Views, Likes, Follows, ensureSessionSecret, isDeveloperUsername, isModeratorUser, ensureNickname, readBadges, badgeDisplay, Settings } from './src/db.js'
 import { verifyToken, parseCookies, COOKIE_NAME, MAX_AGE, createToken, setSecret } from './src/token.js'
 import { renderCodeOgImage, renderProfileOgImage, renderFeedOgImage } from './src/og.js'
 import fs from 'fs'
@@ -139,6 +139,21 @@ app.get('/banner/:username', async (req, res) => {
         res.send(buf)
     } catch (e) {
         res.status(404).send('Banner tidak ditemukan')
+    }
+})
+
+// Publik, tanpa login -- dipanggil common.js di SEMUA halaman biar teks info
+// bar (diatur developer lewat Admin > Overview > Info bar) selalu up-to-date
+// tanpa perlu deploy ulang. Cache pendek di browser: cukup biar gak nembak
+// server tiap detik pas navigasi antar halaman, tapi tetep kerasa "real-time"
+// buat perubahan yang developer bikin.
+app.get('/api/site-settings', async (req, res) => {
+    try {
+        const settings = await Settings.get()
+        res.set('Cache-Control', 'public, max-age=30')
+        res.json({ infoBanner: settings.infoBanner })
+    } catch (e) {
+        res.status(500).json({ error: e.response?.data?.message || e.message })
     }
 })
 

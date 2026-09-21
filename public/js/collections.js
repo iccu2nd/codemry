@@ -1,231 +1,99 @@
-import { Router } from 'express'
-import {
-    Collections, Snippets, Users, avatarUrl,
-    MAX_COLLECTIONS_PER_USER, MAX_CODES_PER_COLLECTION,
-    MAX_COLLECTION_TITLE, MAX_COLLECTION_DESC
-} from '../db.js'
-import { createRateLimiter } from '../rate-limit.js'
 
-const router = Router()
-const tooManyWrites = createRateLimiter(20)
+async function init() {
+  await refreshAuth()
+  if (!me) { window.location.replace('/auth'); return }
 
-function requireAuth(req, res, next) {
-    if (!req.username) return res.status(401).json({ error: 'Please sign in' })
-    next()
+  const container = document.getElementById('collectionsPage')
+  try {
+    const list = await api('/collections/mine')
+    renderCollectionsPage(container, list)
+  } catch (e) {
+    container.innerHTML = `<div class="card">${emptyStateHtml({ title: escapeHtml(e.message) })}</div>`
+  }
 }
 
-function sanitizeTitle(title) {
-    const t = String(title || '').trim().replace(/\s+/g, ' ')
-    if (!t) return null
-    return t.slice(0, MAX_COLLECTION_TITLE)
+function renderCollectionsPage(container, list) {
+  container.innerHTML = `
+    <div class="col-page-head">
+      <div>
+        <h1 style="font-size:20px;font-weight:700;margin:0 0 4px">My Collections</h1>
+        <p class="field-hint" style="margin:0">Group your codes into collections others can browse.</p>
+      </div>
+      <button type="button" class="btn btn-primary btn-sm" id="newColBtn">+ New</button>
+    </div>
+    <div id="colList">
+      ${list.length ? list.map(collectionCardHtml).join('') : `<div class="card">${emptyStateHtml({
+        title: 'No collections yet',
+        sub: 'Create one to start organizing your codes into a series others can browse.'
+      })}</div>`}
+    </div>
+  `
+  document.getElementById('newColBtn').addEventListener('click', openCreateCollectionModal)
 }
 
-function sanitizeDesc(desc) {
-    return String(desc || '').trim().slice(0, MAX_COLLECTION_DESC)
+function collectionCardHtml(c) {
+  const n = c.count ?? (c.shortIds || []).length ?? 0
+  const vis = c.isPublic === false
+    ? `<span class="col-badge col-badge-private">Private</span>`
+    : `<span class="col-badge col-badge-public">Public</span>`
+  return `
+    <a class="col-card" href="/collection?id=${encodeURIComponent(c.shortId)}">
+      <div class="col-card-main">
+        <div class="col-card-title">${escapeHtml(c.title)}</div>
+        <div class="col-card-meta">${vis}<span>·</span><span>${n} code${n === 1 ? '' : 's'}</span></div>
+        ${c.description ? `<div class="col-card-desc">${escapeHtml(c.description)}</div>` : ''}
+      </div>
+      <span class="col-card-arrow">›</span>
+    </a>`
 }
 
-function publicView(col) {
-    return {
-        shortId: col.shortId,
-        title: col.title,
-        description: col.description || '',
-        isPublic: col.isPublic !== false,
-        ownerUsername: col.ownerUsername,
-        shortIds: Array.isArray(col.shortIds) ? col.shortIds : [],
-        count: Array.isArray(col.shortIds) ? col.shortIds.length : 0,
-        createdAt: col.createdAt,
-        updatedAt: col.updatedAt || col.createdAt
-    }
-}
-
-/** List my collections (owner only). */
-router.get('/mine', requireAuth, async (req, res) => {
+function openCreateCollectionModal() {
+  openModal(`
+    <div class="modal-head">
+      <div class="modal-head-title">New collection</div>
+      <button class="modal-close-btn" onclick="closeModal()">${closeIconSvg()}</button>
+    </div>
+    <div class="modal-body">
+      <div class="field"><label>Title</label>
+        <input type="text" id="newColTitle" maxlength="80" placeholder="e.g. Useful snippets" autofocus>
+      </div>
+      <div class="field"><label>Description <span class="label-opt">(optional)</span></label>
+        <textarea id="newColDesc" rows="2" maxlength="300" placeholder="What's this collection about?"></textarea>
+      </div>
+      <label class="col-check-row">
+        <input type="checkbox" id="newColPublic" checked>
+        <span>Public — anyone can view this collection</span>
+      </label>
+      <div class="modal-actions" style="margin-top:14px">
+        <button type="button" class="btn" onclick="closeModal()">Cancel</button>
+        <button type="button" class="btn btn-primary" id="newColSaveBtn">Create</button>
+      </div>
+    </div>
+  `)
+  const titleInput = document.getElementById('newColTitle')
+  const submit = async () => {
+    const title = titleInput.value.trim()
+    if (!title) { toast('Please enter a title'); return }
+    const btn = document.getElementById('newColSaveBtn')
+    setBtnLoading(btn, true)
     try {
-        const list = await Collections.byUser(req.username)
-        res.json(list.map(publicView))
-    } catch (e) {
-        res.status(500).json({ error: e.message })
-    }
-})
-
-/** List public collections of a user. */
-router.get('/user/:username', async (req, res) => {
-    try {
-        const list = await Collections.publicByUser(req.params.username)
-        // If requester is the owner, also include private ones
-        if (req.username && req.username.toLowerCase() === String(req.params.username || '').toLowerCase()) {
-            const all = await Collections.byUser(req.params.username)
-            return res.json(all.map(publicView))
-        }
-        res.json(list.map(publicView))
-    } catch (e) {
-        res.status(500).json({ error: e.message })
-    }
-})
-
-/** Get one collection + its snippets (public or owner). */
-router.get('/:shortId', async (req, res) => {
-    try {
-        const col = await Collections.findByShort(req.params.shortId)
-        if (!col) return res.status(404).json({ error: 'Collection not found' })
-        const isOwner = req.username && req.username.toLowerCase() === String(col.ownerUsername || '').toLowerCase()
-        if (col.isPublic === false && !isOwner) {
-            return res.status(403).json({ error: 'This collection is private' })
-        }
-        const owner = await Users.find(col.ownerUsername)
-        const shortIds = Array.isArray(col.shortIds) ? col.shortIds : []
-        const allSnippets = await Snippets.all()
-        const byId = new Map(allSnippets.map(s => [s.shortId, s]))
-        const snippets = []
-        for (const id of shortIds) {
-            const s = byId.get(id)
-            if (!s) continue
-            // Only show public codes (or own private ones) to non-owners
-            if (s.isPublic === false && !isOwner && s.ownerUsername !== req.username) continue
-            snippets.push({
-                shortId: s.shortId,
-                title: s.title,
-                description: s.description || '',
-                filename: s.filename,
-                language: s.language,
-                tags: s.tags || [],
-                ownerUsername: s.ownerUsername,
-                preview: s.preview,
-                lineCount: s.lineCount,
-                isPublic: s.isPublic !== false,
-                isLocked: !!s.isLocked,
-                createdAt: s.createdAt
-            })
-        }
-        res.json({
-            ...publicView(col),
-            isOwner,
-            ownerNickname: owner ? (owner.nickname || owner.username) : col.ownerUsername,
-            ownerAvatar: avatarUrl(owner),
-            snippets
+      const created = await api('/collections', {
+        method: 'POST',
+        body: JSON.stringify({
+          title,
+          description: document.getElementById('newColDesc').value.trim(),
+          isPublic: document.getElementById('newColPublic').checked
         })
+      })
+      closeModal()
+      window.location.href = `/collection?id=${encodeURIComponent(created.shortId)}`
     } catch (e) {
-        res.status(500).json({ error: e.message })
+      toast(e.message)
+      setBtnLoading(btn, false)
     }
-})
+  }
+  document.getElementById('newColSaveBtn').onclick = submit
+  titleInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') submit() })
+}
 
-/** Create collection. */
-router.post('/', requireAuth, async (req, res) => {
-    try {
-        if (tooManyWrites(req.username)) return res.status(429).json({ error: 'Too many requests, slow down' })
-        const title = sanitizeTitle(req.body?.title)
-        if (!title) return res.status(400).json({ error: 'Title is required' })
-        const mine = await Collections.byUser(req.username)
-        if (mine.length >= MAX_COLLECTIONS_PER_USER) {
-            return res.status(400).json({ error: `You can have at most ${MAX_COLLECTIONS_PER_USER} collections` })
-        }
-        const col = {
-            shortId: await Collections.uniqueShortId(),
-            ownerUsername: req.username,
-            title,
-            description: sanitizeDesc(req.body?.description),
-            isPublic: req.body?.isPublic !== false,
-            shortIds: [],
-            createdAt: Date.now(),
-            updatedAt: Date.now()
-        }
-        // Optional: seed with one code
-        const seedId = typeof req.body?.shortId === 'string' ? req.body.shortId.trim() : ''
-        if (seedId) {
-            const snip = await Snippets.findByShort(seedId)
-            if (snip && (snip.isPublic !== false || snip.ownerUsername === req.username)) {
-                col.shortIds = [seedId]
-            }
-        }
-        const created = await Collections.create(col)
-        res.json(publicView(created))
-    } catch (e) {
-        res.status(500).json({ error: e.message })
-    }
-})
-
-/** Update title / description / visibility. */
-router.patch('/:shortId', requireAuth, async (req, res) => {
-    try {
-        if (tooManyWrites(req.username)) return res.status(429).json({ error: 'Too many requests, slow down' })
-        const col = await Collections.findByShort(req.params.shortId)
-        if (!col) return res.status(404).json({ error: 'Collection not found' })
-        if (String(col.ownerUsername || '').toLowerCase() !== req.username.toLowerCase()) {
-            return res.status(403).json({ error: 'Not your collection' })
-        }
-        const patch = {}
-        if (req.body?.title !== undefined) {
-            const title = sanitizeTitle(req.body.title)
-            if (!title) return res.status(400).json({ error: 'Title is required' })
-            patch.title = title
-        }
-        if (req.body?.description !== undefined) patch.description = sanitizeDesc(req.body.description)
-        if (req.body?.isPublic !== undefined) patch.isPublic = !!req.body.isPublic
-        const updated = await Collections.update(col.shortId, patch)
-        res.json(publicView(updated))
-    } catch (e) {
-        res.status(500).json({ error: e.message })
-    }
-})
-
-/** Delete collection. */
-router.delete('/:shortId', requireAuth, async (req, res) => {
-    try {
-        const col = await Collections.findByShort(req.params.shortId)
-        if (!col) return res.status(404).json({ error: 'Collection not found' })
-        if (String(col.ownerUsername || '').toLowerCase() !== req.username.toLowerCase()) {
-            return res.status(403).json({ error: 'Not your collection' })
-        }
-        await Collections.remove(col.shortId)
-        res.json({ ok: true })
-    } catch (e) {
-        res.status(500).json({ error: e.message })
-    }
-})
-
-/** Add a code to a collection. */
-router.post('/:shortId/codes', requireAuth, async (req, res) => {
-    try {
-        if (tooManyWrites(req.username)) return res.status(429).json({ error: 'Too many requests, slow down' })
-        const col = await Collections.findByShort(req.params.shortId)
-        if (!col) return res.status(404).json({ error: 'Collection not found' })
-        if (String(col.ownerUsername || '').toLowerCase() !== req.username.toLowerCase()) {
-            return res.status(403).json({ error: 'Not your collection' })
-        }
-        const codeId = String(req.body?.shortId || '').trim()
-        if (!codeId) return res.status(400).json({ error: 'shortId is required' })
-        const snip = await Snippets.findByShort(codeId)
-        if (!snip) return res.status(404).json({ error: 'Code not found' })
-        if (snip.isPublic === false && snip.ownerUsername !== req.username) {
-            return res.status(403).json({ error: 'Cannot add private code you do not own' })
-        }
-        const ids = Array.isArray(col.shortIds) ? [...col.shortIds] : []
-        if (ids.includes(codeId)) return res.json(publicView(col)) // already in
-        if (ids.length >= MAX_CODES_PER_COLLECTION) {
-            return res.status(400).json({ error: `A collection can have at most ${MAX_CODES_PER_COLLECTION} codes` })
-        }
-        ids.push(codeId)
-        const updated = await Collections.update(col.shortId, { shortIds: ids })
-        res.json(publicView(updated))
-    } catch (e) {
-        res.status(500).json({ error: e.message })
-    }
-})
-
-/** Remove a code from a collection. */
-router.delete('/:shortId/codes/:codeId', requireAuth, async (req, res) => {
-    try {
-        const col = await Collections.findByShort(req.params.shortId)
-        if (!col) return res.status(404).json({ error: 'Collection not found' })
-        if (String(col.ownerUsername || '').toLowerCase() !== req.username.toLowerCase()) {
-            return res.status(403).json({ error: 'Not your collection' })
-        }
-        const ids = (Array.isArray(col.shortIds) ? col.shortIds : []).filter(id => id !== req.params.codeId)
-        const updated = await Collections.update(col.shortId, { shortIds: ids })
-        res.json(publicView(updated))
-    } catch (e) {
-        res.status(500).json({ error: e.message })
-    }
-})
-
-export default router
+init()

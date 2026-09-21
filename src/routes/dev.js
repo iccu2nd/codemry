@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import bcrypt from 'bcryptjs'
-import { Users, Follows, Snippets, Views, Reports, REPORT_REASON_LABELS, avatarUrl, ensureNickname, ensureBadges, setBadge, BADGE_TYPES, isDeveloperUsername, isModeratorUser, deleteUserAccount } from '../db.js'
+import { Users, Follows, Snippets, Views, Reports, REPORT_REASON_LABELS, avatarUrl, ensureNickname, ensureBadges, setBadge, BADGE_TYPES, isDeveloperUsername, isModeratorUser, deleteUserAccount, Settings } from '../db.js'
 import { deleteGist } from '../github.js'
 
 const router = Router()
@@ -159,6 +159,27 @@ router.delete('/snippets/:shortId', requireModerator, async (req, res) => {
         await deleteGist(snippet.id)
         await Snippets.remove(snippet.id)
         res.json({ ok: true })
+    } catch (e) {
+        res.status(500).json({ error: e.response?.data?.message || e.message })
+    }
+})
+
+// Pengaturan situs (info bar pengumuman dst.) -- khusus developer.
+router.get('/settings', requireDeveloper, async (req, res) => {
+    try {
+        res.json(await Settings.get())
+    } catch (e) {
+        res.status(500).json({ error: e.response?.data?.message || e.message })
+    }
+})
+
+router.post('/settings/info-banner', requireDeveloper, async (req, res) => {
+    const { text, enabled } = req.body
+    if (text !== undefined && typeof text !== 'string') return res.status(400).json({ error: 'text harus berupa teks' })
+    if (enabled !== undefined && typeof enabled !== 'boolean') return res.status(400).json({ error: 'enabled harus true/false' })
+    try {
+        const settings = await Settings.updateInfoBanner({ text, enabled })
+        res.json(settings)
     } catch (e) {
         res.status(500).json({ error: e.response?.data?.message || e.message })
     }
