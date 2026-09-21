@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import crypto from 'crypto'
-import { Snippets, Users, Views, Likes, Comments, Bookmarks, Notifications, Reports, Follows, Collections, REPORT_REASONS, DEV_USERNAME, avatarUrl, readBadges, badgeDisplay, hashPin, verifyPin, stripSnippetSecrets, lockedSnippetStub, isDeveloperUsername } from '../db.js'
+import { Snippets, Users, Views, Likes, Comments, Bookmarks, Notifications, Reports, Follows, REPORT_REASONS, DEV_USERNAME, avatarUrl, readBadges, badgeDisplay, hashPin, verifyPin, stripSnippetSecrets, lockedSnippetStub, isDeveloperUsername } from '../db.js'
 import { createGist, getGist, editGist, deleteGist, listGists } from '../github.js'
 import { createRateLimiter } from '../rate-limit.js'
 
@@ -428,7 +428,6 @@ router.delete('/:shortId', requireAuth, async (req, res) => {
         await Comments.removeAllForSnippet(snippet.shortId)
         await Likes.removeAllForSnippet(snippet.shortId)
         Bookmarks.removeAllForSnippet(snippet.shortId)
-        Collections.removeSnippetEverywhere(snippet.shortId).catch(() => {})
         res.json({ ok: true })
     } catch (e) {
         res.status(500).json({ error: e.response?.data?.message || e.message })

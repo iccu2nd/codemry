@@ -13,7 +13,6 @@ import devRoutes from './src/routes/dev.js'
 import notificationRoutes from './src/routes/notifications.js'
 import tenorRoutes from './src/routes/tenor.js'
 import publicApiRoutes from './src/routes/public-api.js'
-import collectionRoutes from './src/routes/collections.js'
 import { initGithub, getAssetContent } from './src/github.js'
 import { Snippets, Users, Views, Likes, Follows, ensureSessionSecret, isDeveloperUsername, isModeratorUser, ensureNickname, readBadges, badgeDisplay, Settings } from './src/db.js'
 import { verifyToken, parseCookies, COOKIE_NAME, MAX_AGE, createToken, setSecret } from './src/token.js'
@@ -98,7 +97,6 @@ app.use('/api/dev', devRoutes)
 app.use('/api/notifications', notificationRoutes)
 app.use('/api/tenor', tenorRoutes)
 app.use('/api/public', publicApiRoutes)
-app.use('/api/collections', collectionRoutes)
 
 
 app.get('/avatar/:username', async (req, res) => {
@@ -329,7 +327,6 @@ Disallow: /upload
 Disallow: /notifications
 Disallow: /liked
 Disallow: /bookmarks
-Disallow: /collections
 Disallow: /admin
 Disallow: /devpanel
 Disallow: /moderasi
@@ -429,8 +426,6 @@ const adminHtmlTemplate = versionAssets(fs.readFileSync(path.join(__dirname, 'pu
 const uploadHtmlTemplate = versionAssets(fs.readFileSync(path.join(__dirname, 'public', 'upload.html'), 'utf-8'))
 const likedHtmlTemplate = versionAssets(fs.readFileSync(path.join(__dirname, 'public', 'liked.html'), 'utf-8'))
 const bookmarksHtmlTemplate = versionAssets(fs.readFileSync(path.join(__dirname, 'public', 'bookmarks.html'), 'utf-8'))
-const collectionsHtmlTemplate = versionAssets(fs.readFileSync(path.join(__dirname, 'public', 'collections.html'), 'utf-8'))
-const collectionHtmlTemplate = versionAssets(fs.readFileSync(path.join(__dirname, 'public', 'collection.html'), 'utf-8'))
 const notificationsHtmlTemplate = versionAssets(fs.readFileSync(path.join(__dirname, 'public', 'notifications.html'), 'utf-8'))
 const apiDocsHtmlTemplate = versionAssets(fs.readFileSync(path.join(__dirname, 'public', 'api-docs.html'), 'utf-8'))
 const pagesHtmlTemplates = {}
@@ -465,13 +460,6 @@ app.get('/liked', (req, res) => {
 app.get('/bookmarks', (req, res) => {
     if (!req.username) return res.redirect('/auth')
     sendHtml(res, bookmarksHtmlTemplate)
-})
-app.get('/collections', (req, res) => {
-    if (!req.username) return res.redirect('/auth')
-    sendHtml(res, collectionsHtmlTemplate)
-})
-app.get('/collection', (req, res) => {
-    sendHtml(res, collectionHtmlTemplate)
 })
 app.get('/notifications', (req, res) => {
     if (!req.username) return res.redirect('/auth')

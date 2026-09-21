@@ -80,13 +80,9 @@ async function renderProfile() {
              </div>`
           : `<button class="btn ${p.isFollowing ? 'btn-white' : 'btn-primary'} btn-block profile-actions" id="followBtn">${p.isFollowing ? t('following') : t('follow')}</button>`}
       </div>
-      <div id="profileCollections"></div>
       <div class="section-label">${t('sharedCode')}</div>
       <div id="profileSnippets"></div>
     `
-
-    // Public collections of this user (shown above their codes)
-    loadProfileCollections(p.username, p.isMe)
 
     const list = document.getElementById('profileSnippets')
     const pinCount = (p.pinnedShortIds || []).length
@@ -528,38 +524,3 @@ function pauseIconMini() {
   return `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M6 5h4v14H6zm8 0h4v14h-4z"/></svg>`
 }
 
-async function loadProfileCollections(username, isMe) {
-  const el = document.getElementById('profileCollections')
-  if (!el) return
-  try {
-    const list = await api(`/collections/user/${encodeURIComponent(username)}`)
-    // Non-owners only see public; API already filters. Hide section if empty (unless isMe with manage link).
-    if (!list.length) {
-      if (isMe) {
-        el.innerHTML = `
-          <div class="section-label">Collections</div>
-          <div class="card" style="padding:14px 16px">
-            <p class="field-hint" style="margin:0 0 10px">Organize codes into series or playlists.</p>
-            <a class="btn btn-sm btn-primary" href="/collections">Manage collections</a>
-          </div>`
-      } else {
-        el.innerHTML = ''
-      }
-      return
-    }
-    el.innerHTML = `
-      <div class="section-label">Collections${isMe ? ` <a href="/collections" class="section-link">Manage</a>` : ''}</div>
-      <div class="col-profile-list">
-        ${list.map(c => {
-          const n = c.count || (c.shortIds || []).length || 0
-          const vis = c.isPublic === false ? `<span class="col-badge col-badge-private">Private</span>` : ''
-          return `<a class="col-profile-item" href="/collection?id=${encodeURIComponent(c.shortId)}">
-            <span class="col-profile-title">${escapeHtml(c.title)}</span>
-            <span class="col-profile-meta">${n} code${n === 1 ? '' : 's'} ${vis}</span>
-          </a>`
-        }).join('')}
-      </div>`
-  } catch {
-    el.innerHTML = ''
-  }
-}

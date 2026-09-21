@@ -16,7 +16,6 @@ const I18N = {
   guide: 'Guide',
   likedCodes: 'Liked codes',
   savedCodes: 'Saved codes',
-  collections: 'Collections',
   apiDocs: 'API Documentation',
   open: 'Open',
   copyLink: 'Copy link',
@@ -495,22 +494,7 @@ function injectAccountLinks() {
   const onProfilePage = location.pathname.startsWith('/profile')
   let likedLink = document.getElementById('likedMenuLink')
   let savedLink = document.getElementById('savedMenuLink')
-  let collectionsLink = document.getElementById('collectionsMenuLink')
   let apiDocsLink = document.getElementById('apiDocsMenuLink')
-
-  // Collections: always visible in menu when logged in (any page)
-  if (me) {
-    if (!collectionsLink) {
-      collectionsLink = document.createElement('a')
-      collectionsLink.id = 'collectionsMenuLink'
-      collectionsLink.className = 'link-btn'
-      collectionsLink.href = '/collections'
-      collectionsLink.textContent = t('collections')
-      topnav.insertBefore(collectionsLink, authArea)
-    }
-  } else if (collectionsLink) {
-    collectionsLink.remove()
-  }
 
   // Liked / Saved / API docs: only on profile page
   if (!me || !onProfilePage) {
