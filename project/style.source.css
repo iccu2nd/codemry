@@ -1429,11 +1429,11 @@ body:has(.code-window.fullscreen) { touch-action: pan-x pan-y; }
 }
 .sc-preview-hint { display: none; }
 
-/* Scroll-to-top: higher above bottom nav, slightly toward center for easy tap */
+/* Scroll-to-top: sits just above bottom nav (right side, clear of center FAB) */
 .scroll-top-btn {
   position: fixed;
-  right: max(28px, env(safe-area-inset-right, 0px));
-  bottom: calc(112px + env(safe-area-inset-bottom, 0px));
+  right: max(20px, env(safe-area-inset-right, 0px));
+  bottom: calc(92px + env(safe-area-inset-bottom, 0px));
   z-index: 45;
   width: 42px;
   height: 42px;
@@ -1460,8 +1460,8 @@ body[data-no-bottom-nav] .scroll-top-btn {
 }
 @media (min-width: 768px) {
   .scroll-top-btn {
-    right: max(32px, env(safe-area-inset-right, 0px));
-    bottom: calc(36px + env(safe-area-inset-bottom, 0px));
+    right: max(28px, env(safe-area-inset-right, 0px));
+    bottom: calc(32px + env(safe-area-inset-bottom, 0px));
     width: 44px;
     height: 44px;
   }

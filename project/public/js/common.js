@@ -505,10 +505,25 @@ function injectAccountLinks() {
   let savedLink = document.getElementById('savedMenuLink')
   let collectionsLink = document.getElementById('collectionsMenuLink')
   let apiDocsLink = document.getElementById('apiDocsMenuLink')
+
+  // Collections: always visible in menu when logged in (any page)
+  if (me) {
+    if (!collectionsLink) {
+      collectionsLink = document.createElement('a')
+      collectionsLink.id = 'collectionsMenuLink'
+      collectionsLink.className = 'link-btn'
+      collectionsLink.href = '/collections'
+      collectionsLink.textContent = t('collections')
+      topnav.insertBefore(collectionsLink, authArea)
+    }
+  } else if (collectionsLink) {
+    collectionsLink.remove()
+  }
+
+  // Liked / Saved / API docs: only on profile page
   if (!me || !onProfilePage) {
     if (likedLink) likedLink.remove()
     if (savedLink) savedLink.remove()
-    if (collectionsLink) collectionsLink.remove()
     if (apiDocsLink) apiDocsLink.remove()
     return
   }
@@ -527,14 +542,6 @@ function injectAccountLinks() {
     savedLink.href = '/bookmarks'
     savedLink.textContent = t('savedCodes')
     topnav.insertBefore(savedLink, authArea)
-  }
-  if (!collectionsLink) {
-    collectionsLink = document.createElement('a')
-    collectionsLink.id = 'collectionsMenuLink'
-    collectionsLink.className = 'link-btn'
-    collectionsLink.href = '/collections'
-    collectionsLink.textContent = t('collections')
-    topnav.insertBefore(collectionsLink, authArea)
   }
   if (!apiDocsLink) {
     apiDocsLink = document.createElement('a')
