@@ -47,8 +47,9 @@ function buildPreview(content) {
     const lines = content.split('\n')
     let start = 0
     while (start < lines.length && lines[start].trim() === '') start++
-    const preview = lines.slice(start, start + 16).join('\n')
-    return preview.length > 700 ? preview.slice(0, 700) : preview
+    // 12 baris / max 420 char → feed JSON lebih ringan (hemat kuota + load lebih cepat)
+    const preview = lines.slice(start, start + 12).join('\n')
+    return preview.length > 420 ? preview.slice(0, 420) : preview
 }
 
 function countLines(content) {

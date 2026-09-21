@@ -110,10 +110,12 @@ app.get('/avatar/:username', async (req, res) => {
         const ext = user.avatarPath.split('.').pop().toLowerCase()
         const contentType = ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg'
         const etag = `"${crypto.createHash('sha1').update(buf).digest('hex')}"`
-        res.set('Cache-Control', 'no-cache')
+        // URL sudah pakai ?v=avatarUpdatedAt → aman cache panjang; ganti foto = URL baru
+        res.set('Cache-Control', 'public, max-age=31536000, immutable')
         res.set('ETag', etag)
         if (req.headers['if-none-match'] === etag) return res.status(304).end()
         res.set('Content-Type', contentType)
+        res.set('Content-Length', buf.length)
         res.send(buf)
     } catch (e) {
         res.status(404).send('Foto tidak ditemukan')
@@ -128,10 +130,12 @@ app.get('/banner/:username', async (req, res) => {
         const ext = user.bannerPath.split('.').pop().toLowerCase()
         const contentType = ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg'
         const etag = `"${crypto.createHash('sha1').update(buf).digest('hex')}"`
-        res.set('Cache-Control', 'no-cache')
+        // URL sudah pakai ?v=bannerUpdatedAt → aman cache panjang
+        res.set('Cache-Control', 'public, max-age=31536000, immutable')
         res.set('ETag', etag)
         if (req.headers['if-none-match'] === etag) return res.status(304).end()
         res.set('Content-Type', contentType)
+        res.set('Content-Length', buf.length)
         res.send(buf)
     } catch (e) {
         res.status(404).send('Banner tidak ditemukan')
@@ -150,7 +154,8 @@ app.get('/raw/:shortId', async (req, res) => {
             transformResponse: [d => d]
         })
         res.set('Content-Type', 'text/plain; charset=utf-8')
-        res.set('Cache-Control', 'no-store')
+        // Publik & tidak terkunci: cache singkat biar refresh berulang hemat kuota
+        res.set('Cache-Control', 'public, max-age=120, stale-while-revalidate=600')
         res.send(raw.data)
     } catch (e) {
         res.status(404).send('Kode tidak ditemukan (gist mungkin sudah dihapus)')
@@ -310,6 +315,7 @@ Disallow: /notifications
 Disallow: /liked
 Disallow: /bookmarks
 Disallow: /collections
+Disallow: /admin
 Disallow: /devpanel
 Disallow: /moderasi
 Disallow: /follow
@@ -404,8 +410,7 @@ const PAGES = {
     '/search': 'search.html',
     '/panduan': 'panduan.html'
 }
-const devpanelHtmlTemplate = versionAssets(fs.readFileSync(path.join(__dirname, 'public', 'devpanel.html'), 'utf-8'))
-const moderasiHtmlTemplate = versionAssets(fs.readFileSync(path.join(__dirname, 'public', 'moderasi.html'), 'utf-8'))
+const adminHtmlTemplate = versionAssets(fs.readFileSync(path.join(__dirname, 'public', 'admin.html'), 'utf-8'))
 const uploadHtmlTemplate = versionAssets(fs.readFileSync(path.join(__dirname, 'public', 'upload.html'), 'utf-8'))
 const likedHtmlTemplate = versionAssets(fs.readFileSync(path.join(__dirname, 'public', 'liked.html'), 'utf-8'))
 const bookmarksHtmlTemplate = versionAssets(fs.readFileSync(path.join(__dirname, 'public', 'bookmarks.html'), 'utf-8'))
@@ -422,15 +427,15 @@ function sendHtml(res, html) {
     res.set('Cache-Control', 'no-cache')
     res.send(html)
 }
-app.get('/devpanel', (req, res) => {
-    if (!req.username || !isDeveloperUsername(req.username)) return res.redirect('/')
-    sendHtml(res, devpanelHtmlTemplate)
+// Unified admin panel (developer + moderator). Old URLs redirect here.
+app.get('/admin', async (req, res) => {
+    if (!req.username) return res.redirect('/auth')
+    const user = await Users.find(req.username)
+    if (!isModeratorUser(user) && !isDeveloperUsername(req.username)) return res.redirect('/')
+    sendHtml(res, adminHtmlTemplate)
 })
-app.get('/moderasi', async (req, res) => {
-    const user = req.username ? await Users.find(req.username) : null
-    if (!isModeratorUser(user)) return res.redirect('/')
-    sendHtml(res, moderasiHtmlTemplate)
-})
+app.get('/devpanel', (req, res) => res.redirect(301, '/admin?tab=overview'))
+app.get('/moderasi', (req, res) => res.redirect(301, '/admin?tab=reports'))
 for (const [route, file] of Object.entries(PAGES)) {
     app.get(route, (req, res) => sendHtml(res, pagesHtmlTemplates[file]))
 }

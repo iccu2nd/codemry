@@ -229,7 +229,8 @@ async function renderProfile() {
         const file = avatarInput.files[0]
         if (!file) return
         try {
-          const base64 = await openImageCropper(file, { outW: 256, outH: 256, shape: 'circle' })
+          // 256px + JPEG 0.82 ≈ 12–25 KB (cukup tajam di layar HP/retina)
+          const base64 = await openImageCropper(file, { outW: 256, outH: 256, shape: 'circle', quality: 0.82 })
           // FIX "kedip balik ke foto lama": sebelumnya kita nunggu response
           // server dulu baru ganti src avatar ke URL server (`/avatar/user?v=...`).
           // Ganti-ke-URL itu artinya browser harus request ulang ke server, dan
@@ -275,7 +276,8 @@ async function renderProfile() {
         const file = bannerInput.files[0]
         if (!file) return
         try {
-          const base64 = await openImageCropper(file, { outW: 960, outH: 400, shape: 'rect' })
+          // 800×333 + JPEG 0.78 ≈ 25–55 KB — cukup lebar di mobile, hemat kuota
+          const base64 = await openImageCropper(file, { outW: 800, outH: 333, shape: 'rect', quality: 0.78 })
           // Sama kayak avatar: pasang preview lokal (data URL hasil crop)
           // LANGSUNG duluan, biar gak ada celah waktu di mana banner sempat
           // kelihatan balik ke yang lama pas nunggu response server / URL
@@ -327,7 +329,7 @@ function usernameCooldownHint(changedAt) {
   return `Baru bisa ganti username lagi dalam ${days} hari.`
 }
 
-function openImageCropper(file, { outW, outH, shape = 'rect' }) {
+function openImageCropper(file, { outW, outH, shape = 'rect', quality = 0.82 }) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
     reader.onerror = () => reject(new Error('Gagal membaca file'))
@@ -488,7 +490,7 @@ function openImageCropper(file, { outW, outH, shape = 'rect' }) {
             (offX - boxX) * factor, (offY - boxY) * factor,
             img.width * scale * factor, img.height * scale * factor
           )
-          const dataUrl = outCanvas.toDataURL('image/jpeg', 0.9)
+          const dataUrl = outCanvas.toDataURL('image/jpeg', quality)
           cleanup()
           resolve(dataUrl.split(',')[1])
         }

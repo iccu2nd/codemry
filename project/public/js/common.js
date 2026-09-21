@@ -443,33 +443,25 @@ function renderAuthArea() {
 function injectDevMenuLink() {
   const topnav = document.getElementById('topnav')
   if (!topnav) return
-  let devLink = document.getElementById('devMenuLink')
-  let modLink = document.getElementById('modMenuLink')
+  // Unified Admin panel (developer + moderator in one place)
+  let adminLink = document.getElementById('adminMenuLink')
+  // Clean up old separate links if still in DOM
+  document.getElementById('devMenuLink')?.remove()
+  document.getElementById('modMenuLink')?.remove()
   const authArea = document.getElementById('authArea')
 
-  // "Developer" cuma buat akun developer asli. "Moderasi" dicek terpisah lewat
-  // me.isModerator (developer otomatis termasuk, tapi role 'moderator'/'admin'
-  // juga dapet akses tanpa harus jadi developer).
-  if (!me || !me.isDeveloper) {
-    if (devLink) devLink.remove()
-  } else if (!devLink) {
-    devLink = document.createElement('a')
-    devLink.id = 'devMenuLink'
-    devLink.className = 'link-btn link-btn-dev'
-    devLink.href = '/devpanel'
-    devLink.innerHTML = `${devIconSvg()} Developer`
-    topnav.insertBefore(devLink, authArea)
+  const canAdmin = me && (me.isDeveloper || me.isModerator)
+  if (!canAdmin) {
+    if (adminLink) adminLink.remove()
+    return
   }
-
-  if (!me || !me.isModerator) {
-    if (modLink) modLink.remove()
-  } else if (!modLink) {
-    modLink = document.createElement('a')
-    modLink.id = 'modMenuLink'
-    modLink.className = 'link-btn link-btn-dev'
-    modLink.href = '/moderasi'
-    modLink.innerHTML = `${flagIconSvg()} Moderation`
-    topnav.insertBefore(modLink, authArea)
+  if (!adminLink) {
+    adminLink = document.createElement('a')
+    adminLink.id = 'adminMenuLink'
+    adminLink.className = 'link-btn link-btn-dev'
+    adminLink.href = '/admin'
+    adminLink.innerHTML = `${devIconSvg()} Admin`
+    topnav.insertBefore(adminLink, authArea)
   }
 }
 
