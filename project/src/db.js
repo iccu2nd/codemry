@@ -181,6 +181,7 @@ export async function deleteUserAccount(username, deleteGistFn) {
     await update('comments.json', d => d.filter(c => c.username !== username && !shortIds.has(c.shortId)), `remove comments for ${username}`)
     await update('notifications.json', d => d.filter(n => n.username !== username && n.fromUsername !== username), `remove notifications for ${username}`)
     await update('reports.json', d => d.filter(r => r.fromUsername !== username && r.ownerUsername !== username), `remove reports for ${username}`)
+    await update('collections.json', d => d.filter(c => c.ownerUsername.toLowerCase() !== uname), `remove collections for ${username}`)
     await Users.remove(username)
 }
 
@@ -496,5 +497,73 @@ export const Snippets = {
             id = Array.from({ length: 8 }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
         } while (existing.has(id))
         return id
+    }
+}
+
+// ============================================================
+// Collections — named groups of codes (playlists / series)
+// ============================================================
+export const MAX_COLLECTIONS_PER_USER = 20
+export const MAX_CODES_PER_COLLECTION = 50
+export const MAX_COLLECTION_TITLE = 80
+export const MAX_COLLECTION_DESC = 300
+
+export const Collections = {
+    async all() { return (await readDbFile('collections.json')).data },
+
+    async findByShort(shortId) {
+        const all = await this.all()
+        return all.find(c => c.shortId === shortId) || null
+    },
+
+    async byUser(username) {
+        const all = await this.all()
+        return all
+            .filter(c => c.ownerUsername.toLowerCase() === String(username || '').toLowerCase())
+            .sort((a, b) => (b.updatedAt || b.createdAt || 0) - (a.updatedAt || a.createdAt || 0))
+    },
+
+    async publicByUser(username) {
+        const list = await this.byUser(username)
+        return list.filter(c => c.isPublic !== false)
+    },
+
+    async uniqueShortId() {
+        const existing = new Set((await this.all()).map(x => x.shortId))
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+        let id
+        do {
+            id = Array.from({ length: 8 }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
+        } while (existing.has(id))
+        return id
+    },
+
+    async create(col) {
+        const updated = await update('collections.json', d => [col, ...d], `add collection ${col.shortId}`)
+        return updated.find(c => c.shortId === col.shortId)
+    },
+
+    async update(shortId, patch) {
+        const updated = await update('collections.json', d => d.map(c =>
+            c.shortId === shortId ? { ...c, ...patch, updatedAt: Date.now() } : c
+        ), `update collection ${shortId}`)
+        return updated.find(c => c.shortId === shortId)
+    },
+
+    async remove(shortId) {
+        return update('collections.json', d => d.filter(c => c.shortId !== shortId), `remove collection ${shortId}`)
+    },
+
+    /** Strip a deleted snippet from every collection that contains it. */
+    async removeSnippetEverywhere(shortId) {
+        return update('collections.json', d => {
+            let changed = false
+            const next = d.map(c => {
+                if (!Array.isArray(c.shortIds) || !c.shortIds.includes(shortId)) return c
+                changed = true
+                return { ...c, shortIds: c.shortIds.filter(id => id !== shortId), updatedAt: Date.now() }
+            })
+            return changed ? next : d
+        }, `remove snippet ${shortId} from collections`)
     }
 }

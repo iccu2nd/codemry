@@ -80,6 +80,7 @@ function renderUnlockedDetail(app, shortId, s) {
               <button type="button" class="cd-more-item" id="copyMdBtn">${markdownIconSvg()}<span>Copy as Markdown</span></button>
               <button type="button" class="cd-more-item" id="embedBtn">${embedIconSvg()}<span>Embed</span></button>
               <button type="button" class="cd-more-item" id="qrBtn">${qrIconSvg()}<span>QR code</span></button>
+              ${me ? `<button type="button" class="cd-more-item" id="addToColBtn">${collectionIconSvg()}<span>Add to collection</span></button>` : ''}
               ${!me || me.username !== s.ownerUsername ? `<button type="button" class="cd-more-item" id="forkBtn">${forkIconSvg()}<span>Fork</span></button>` : ''}
               ${me && me.username === s.ownerUsername ? `<button type="button" class="cd-more-item" id="pinBtn">${pinIconSvg()}<span id="pinBtnLabel">Pin to profile</span></button>` : ''}
               ${me && me.username === s.ownerUsername ? `<button type="button" class="cd-more-item" id="duplicateBtn">${copyIconSvg()}<span>Duplicate</span></button>` : ''}
@@ -213,6 +214,7 @@ function renderUnlockedDetail(app, shortId, s) {
     }
 
     document.getElementById('shareBtn').onclick = () => { navigator.clipboard.writeText(location.href); toast('Link copied!') }
+    document.getElementById('addToColBtn')?.addEventListener('click', () => openAddToCollectionModal(s.shortId))
     document.getElementById('copyMdBtn').onclick = () => {
       const lang = (s.language || 'text').toLowerCase()
       const title = s.title || s.filename || 'Code'
@@ -869,6 +871,118 @@ function rawIconSvg() {
 
 function shareIconSvg() {
   return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5.5" r="2.8"/><circle cx="5.5" cy="12" r="2.8"/><circle cx="18" cy="18.5" r="2.8"/><path d="M8 10.8 15.2 6.8"/><path d="M8 13.2l7.2 4"/></svg>`
+}
+function collectionIconSvg() {
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.5h16v3H4z"/><path d="M4 12h16v3H4z"/><path d="M4 17.5h12v3H4z"/></svg>`
+}
+
+/** Modal: pick an existing collection or create a new one, then add this code. */
+async function openAddToCollectionModal(codeShortId) {
+  if (!me) { toast('Sign in first'); return }
+  openModal(`
+    <div class="modal-head">
+      <div class="modal-head-title">Add to collection</div>
+      <button class="modal-close-btn" onclick="closeModal()">${closeIconSvg()}</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-loading">Loading…</div>
+    </div>
+  `)
+  try {
+    const list = await api('/collections/mine')
+    const body = document.querySelector('#modalBox .modal-body')
+    if (!body) return
+    if (!list.length) {
+      body.innerHTML = `
+        <p class="field-hint" style="margin:0 0 12px">You don’t have a collection yet. Create one:</p>
+        <div class="field"><label>Title</label>
+          <input type="text" id="colTitle" maxlength="80" placeholder="e.g. Useful snippets" autofocus>
+        </div>
+        <label class="col-check-row">
+          <input type="checkbox" id="colPublic" checked>
+          <span>Public</span>
+        </label>
+        <div class="modal-actions" style="margin-top:14px">
+          <button type="button" class="btn" onclick="closeModal()">Cancel</button>
+          <button type="button" class="btn btn-primary" id="colCreateAndAdd">Create &amp; add</button>
+        </div>`
+      document.getElementById('colCreateAndAdd').onclick = async () => {
+        const title = document.getElementById('colTitle').value.trim()
+        if (!title) { toast('Please enter a title'); return }
+        try {
+          await api('/collections', {
+            method: 'POST',
+            body: JSON.stringify({
+              title,
+              isPublic: document.getElementById('colPublic').checked,
+              shortId: codeShortId
+            })
+          })
+          toast('Added to new collection')
+          closeModal()
+        } catch (e) { toast(e.message) }
+      }
+      return
+    }
+    body.innerHTML = `
+      <p class="field-hint" style="margin:0 0 10px">Choose a collection:</p>
+      <div class="col-pick-list" id="colPickList">
+        ${list.map(c => {
+          const already = (c.shortIds || []).includes(codeShortId)
+          const n = c.count || (c.shortIds || []).length || 0
+          return `<button type="button" class="col-pick-item${already ? ' is-in' : ''}" data-id="${escapeHtml(c.shortId)}" ${already ? 'disabled' : ''}>
+            <span class="col-pick-title">${escapeHtml(c.title)}</span>
+            <span class="col-pick-meta">${already ? 'Already in' : n + ' code' + (n === 1 ? '' : 's')}</span>
+          </button>`
+        }).join('')}
+      </div>
+      <button type="button" class="btn btn-sm" id="colNewFromPick" style="margin-top:12px;width:100%">+ New collection</button>`
+    document.querySelectorAll('.col-pick-item:not([disabled])').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        try {
+          await api(`/collections/${encodeURIComponent(btn.dataset.id)}/codes`, {
+            method: 'POST',
+            body: JSON.stringify({ shortId: codeShortId })
+          })
+          toast('Added to collection')
+          closeModal()
+        } catch (e) { toast(e.message) }
+      })
+    })
+    document.getElementById('colNewFromPick').onclick = () => {
+      body.innerHTML = `
+        <div class="field"><label>Title</label>
+          <input type="text" id="colTitle" maxlength="80" placeholder="e.g. Useful snippets" autofocus>
+        </div>
+        <label class="col-check-row">
+          <input type="checkbox" id="colPublic" checked>
+          <span>Public</span>
+        </label>
+        <div class="modal-actions" style="margin-top:14px">
+          <button type="button" class="btn" onclick="closeModal()">Cancel</button>
+          <button type="button" class="btn btn-primary" id="colCreateAndAdd">Create &amp; add</button>
+        </div>`
+      document.getElementById('colCreateAndAdd').onclick = async () => {
+        const title = document.getElementById('colTitle').value.trim()
+        if (!title) { toast('Please enter a title'); return }
+        try {
+          await api('/collections', {
+            method: 'POST',
+            body: JSON.stringify({
+              title,
+              isPublic: document.getElementById('colPublic').checked,
+              shortId: codeShortId
+            })
+          })
+          toast('Added to new collection')
+          closeModal()
+        } catch (e) { toast(e.message) }
+      }
+    }
+  } catch (e) {
+    const body = document.querySelector('#modalBox .modal-body')
+    if (body) body.innerHTML = `<p style="color:var(--text-secondary)">${escapeHtml(e.message)}</p>`
+  }
 }
 
 function downloadIconSvg() {

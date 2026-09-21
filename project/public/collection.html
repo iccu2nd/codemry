@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0c0c0c" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f5f5f5" media="(prefers-color-scheme: light)">
+<meta name="application-name" content="Codery">
+<meta name="apple-mobile-web-app-title" content="Codery">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+
+<title>Codery - Collection</title>
+<link rel="preload" href="fonts/Utendo-Regular.woff" as="font" type="font/woff" crossorigin>
+<link rel="preload" href="fonts/Utendo-Bold.woff" as="font" type="font/woff" crossorigin>
+<link rel="stylesheet" href="style.css">
+<link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css"></noscript>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">Codery</div>
+  <button class="hamburger" id="hamburgerBtn" aria-label="Open menu">
+    <span></span><span></span><span></span>
+  </button>
+  <nav class="topnav" id="topnav">
+    <div id="authArea"></div>
+  </nav>
+</header>
+
+<div class="nav-backdrop" id="navBackdrop"></div>
+
+<main class="app" id="collectionPage">
+  <div id="skelInit">
+    <div class="skel-card skel-card-plain">
+      <div class="skeleton skel-line" style="width:55%;height:22px;margin-bottom:10px"></div>
+      <div class="skeleton skel-line" style="width:35%;height:12px;margin-bottom:18px"></div>
+      <div class="skeleton skel-line" style="width:100%;height:12px;margin-bottom:6px"></div>
+      <div class="skeleton skel-line" style="width:80%;height:12px"></div>
+    </div>
+  </div>
+</main>
+
+<div id="toast" class="toast"></div>
+
+<script src="js/config.js"></script>
+<script src="js/common.js"></script>
+<script src="js/collection.js"></script>
+</body>
+</html>
