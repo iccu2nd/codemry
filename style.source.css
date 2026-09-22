@@ -2200,6 +2200,15 @@ body:not([data-no-bottom-nav]) .app { padding-bottom: 116px; }
   cursor: pointer; color: var(--text);
 }
 .modal-close-btn:active { transform: scale(.9); }
+.modal-head-left { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.modal-back-btn {
+  background: var(--accent-bg); border: none; border-radius: 10px;
+  width: 32px; height: 32px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; color: var(--text);
+}
+.modal-back-btn:active { transform: scale(.9); }
+.modal-back-btn svg { width: 16px; height: 16px; }
 .modal-body { padding: 16px 18px 18px; overflow-y: auto; }
 .modal-code-window { border-radius: 12px; overflow: hidden; border: 1px solid #2d2d2d; background: #1e1e1e; }
 .modal-code-window pre { margin: 0; padding: 16px; overflow-x: auto; }
@@ -4526,10 +4535,6 @@ html:not(.light) .api-method.m-del { background: rgba(239,68,68,.15); color: #f8
 .contrib-user { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
 
 /* Version history modal (code detail page) */
-.empty-state-mini {
-  text-align: center; padding: 24px 8px;
-  color: var(--text-muted); font-size: 13.5px;
-}
 .history-list {
   display: flex; flex-direction: column; gap: 8px;
   max-height: 60vh; overflow-y: auto;
@@ -4545,15 +4550,15 @@ html:not(.light) .api-method.m-del { background: rgba(239,68,68,.15); color: #f8
   font: inherit; color: inherit;
   transition: background .12s ease;
 }
-.history-item:hover { background: #f8f8fc; }
+.history-item:hover { background: var(--bg-muted); }
 .history-item-main { display: flex; align-items: center; gap: 8px; }
 .history-item-when { font-size: 13.5px; font-weight: 700; }
 .badge.badge-sm {
   display: inline-block; padding: 2px 8px; border-radius: 999px;
   font-size: 11px; font-weight: 700;
-  background: var(--accent-soft, #eef0ff); color: var(--accent-dark, #4338ca);
+  background: var(--accent); color: var(--on-accent);
 }
-.history-item-diff { font-size: 12.5px; font-family: var(--mono-font, monospace); }
+.history-item-diff { font-size: 12.5px; font-family: 'JetBrains Mono', monospace; }
 .history-add { color: #16a34a; font-weight: 700; }
 .history-del { color: #dc2626; font-weight: 700; margin-left: 6px; }
 .history-file-name { font-size: 13px; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; }
@@ -4561,6 +4566,6 @@ html:not(.light) .api-method.m-del { background: rgba(239,68,68,.15); color: #f8
   max-height: 50vh; overflow: auto;
   background: var(--bg-muted); border: 1px solid var(--border);
   border-radius: 12px; padding: 12px;
-  font-family: var(--mono-font, monospace); font-size: 12.5px; line-height: 1.5;
+  font-family: 'JetBrains Mono', monospace; font-size: 12.5px; line-height: 1.5;
   white-space: pre;
 }

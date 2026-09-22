@@ -317,27 +317,27 @@ function renderUnlockedDetail(app, shortId, s) {
       }
     })
 
-    document.getElementById('historyBtn')?.addEventListener('click', async () => {
+    async function renderHistoryList() {
       openModal(`
         <div class="modal-head">
           <div class="modal-head-title">Version history</div>
           <button class="modal-close-btn" onclick="closeModal()">${closeIconSvg()}</button>
         </div>
         <div class="modal-body" id="historyModalBody">
-          <div class="empty-state-mini">Loading...</div>
+          <div class="modal-loading">Loading...</div>
         </div>
       `)
       const body = document.getElementById('historyModalBody')
       try {
         const { history } = await api(`/codes/${shortId}/history`)
         if (!history || !history.length) {
-          body.innerHTML = `<div class="empty-state-mini">No version history yet.</div>`
+          body.innerHTML = `<div class="modal-loading">No version history yet.</div>`
           return
         }
         body.innerHTML = `
           <div class="history-list">
             ${history.map(h => `
-              <button type="button" class="history-item" data-sha="${escapeHtml(h.version)}">
+              <button type="button" class="history-item" data-sha="${escapeHtml(h.version)}" data-when="${escapeHtml(timeAgo(new Date(h.committedAt).getTime()))} ago">
                 <div class="history-item-main">
                   <span class="history-item-when">${escapeHtml(timeAgo(new Date(h.committedAt).getTime()))} ago</span>
                   ${h.isCurrent ? `<span class="badge badge-sm">Current</span>` : ''}
@@ -348,50 +348,63 @@ function renderUnlockedDetail(app, shortId, s) {
           </div>
         `
         body.querySelectorAll('.history-item').forEach(btn => {
-          btn.onclick = async () => {
-            const sha = btn.dataset.sha
-            const isCurrent = btn.querySelector('.badge')
-            body.innerHTML = `<div class="empty-state-mini">Loading...</div>`
-            try {
-              const rev = await api(`/codes/${shortId}/history/${sha}`)
-              const isOwner = !!(me && me.username === s.ownerUsername)
-              body.innerHTML = `
-                <button type="button" class="btn btn-secondary btn-sm" id="backToHistoryBtn" style="margin-bottom:10px">← Back to list</button>
-                <div class="history-file-name">${escapeHtml(rev.filename)}</div>
-                <pre class="history-code-view"><code>${escapeHtml(rev.content)}</code></pre>
-                <div class="modal-actions" style="margin-top:12px">
-                  <button class="btn btn-secondary" type="button" id="copyHistoryBtn">Copy content</button>
-                  ${isOwner && !isCurrent ? `<button class="btn btn-primary" type="button" id="restoreHistoryBtn">Restore this version</button>` : ''}
-                </div>
-              `
-              document.getElementById('backToHistoryBtn').onclick = () => document.getElementById('historyBtn').click()
-              document.getElementById('copyHistoryBtn').onclick = () => {
-                navigator.clipboard.writeText(rev.content)
-                toast('Copied!')
-              }
-              const restoreBtn = document.getElementById('restoreHistoryBtn')
-              if (restoreBtn) restoreBtn.onclick = async () => {
-                if (!confirm('Replace the current version with this one?')) return
-                setBtnLoading(restoreBtn, true)
-                try {
-                  await api(`/codes/${shortId}/history/${sha}/restore`, { method: 'POST' })
-                  toast('Version restored')
-                  closeModal()
-                  window.location.reload()
-                } catch (e) {
-                  toast(e.message)
-                  setBtnLoading(restoreBtn, false)
-                }
-              }
-            } catch (e) {
-              body.innerHTML = `<div class="empty-state-mini">${escapeHtml(e.message)}</div>`
-            }
-          }
+          btn.onclick = () => renderHistoryDetail(btn.dataset.sha, btn.dataset.when, !!btn.querySelector('.badge'))
         })
       } catch (e) {
-        body.innerHTML = `<div class="empty-state-mini">${escapeHtml(e.message)}</div>`
+        body.innerHTML = `<div class="modal-loading">${escapeHtml(e.message)}</div>`
       }
-    })
+    }
+
+    async function renderHistoryDetail(sha, whenLabel, isCurrent) {
+      openModal(`
+        <div class="modal-head">
+          <div class="modal-head-left">
+            <button class="modal-back-btn" id="historyBackBtn" aria-label="Back to version list">${chevronLeftSvg()}</button>
+            <div class="modal-head-title">${escapeHtml(whenLabel || 'Revision')}</div>
+          </div>
+          <button class="modal-close-btn" onclick="closeModal()">${closeIconSvg()}</button>
+        </div>
+        <div class="modal-body" id="historyDetailBody">
+          <div class="modal-loading">Loading...</div>
+        </div>
+      `)
+      document.getElementById('historyBackBtn').onclick = renderHistoryList
+      const body = document.getElementById('historyDetailBody')
+      try {
+        const rev = await api(`/codes/${shortId}/history/${sha}`)
+        const isOwner = !!(me && me.username === s.ownerUsername)
+        body.innerHTML = `
+          <div class="history-file-name">${escapeHtml(rev.filename)}</div>
+          <pre class="history-code-view"><code>${escapeHtml(rev.content)}</code></pre>
+          <div class="modal-actions" style="margin-top:12px">
+            <button class="btn btn-secondary" type="button" id="copyHistoryBtn">Copy content</button>
+            ${isOwner && !isCurrent ? `<button class="btn btn-primary" type="button" id="restoreHistoryBtn">Restore this version</button>` : ''}
+          </div>
+        `
+        document.getElementById('copyHistoryBtn').onclick = () => {
+          navigator.clipboard.writeText(rev.content)
+          toast('Copied!')
+        }
+        const restoreBtn = document.getElementById('restoreHistoryBtn')
+        if (restoreBtn) restoreBtn.onclick = async () => {
+          if (!confirm('Replace the current version with this one?')) return
+          setBtnLoading(restoreBtn, true)
+          try {
+            await api(`/codes/${shortId}/history/${sha}/restore`, { method: 'POST' })
+            toast('Version restored')
+            closeModal()
+            window.location.reload()
+          } catch (e) {
+            toast(e.message)
+            setBtnLoading(restoreBtn, false)
+          }
+        }
+      } catch (e) {
+        body.innerHTML = `<div class="modal-loading">${escapeHtml(e.message)}</div>`
+      }
+    }
+
+    document.getElementById('historyBtn')?.addEventListener('click', renderHistoryList)
 
     document.getElementById('duplicateBtn')?.addEventListener('click', async () => {
       if (!me) { toast('Login required'); return }
