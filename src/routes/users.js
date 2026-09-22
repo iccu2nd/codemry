@@ -196,6 +196,25 @@ router.get('/leaderboard', async (req, res) => {
     }
 })
 
+router.get('/contributors', async (req, res) => {
+    try {
+        const users = await Users.all()
+        const list = users
+            .filter(u => readBadges(u).includes('contributor'))
+            .map(u => ({
+                username: u.username,
+                nickname: u.nickname || u.username,
+                avatar: avatarUrl(u),
+                badges: readBadges(u),
+                ...badgeDisplay(u, readBadges(u))
+            }))
+            .sort((a, b) => a.nickname.localeCompare(b.nickname))
+        res.json(list)
+    } catch (e) {
+        res.status(500).json({ error: e.response?.data?.message || e.message })
+    }
+})
+
 
 // Pin / unpin own code on profile (max MAX_PINS)
 router.post('/me/pins', async (req, res) => {

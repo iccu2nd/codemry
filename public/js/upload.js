@@ -57,7 +57,13 @@ async function init() {
     if (pub) saved.isPublic = pub.checked
     if (pin) saved.usePin = pin.checked
     if (pinVal) saved.pin = pinVal.value
-    if (expires) saved.expiresSelect = expires.value
+    if (expires) {
+      saved.expiresSelect = expires.value
+      if (expires.value === 'custom') {
+        saved.expiresCustomVal = document.getElementById('expiresSelectCustomVal')?.value
+        saved.expiresCustomUnit = document.getElementById('expiresSelectCustomUnit')?.value
+      }
+    }
     if (saved.content) saveDraft(saved)
   }
 
@@ -80,7 +86,15 @@ async function init() {
       if (pinField) pinField.style.display = saved.usePin ? 'block' : 'none'
     }
     if (pinVal && saved.pin != null) pinVal.value = saved.pin
-    if (expires && saved.expiresSelect != null) expires.value = saved.expiresSelect
+    if (expires && saved.expiresSelect != null) {
+      expires.value = saved.expiresSelect
+      if (saved.expiresSelect === 'custom') {
+        const cv = document.getElementById('expiresSelectCustomVal')
+        const cu = document.getElementById('expiresSelectCustomUnit')
+        if (cv && saved.expiresCustomVal != null) cv.value = saved.expiresCustomVal
+        if (cu && saved.expiresCustomUnit != null) cu.value = saved.expiresCustomUnit
+      }
+    }
   }
 
   function render() {
@@ -236,7 +250,7 @@ async function init() {
     if (step === 3) {
       const sum = document.getElementById('uploadSummary')
       if (sum) {
-        const expiresMs = Number(saved.expiresSelect || 0)
+        const expiresMs = resolveExpiryMs('expiresSelect')
         const expiresLabel = expiresMs
           ? new Date(Date.now() + expiresMs).toLocaleDateString()
           : t('expiresPermanent')
@@ -291,18 +305,7 @@ async function init() {
       }
     }
 
-    const expiresSelect = document.getElementById('expiresSelect')
-    const expiresHint = document.getElementById('expiresHint')
-    if (expiresSelect && expiresHint) {
-      const updateExpiresHint = () => {
-        const ms = Number(expiresSelect.value)
-        expiresHint.textContent = ms
-          ? `${t('expiresOn')} ${new Date(Date.now() + ms).toLocaleString()}`
-          : t('expirationHint')
-      }
-      expiresSelect.addEventListener('change', updateExpiresHint)
-      updateExpiresHint()
-    }
+    wireExpiryField('expiresSelect', 'expiresHint')
 
     document.getElementById('pickFileBtn')?.addEventListener('click', () => fileInput?.click())
     if (fileInput) {
@@ -356,7 +359,7 @@ async function init() {
       applyAutoExtension()
       const pin = usePinCb?.checked ? (pinInput?.value.trim() || '') : ''
       if (usePinCb?.checked && !/^[a-zA-Z0-9]{4,8}$/.test(pin)) { toast('Password must be 4–8 characters (letters/numbers)'); return }
-      const expiresMs = Number(expiresSelect?.value || 0)
+      const expiresMs = resolveExpiryMs('expiresSelect')
       const expiresAt = expiresMs ? Date.now() + expiresMs : null
       const f = new FormData(form)
       setBtnLoading(submitBtn, true)

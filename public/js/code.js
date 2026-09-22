@@ -21,12 +21,22 @@ async function renderCodeDetail(authReady) {
 }
 
 function renderExpiredCard(app, s) {
+  const ownerName = escapeHtml(s.ownerNickname || s.ownerUsername || 'Unknown')
+  const expiredWhen = s.expiresAt ? formatExpiryFull(s.expiresAt) : ''
   app.innerHTML = `
     <div class="card">
       <div class="lock-screen expired-screen">
-        ${hourglassIconSvg()}
+        <div class="expired-icon-wrap">${hourglassIconSvg()}</div>
         <div class="lock-title">${t('expiredTitle')}</div>
         <div class="lock-sub">${t('expiredSub')}</div>
+        ${expiredWhen ? `<div class="expired-meta">Expired on ${escapeHtml(expiredWhen)}</div>` : ''}
+        <div class="expired-owner">
+          ${avatarHtml(s.ownerAvatar, s.ownerNickname || s.ownerUsername, 'avatar-circle-sm')}
+          <div>
+            <div class="expired-owner-name">${ownerName}</div>
+            <a class="link-btn-inline" href="${profileUrl(s.ownerUsername)}">${t('viewProfile')}</a>
+          </div>
+        </div>
         <a class="btn btn-primary btn-block" href="/">${t('backToFeed')}</a>
       </div>
     </div>`
@@ -186,7 +196,7 @@ function renderUnlockedDetail(app, shortId, s) {
           <div class="field">
             <label>${t('expirationLabel')}</label>
             ${expirySelectHtml('editExpiresSelect', 'edit', s.expiresAt)}
-            <div class="field-hint">${s.expiresAt ? `${t('expiresOn')}: ${escapeHtml(formatExpiryFull(s.expiresAt))}` : t('expiresPermanent')}</div>
+            <div class="field-hint" id="editExpiresHint">${s.expiresAt ? `${t('expiresOn')}: ${escapeHtml(formatExpiryFull(s.expiresAt))}` : t('expiresPermanent')}</div>
           </div>
           <div class="btn-row">
             <button class="btn btn-white" id="cancelEditBtn">Cancel</button>
@@ -767,6 +777,7 @@ function renderUnlockedDetail(app, shortId, s) {
 
     wireFilenameSpaces(document.getElementById('editFilename'))
     wireAutoGrowTextarea(document.getElementById('editDescription'))
+    wireExpiryField('editExpiresSelect', 'editExpiresHint')
 
     function enterEditMode() {
       editForm.style.display = 'block'
@@ -809,9 +820,10 @@ function renderUnlockedDetail(app, shortId, s) {
       if (nowWantsPin) { if (pinVal) body.pin = pinVal }
       else if (s.locked) { body.removePin = true }
 
-      const expiresChoice = document.getElementById('editExpiresSelect')?.value
-      if (expiresChoice === 'none') body.expiresAt = null
-      else if (expiresChoice && expiresChoice !== 'keep') body.expiresAt = Date.now() + Number(expiresChoice)
+      const expiresMs = resolveExpiryMs('editExpiresSelect')
+      if (expiresMs === null) body.expiresAt = null
+      else if (typeof expiresMs === 'number') body.expiresAt = Date.now() + expiresMs
+      // undefined = keep current (don't send expiresAt)
 
       saveEditBtn.disabled = true
       try {

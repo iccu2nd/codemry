@@ -75,24 +75,30 @@ const I18N = {
   secAgo: 's ago',
   expired: 'Expired',
   expiredTitle: 'This code has expired',
-  expiredSub: 'The owner set this code to expire and it is no longer available.',
+  expiredSub: 'The owner set an expiration date and this code is no longer publicly available.',
   backToFeed: 'Back to feed',
   expirationLabel: 'Expiration',
   expirationHint: 'Choose when this code stops being accessible. Default is permanent.',
   expiresPermanent: 'Permanent (never expires)',
-  expiresIn1h: 'Expires in 1 hour',
-  expiresIn1d: 'Expires in 1 day',
-  expiresIn3d: 'Expires in 3 days',
-  expiresIn7d: 'Expires in 7 days',
-  expiresIn30d: 'Expires in 30 days',
-  expiresIn90d: 'Expires in 90 days',
-  expiresIn1y: 'Expires in 1 year',
+  expiresIn1h: '1 hour',
+  expiresIn1d: '1 day',
+  expiresIn3d: '3 days',
+  expiresIn7d: '7 days',
+  expiresIn30d: '30 days',
+  expiresIn90d: '90 days',
+  expiresIn1y: '1 year',
+  expiresCustom: 'Custom…',
+  expiresCustomHint: 'Enter a custom duration',
+  expiresUnitHours: 'Hours',
+  expiresUnitDays: 'Days',
+  expiresUnitWeeks: 'Weeks',
   expiresOn: 'Expires',
   expiresBadgeTitle: 'This code will expire',
   keepCurrentExpiry: 'Keep current expiration',
   removeExpiry: 'Remove expiration',
   expiredOwnerNotice: 'This code has expired — only visible to you now.',
   expiryRemoved: 'Expiration removed',
+  viewProfile: 'View profile',
 }
 function t(key) {
   return I18N[key] || key
@@ -888,13 +894,12 @@ const EXPIRY_PRESETS = [
   { value: '31536000000', labelKey: 'expiresIn1y' },
 ]
 
+const EXPIRY_UNIT_MS = { hours: 3600000, days: 86400000, weeks: 604800000 }
+
 function hourglassIconSvg() {
   return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h12"/><path d="M6 20.5h12"/><path d="M7 3.5v3.2c0 1.8 1.9 3.3 3.3 4.3.5.35.5 1.05 0 1.4C8.9 13.4 7 14.9 7 16.7v3.8"/><path d="M17 3.5v3.2c0 1.8-1.9 3.3-3.3 4.3-.5.35-.5 1.05 0 1.4 1.4 1 3.3 2.5 3.3 4.3v3.8"/></svg>`
 }
 
-// Format a future expiresAt timestamp as a short relative label, e.g.
-// "Expires in 3d" / "Expires in 2h" / "Expires in 40m". Falls back to a
-// plain date once it's far enough out.
 function formatExpiryShort(expiresAt) {
   const ms = expiresAt - Date.now()
   if (ms <= 0) return t('expired')
@@ -911,8 +916,6 @@ function formatExpiryFull(expiresAt) {
   try { return new Date(expiresAt).toLocaleString() } catch { return '' }
 }
 
-// Small pill shown on snippet cards / detail header when a snippet has an
-// expiration set but hasn't expired yet (a quiet heads-up, not an alarm).
 function expiryBadgeHtml(expiresAt) {
   if (!expiresAt) return ''
   return `<span class="expiry-badge" title="${t('expiresBadgeTitle')}: ${escapeHtml(formatExpiryFull(expiresAt))}">${hourglassIconSvg()}<span>${formatExpiryShort(expiresAt)}</span></span>`
@@ -922,19 +925,72 @@ function expiredBadgeHtml() {
   return `<span class="expired-badge" title="${t('expired')}">${hourglassIconSvg()}</span>`
 }
 
-// <select> markup reused by both the upload wizard (step 3) and the edit
-// form on the code detail page. `mode` controls the first option:
-// - 'create': first option is "Permanent" and is the default
-// - 'edit': first option is "Keep current expiration" (a no-op sentinel so
-//   editing a code never resets its expiry unless the user explicitly
-//   picks something else)
+// Select + optional custom duration row. Used by upload wizard & edit form.
+// mode: 'create' | 'edit'
 function expirySelectHtml(id, mode, currentExpiresAt) {
   const first = mode === 'edit'
     ? `<option value="keep" selected>${currentExpiresAt ? t('keepCurrentExpiry') : t('expiresPermanent')}</option>`
     : `<option value="" selected>${t('expiresPermanent')}</option>`
   const permanentOption = mode === 'edit' ? `<option value="none">${t('removeExpiry')}</option>` : ''
   const presets = EXPIRY_PRESETS.map(p => `<option value="${p.value}">${t(p.labelKey)}</option>`).join('')
-  return `<select id="${id}">${first}${permanentOption}${presets}</select>`
+  return `
+    <div class="expiry-field" data-expiry-root="${id}">
+      <select id="${id}" class="expiry-select">${first}${permanentOption}${presets}<option value="custom">${t('expiresCustom')}</option></select>
+      <div class="expiry-custom" id="${id}Custom" hidden>
+        <input type="number" id="${id}CustomVal" class="expiry-custom-val" min="1" max="9999" value="1" placeholder="1" inputmode="numeric">
+        <select id="${id}CustomUnit" class="expiry-custom-unit">
+          <option value="hours">${t('expiresUnitHours')}</option>
+          <option value="days" selected>${t('expiresUnitDays')}</option>
+          <option value="weeks">${t('expiresUnitWeeks')}</option>
+        </select>
+      </div>
+    </div>`
+}
+
+// Wire up show/hide of custom row + live hint text. Call after injecting HTML.
+function wireExpiryField(selectId, hintId) {
+  const sel = document.getElementById(selectId)
+  const custom = document.getElementById(selectId + 'Custom')
+  const customVal = document.getElementById(selectId + 'CustomVal')
+  const customUnit = document.getElementById(selectId + 'CustomUnit')
+  const hint = hintId ? document.getElementById(hintId) : null
+  if (!sel) return
+
+  function update() {
+    const isCustom = sel.value === 'custom'
+    if (custom) custom.hidden = !isCustom
+    if (!hint) return
+    const ms = resolveExpiryMs(selectId)
+    if (ms === null || ms === undefined) {
+      hint.textContent = t('expirationHint')
+    } else if (ms === 0) {
+      hint.textContent = t('expiresPermanent')
+    } else {
+      hint.textContent = `${t('expiresOn')} ${new Date(Date.now() + ms).toLocaleString()}`
+    }
+  }
+
+  sel.addEventListener('change', update)
+  customVal?.addEventListener('input', update)
+  customUnit?.addEventListener('change', update)
+  update()
+}
+
+// Resolve select value (+ custom inputs) to milliseconds duration, or special sentinels.
+// Returns: number (ms from now), null (permanent / none), undefined (keep current - edit only)
+function resolveExpiryMs(selectId) {
+  const sel = document.getElementById(selectId)
+  if (!sel) return undefined
+  const v = sel.value
+  if (v === 'keep') return undefined
+  if (v === 'none' || v === '') return null
+  if (v === 'custom') {
+    const n = Math.max(1, Math.min(9999, Number(document.getElementById(selectId + 'CustomVal')?.value) || 1))
+    const unit = document.getElementById(selectId + 'CustomUnit')?.value || 'days'
+    return n * (EXPIRY_UNIT_MS[unit] || EXPIRY_UNIT_MS.days)
+  }
+  const n = Number(v)
+  return Number.isFinite(n) && n > 0 ? n : null
 }
 
 

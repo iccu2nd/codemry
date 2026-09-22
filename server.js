@@ -339,7 +339,7 @@ Sitemap: ${host}/sitemap.xml`)
 app.get('/sitemap.xml', async (req, res) => {
     try {
         const host = `${req.protocol}://${getRequestDomain(req)}`
-        const staticUrls = ['/', '/leaderboard', '/search', '/panduan']
+        const staticUrls = ['/', '/leaderboard', '/search', '/panduan', '/contributors']
         const [snippets, users] = await Promise.all([Snippets.allLive(), Users.all()])
         const publicSnippets = snippets.filter(s => s.isPublic).slice(0, 5000)
         const urls = [
@@ -420,7 +420,8 @@ const PAGES = {
     '/auth': 'auth.html',
     '/leaderboard': 'leaderboard.html',
     '/search': 'search.html',
-    '/panduan': 'panduan.html'
+    '/panduan': 'panduan.html',
+    '/contributors': 'contributors.html'
 }
 const adminHtmlTemplate = versionAssets(fs.readFileSync(path.join(__dirname, 'public', 'admin.html'), 'utf-8'))
 const uploadHtmlTemplate = versionAssets(fs.readFileSync(path.join(__dirname, 'public', 'upload.html'), 'utf-8'))
