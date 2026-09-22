@@ -783,7 +783,7 @@ img.clickable:hover { outline: 2px solid rgba(var(--accent-rgb),.4); outline-off
 }
 .sc-preview-code code { background: transparent !important; color: inherit; font-family: inherit; font-size: inherit; }
 /* Soft fade at bottom of code preview */
-.sc-preview:not(.sc-preview-locked)::after {
+.sc-preview:not(.sc-preview-locked):not(.sc-preview-expired)::after {
   content: '';
   position: absolute;
   left: 0; right: 0; bottom: 0;
@@ -792,7 +792,8 @@ img.clickable:hover { outline: 2px solid rgba(var(--accent-rgb),.4); outline-off
   pointer-events: none;
   z-index: 1;
 }
-.sc-preview-locked {
+.sc-preview-locked,
+.sc-preview-expired {
   display: flex; align-items: center; justify-content: center;
   min-height: 72px; background: #1a1a1a;
 }
@@ -801,6 +802,7 @@ img.clickable:hover { outline: 2px solid rgba(var(--accent-rgb),.4); outline-off
   color: var(--text-muted); font-size: 13px; font-weight: 600;
 }
 .sc-lock-msg svg { width: 16px; height: 16px; }
+.sc-preview-expired .sc-lock-msg { color: #d97706; }
 .sc-foot {
   display: flex; align-items: center; justify-content: space-between;
   gap: 12px; padding: 12px 16px 14px;
@@ -826,6 +828,38 @@ img.clickable:hover { outline: 2px solid rgba(var(--accent-rgb),.4); outline-off
   font-size: 13px !important;
   border-radius: 8px !important;
   text-decoration: none;
+}
+/* Subtle pulsing glow + light-sweep shine on the "Open" button so it draws
+   the eye as the primary action on every snippet card, without being
+   distracting (slow cadence, respects reduced-motion). */
+.sc-open {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  animation: sc-open-glow 2.8s ease-in-out infinite;
+}
+.sc-open::after {
+  content: '';
+  position: absolute;
+  top: 0; left: -60%;
+  width: 40%; height: 100%;
+  background: linear-gradient(115deg, transparent, rgba(255,255,255,.6), transparent);
+  transform: skewX(-18deg);
+  pointer-events: none;
+  animation: sc-open-shine 3.4s ease-in-out infinite;
+}
+@keyframes sc-open-glow {
+  0%, 100% { box-shadow: 0 2px 0 rgba(var(--accent-dark-rgb),.35), 0 1px 3px rgba(var(--accent-rgb),.25), 0 0 0 0 rgba(var(--accent-rgb),0); }
+  50% { box-shadow: 0 2px 0 rgba(var(--accent-dark-rgb),.35), 0 1px 3px rgba(var(--accent-rgb),.25), 0 0 14px 3px rgba(var(--accent-rgb),.55); }
+}
+@keyframes sc-open-shine {
+  0% { left: -60%; }
+  32% { left: 130%; }
+  100% { left: 130%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sc-open { animation: none; }
+  .sc-open::after { display: none; }
 }
 /* legacy aliases */
 .snippet-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 14px; }
@@ -1181,6 +1215,32 @@ mark.code-grep-hit.code-grep-current {
   background: #fef3c7; color: #b45309;
 }
 .lock-badge svg { width: 13px; height: 13px; }
+.expired-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px; border-radius: 8px;
+  background: #fee2e2; color: #b91c1c;
+}
+.expired-badge svg { width: 13px; height: 13px; }
+.expiry-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 9px; border-radius: 999px;
+  background: var(--bg-muted); border: 1px solid var(--border);
+  color: var(--text-muted); font-size: 11px; font-weight: 600;
+  white-space: nowrap;
+}
+.expiry-badge svg { width: 12px; height: 12px; flex-shrink: 0; }
+.expired-banner {
+  display: flex; align-items: center; gap: 10px;
+  margin: 4px 0 12px; padding: 10px 14px;
+  background: rgba(185,28,28,.08); border: 1px solid rgba(185,28,28,.25);
+  border-radius: 12px; color: #b91c1c; font-size: 13px; font-weight: 600;
+  line-height: 1.4;
+}
+html.light .expired-banner { background: #fef2f2; }
+.expired-banner svg { width: 18px; height: 18px; flex-shrink: 0; }
+.expired-banner span { flex: 1; }
+.expired-banner .link-btn-inline { color: #b91c1c; font-size: 12.5px; flex-shrink: 0; }
+.expired-screen svg { color: #d97706; }
 .code-preview-locked { background: #1e1e1e; }
 .lock-preview-body {
   display: flex; align-items: center; justify-content: center; gap: 8px;

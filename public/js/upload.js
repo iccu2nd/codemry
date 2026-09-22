@@ -53,9 +53,11 @@ async function init() {
     const pub = document.getElementById('isPublic')
     const pin = document.getElementById('usePin')
     const pinVal = document.getElementById('pinInput')
+    const expires = document.getElementById('expiresSelect')
     if (pub) saved.isPublic = pub.checked
     if (pin) saved.usePin = pin.checked
     if (pinVal) saved.pin = pinVal.value
+    if (expires) saved.expiresSelect = expires.value
     if (saved.content) saveDraft(saved)
   }
 
@@ -71,12 +73,14 @@ async function init() {
     const pin = document.getElementById('usePin')
     const pinField = document.getElementById('pinField')
     const pinVal = document.getElementById('pinInput')
+    const expires = document.getElementById('expiresSelect')
     if (pub && saved.isPublic != null) pub.checked = saved.isPublic
     if (pin && saved.usePin != null) {
       pin.checked = saved.usePin
       if (pinField) pinField.style.display = saved.usePin ? 'block' : 'none'
     }
     if (pinVal && saved.pin != null) pinVal.value = saved.pin
+    if (expires && saved.expiresSelect != null) expires.value = saved.expiresSelect
   }
 
   function render() {
@@ -170,6 +174,11 @@ async function init() {
             <label>Password (4–8 characters, letters/numbers)</label>
             <input type="password" id="pinInput" maxlength="8" placeholder="e.g. r4hasia">
           </div>
+          <div class="field">
+            <label>${t('expirationLabel')} <span class="label-opt">(${t('optional')})</span></label>
+            ${expirySelectHtml('expiresSelect', 'create')}
+            <div class="field-hint" id="expiresHint">${t('expirationHint')}</div>
+          </div>
           <div class="upload-summary" id="uploadSummary"></div>
           <div class="upload-progress" id="uploadProgress" hidden>
             <div class="up-prog-track"><div class="up-prog-bar"></div></div>
@@ -227,10 +236,15 @@ async function init() {
     if (step === 3) {
       const sum = document.getElementById('uploadSummary')
       if (sum) {
+        const expiresMs = Number(saved.expiresSelect || 0)
+        const expiresLabel = expiresMs
+          ? new Date(Date.now() + expiresMs).toLocaleDateString()
+          : t('expiresPermanent')
         sum.innerHTML = `
           <div class="upload-sum-row"><span>Title</span><b>${escapeHtml(saved.title || '')}</b></div>
           <div class="upload-sum-row"><span>File</span><b>${escapeHtml(saved.filename || '')}</b></div>
-          <div class="upload-sum-row"><span>Language</span><b>${escapeHtml(saved.language || '')}</b></div>`
+          <div class="upload-sum-row"><span>Language</span><b>${escapeHtml(saved.language || '')}</b></div>
+          <div class="upload-sum-row"><span>${t('expirationLabel')}</span><b>${escapeHtml(expiresLabel)}</b></div>`
       }
     }
   }
@@ -275,6 +289,19 @@ async function init() {
         pinField.style.display = usePinCb.checked ? 'block' : 'none'
         if (!usePinCb.checked && pinInput) pinInput.value = ''
       }
+    }
+
+    const expiresSelect = document.getElementById('expiresSelect')
+    const expiresHint = document.getElementById('expiresHint')
+    if (expiresSelect && expiresHint) {
+      const updateExpiresHint = () => {
+        const ms = Number(expiresSelect.value)
+        expiresHint.textContent = ms
+          ? `${t('expiresOn')} ${new Date(Date.now() + ms).toLocaleString()}`
+          : t('expirationHint')
+      }
+      expiresSelect.addEventListener('change', updateExpiresHint)
+      updateExpiresHint()
     }
 
     document.getElementById('pickFileBtn')?.addEventListener('click', () => fileInput?.click())
@@ -329,6 +356,8 @@ async function init() {
       applyAutoExtension()
       const pin = usePinCb?.checked ? (pinInput?.value.trim() || '') : ''
       if (usePinCb?.checked && !/^[a-zA-Z0-9]{4,8}$/.test(pin)) { toast('Password must be 4–8 characters (letters/numbers)'); return }
+      const expiresMs = Number(expiresSelect?.value || 0)
+      const expiresAt = expiresMs ? Date.now() + expiresMs : null
       const f = new FormData(form)
       setBtnLoading(submitBtn, true)
       const progress = document.getElementById('uploadProgress')
@@ -345,7 +374,8 @@ async function init() {
             description: f.get('description'),
             tags: f.get('tags'),
             isPublic: f.get('isPublic') === 'on',
-            pin
+            pin,
+            expiresAt
           })
         })
         clearDraft()

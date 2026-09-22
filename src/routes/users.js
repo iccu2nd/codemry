@@ -1,6 +1,6 @@
 import crypto from 'crypto'
 import { Router } from 'express'
-import { Users, Follows, Snippets, Views, Likes, Bookmarks, avatarUrl, bannerUrl, ensureNickname, renameUsername, ensureBadges, readBadges, badgeDisplay, stripSnippetSecrets, lockedSnippetStub, Notifications, MAX_PINS, normalizePins } from '../db.js'
+import { Users, Follows, Snippets, Views, Likes, Bookmarks, avatarUrl, bannerUrl, ensureNickname, renameUsername, ensureBadges, readBadges, badgeDisplay, stripSnippetSecrets, lockedSnippetStub, isSnippetExpired, expiredSnippetStub, Notifications, MAX_PINS, normalizePins } from '../db.js'
 import { upsertAsset } from '../github.js'
 
 const router = Router()
@@ -249,14 +249,21 @@ router.get('/:username', async (req, res) => {
     const nickname = await ensureNickname(user)
     const badges = await ensureBadges(user)
     const isMe = req.username === user.username
-    const visibleSnippets = snippets.filter(s => s.isPublic || s.ownerUsername === req.username)
+    // Kode yang udah kadaluarsa disembunyiin dari profil buat siapa pun
+    // KECUALI pemiliknya sendiri (biar masih bisa dikelola/diperpanjang).
+    const visibleSnippets = snippets.filter(s =>
+        (s.isPublic || s.ownerUsername === req.username) && (isMe || !isSnippetExpired(s))
+    )
     const [viewCounts, likeCounts, likedByMe, savedByMeSet] = await Promise.all([
         Views.countMany(visibleSnippets.map(s => s.shortId)),
         Likes.countMany(visibleSnippets.map(s => s.shortId)),
         Likes.likedShortIds(req.username),
         Bookmarks.savedShortIds(req.username)
     ])
-    const publicSnippetsOnly = visibleSnippets.filter(s => s.isPublic)
+    // Stats (jumlah kode/views/likes publik) selalu ngitung yang masih hidup
+    // aja, konsisten buat semua orang yang liat profil ini -- gak ikut
+    // berubah cuma gara-gara yang liat kebetulan pemiliknya.
+    const publicSnippetsOnly = visibleSnippets.filter(s => s.isPublic && !isSnippetExpired(s))
     const totalViews = publicSnippetsOnly.reduce((sum, s) => sum + (viewCounts[s.shortId] || 0), 0)
     const totalLikes = publicSnippetsOnly.reduce((sum, s) => sum + (likeCounts[s.shortId] || 0), 0)
     res.json({

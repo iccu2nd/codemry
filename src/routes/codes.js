@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import crypto from 'crypto'
-import { Snippets, Users, Views, Likes, Comments, Bookmarks, Notifications, Reports, Follows, REPORT_REASONS, DEV_USERNAME, avatarUrl, readBadges, badgeDisplay, hashPin, verifyPin, stripSnippetSecrets, lockedSnippetStub, isDeveloperUsername } from '../db.js'
+import { Snippets, Users, Views, Likes, Comments, Bookmarks, Notifications, Reports, Follows, REPORT_REASONS, DEV_USERNAME, avatarUrl, readBadges, badgeDisplay, hashPin, verifyPin, stripSnippetSecrets, lockedSnippetStub, isDeveloperUsername, isSnippetExpired, expiredSnippetStub } from '../db.js'
 import { createGist, getGist, editGist, deleteGist, listGists } from '../github.js'
 import { createRateLimiter } from '../rate-limit.js'
 
@@ -72,6 +72,38 @@ function sanitizeDescription(input) {
     return String(input || '').slice(0, 500)
 }
 
+// Fitur expired code: `expiresAt` dikirim sebagai timestamp ms (epoch) dari
+// klien, dihitung dari preset durasi (1 jam/1 hari/dst) yang dipilih pas
+// upload/edit. Aturan sanitasi:
+// - undefined  -> "gak dikirim / gak diubah" (dipakai buat PATCH: biarin apa adanya)
+// - null/''/0  -> permanen (hapus expiry)
+// - timestamp di masa lalu / gak valid -> dianggap permanen (fail-safe, biar
+//   gak ada kode yang KEBURU expired sebelum sempat dipublish)
+// - dibatasi maksimal 5 tahun ke depan biar gak ada nilai liar
+const MAX_EXPIRY_MS = 5 * 365 * 24 * 60 * 60 * 1000
+function sanitizeExpiresAt(input) {
+    if (input === undefined) return undefined
+    if (input === null || input === '' || input === 0 || input === '0') return null
+    const n = Number(input)
+    if (!Number.isFinite(n)) return null
+    const now = Date.now()
+    if (n <= now) return null
+    return Math.min(n, now + MAX_EXPIRY_MS)
+}
+
+// Bentuk representasi publik sebuah snippet tergantung siapa yang lihat:
+// - kode yang udah expired & yang lihat BUKAN pemiliknya -> stub tanpa isi
+// - kode terkunci password & yang lihat BUKAN pemiliknya -> stub tanpa isi
+// - selain itu -> data lengkap (minus pinHash)
+// Flag `expired` selalu disertakan biar frontend bisa nampilin badge/notice,
+// termasuk buat pemilik yang lagi liat kode miliknya sendiri yang kadaluarsa.
+function snippetBase(snippet, isOwner) {
+    const expired = isSnippetExpired(snippet)
+    if (expired && !isOwner) return { ...expiredSnippetStub(snippet), expired }
+    if (snippet.isLocked && !isOwner) return { ...lockedSnippetStub(snippet), expired }
+    return { ...stripSnippetSecrets(snippet), expired }
+}
+
 router.post('/import', requireAuth, async (req, res) => {
     if (!isDeveloperUsername(req.username)) return res.status(403).json({ error: 'cuma developer yang bisa import gist lama' })
     try {
@@ -110,7 +142,7 @@ router.post('/import', requireAuth, async (req, res) => {
 })
 
 export async function createSnippetForUser(username, body) {
-    const { title, filename, content, language, isPublic, description, tags, pin } = body
+    const { title, filename, content, language, isPublic, description, tags, pin, expiresAt } = body
     if (!content || !filename) { const e = new Error('filename & content wajib'); e.status = 400; throw e }
     const trimmedPin = typeof pin === 'string' ? pin.trim() : ''
     if (trimmedPin && !PIN_RE.test(trimmedPin)) { const e = new Error('Password must be 4-8 characters (letters/numbers)'); e.status = 400; throw e }
@@ -128,6 +160,9 @@ export async function createSnippetForUser(username, body) {
         isPublic: !!isPublic,
         isLocked: !!trimmedPin,
         pinHash: trimmedPin ? await hashPin(trimmedPin) : null,
+        // Default permanen (expiresAt: null). Cuma kepasang kalau user milih
+        // durasi expired pas upload.
+        expiresAt: sanitizeExpiresAt(expiresAt) || null,
         rawUrl: file.raw_url,
         htmlUrl: gist.html_url,
         preview: buildPreview(content),
@@ -148,7 +183,7 @@ export async function createSnippetForUser(username, body) {
 router.post('/', requireAuth, async (req, res) => {
     try {
         const snippet = await createSnippetForUser(req.username, req.body)
-        res.json(stripSnippetSecrets(snippet))
+        res.json({ ...stripSnippetSecrets(snippet), expired: false })
     } catch (e) {
         const raw = e.response?.data?.message || e.message || ''
         const friendly = /expected|is at [a-f0-9]|conflict/i.test(raw)
@@ -164,7 +199,11 @@ router.get('/', async (req, res) => {
         const avatarByUsername = new Map(users.map(u => [u.username, avatarUrl(u)]))
         const nicknameByUsername = new Map(users.map(u => [u.username, u.nickname || u.username]))
         const displayByUsername = new Map(users.map(u => [u.username, badgeDisplay(u, readBadges(u))]))
-        const publicSnippets = live.filter(s => s.isPublic)
+        // Kode yang udah kadaluarsa gak ditampilin lagi di feed publik buat
+        // siapa pun (termasuk pemiliknya sendiri) -- feed cuma nampilin kode
+        // yang masih "hidup". Pemilik masih bisa lihat & kelola kode expired
+        // miliknya lewat profil/halaman kode langsung.
+        const publicSnippets = live.filter(s => s.isPublic && !isSnippetExpired(s))
         const [viewCounts, likeCounts, likedByMe, savedByMeSet] = await Promise.all([
             Views.countMany(publicSnippets.map(s => s.shortId)),
             Likes.countMany(publicSnippets.map(s => s.shortId)),
@@ -174,7 +213,7 @@ router.get('/', async (req, res) => {
         res.json(publicSnippets.map(s => {
             const display = displayByUsername.get(s.ownerUsername) || { badges: [], role: null, isDeveloper: false }
             const isOwner = req.username && req.username === s.ownerUsername
-            const base = s.isLocked && !isOwner ? lockedSnippetStub(s) : stripSnippetSecrets(s)
+            const base = snippetBase(s, isOwner)
             return {
                 ...base,
                 tags: s.tags || [],
@@ -209,7 +248,7 @@ router.get('/liked', requireAuth, async (req, res) => {
         res.json(liked.map(s => {
             const display = displayByUsername.get(s.ownerUsername) || { badges: [], role: null, isDeveloper: false }
             const isOwner = req.username === s.ownerUsername
-            const base = s.isLocked && !isOwner ? lockedSnippetStub(s) : stripSnippetSecrets(s)
+            const base = snippetBase(s, isOwner)
             return {
                 ...base,
                 tags: s.tags || [],
@@ -244,7 +283,7 @@ router.get('/bookmarked', requireAuth, async (req, res) => {
         res.json(saved.map(s => {
             const display = displayByUsername.get(s.ownerUsername) || { badges: [], role: null, isDeveloper: false }
             const isOwner = req.username === s.ownerUsername
-            const base = s.isLocked && !isOwner ? lockedSnippetStub(s) : stripSnippetSecrets(s)
+            const base = snippetBase(s, isOwner)
             return {
                 ...base,
                 tags: s.tags || [],
@@ -282,6 +321,24 @@ router.get('/:shortId', async (req, res) => {
         }
     }
 
+    // Kode kadaluarsa dicek DULUAN sebelum status terkunci -- begitu lewat
+    // waktu expired-nya, konten gak lagi bisa diakses siapa pun kecuali
+    // pemiliknya sendiri (yang mana bakal ketemu jalur "unlocked" di bawah
+    // dan cuma dikasih tau lewat flag `expired`, bukan diblokir).
+    if (isSnippetExpired(snippet) && !isOwner) {
+        const [views, likes, likedByMe, savedByMe] = await Promise.all([
+            Views.count(snippet.shortId),
+            Likes.count(snippet.shortId),
+            Likes.hasLiked(req.username, snippet.shortId),
+            Bookmarks.hasSaved(req.username, snippet.shortId)
+        ])
+        return res.json({
+            ...expiredSnippetStub(snippet), tags: snippet.tags || [], content: null, expired: true,
+            views, likes, likedByMe, savedByMe, forkedFrom,
+            ownerBadges: ownerDisplay.badges, ownerAvatar, ownerNickname, ownerRole: ownerDisplay.role, ownerIsDeveloper: ownerDisplay.isDeveloper
+        })
+    }
+
     if (snippet.isLocked && !isOwner) {
         const [views, likes, likedByMe, savedByMe] = await Promise.all([
             Views.count(snippet.shortId),
@@ -290,7 +347,7 @@ router.get('/:shortId', async (req, res) => {
             Bookmarks.hasSaved(req.username, snippet.shortId)
         ])
         return res.json({
-            ...lockedSnippetStub(snippet), tags: snippet.tags || [], content: null,
+            ...lockedSnippetStub(snippet), tags: snippet.tags || [], content: null, expired: false,
             views, likes, likedByMe, savedByMe, forkedFrom,
             ownerBadges: ownerDisplay.badges, ownerAvatar, ownerNickname, ownerRole: ownerDisplay.role, ownerIsDeveloper: ownerDisplay.isDeveloper
         })
@@ -317,6 +374,7 @@ router.get('/:shortId', async (req, res) => {
         res.json({
             ...stripSnippetSecrets(snippet), tags: snippet.tags || [], content, lineCount, views, likes, likedByMe, savedByMe, forkedFrom,
             locked: !!snippet.isLocked,
+            expired: isSnippetExpired(snippet),
             ownerBadges: ownerDisplay.badges, ownerAvatar, ownerNickname, ownerRole: ownerDisplay.role, ownerIsDeveloper: ownerDisplay.isDeveloper
         })
     } catch (e) {
@@ -333,6 +391,7 @@ router.get('/:shortId', async (req, res) => {
 router.post('/:shortId/unlock', async (req, res) => {
     const snippet = await Snippets.findByShort(req.params.shortId)
     if (!snippet) return res.status(404).json({ error: 'Not found' })
+    if (isSnippetExpired(snippet) && req.username !== snippet.ownerUsername) return res.status(410).json({ error: 'This code has expired' })
     if (!snippet.isLocked) return res.status(400).json({ error: 'This code is not locked' })
     const key = `${req.ip}:${snippet.shortId}`
     if (tooManyAttempts(key)) return res.status(429).json({ error: 'Too many attempts, try again later' })
@@ -353,7 +412,7 @@ router.post('/:shortId/unlock', async (req, res) => {
         const ownerDisplay = badgeDisplay(owner, owner ? readBadges(owner) : [])
         res.json({
             ...stripSnippetSecrets(snippet), tags: snippet.tags || [], content: file?.content || '', views, likes, likedByMe,
-            locked: true,
+            locked: true, expired: false,
             ownerBadges: ownerDisplay.badges, ownerAvatar: owner ? avatarUrl(owner) : null, ownerNickname: owner ? (owner.nickname || owner.username) : null, ownerRole: ownerDisplay.role, ownerIsDeveloper: ownerDisplay.isDeveloper
         })
     } catch (e) {
@@ -367,7 +426,7 @@ router.patch('/:shortId', requireAuth, async (req, res) => {
     if (!snippet) return res.status(404).json({ error: 'Not found' })
     if (snippet.ownerUsername !== req.username) return res.status(403).json({ error: 'bukan milikmu' })
 
-    const { title, description, filename, language, content, isPublic, tags, pin, removePin } = req.body
+    const { title, description, filename, language, content, isPublic, tags, pin, removePin, expiresAt } = req.body
     const newFilename = filename && filename.trim() ? filename.trim() : snippet.filename
     const newTitle = title !== undefined ? (title.trim() || snippet.filename) : snippet.title
     const contentChanged = content !== undefined && content !== null
@@ -375,6 +434,10 @@ router.patch('/:shortId', requireAuth, async (req, res) => {
 
     const trimmedPin = typeof pin === 'string' ? pin.trim() : ''
     if (trimmedPin && !PIN_RE.test(trimmedPin)) return res.status(400).json({ error: 'Password must be 4-8 characters (letters/numbers)' })
+
+    // expiresAt gak dikirim sama sekali -> biarin apa adanya (undefined).
+    // Dikirim null/''/0 -> jadiin permanen lagi. Dikirim timestamp -> pasang/perpanjang expiry.
+    const nextExpiresAt = sanitizeExpiresAt(expiresAt)
 
     try {
         let rawUrl = snippet.rawUrl
@@ -401,10 +464,11 @@ router.patch('/:shortId', requireAuth, async (req, res) => {
             rawUrl,
             preview: contentChanged ? buildPreview(content) : snippet.preview,
             lineCount: contentChanged ? countLines(content) : (snippet.lineCount ?? countLines(content)),
+            ...(nextExpiresAt !== undefined ? { expiresAt: nextExpiresAt } : {}),
             ...pinPatch
         }
         const updated = await Snippets.update(snippet.id, patch)
-        res.json({ ...stripSnippetSecrets(updated), locked: !!updated.isLocked, content: contentChanged ? content : undefined })
+        res.json({ ...stripSnippetSecrets(updated), locked: !!updated.isLocked, expired: isSnippetExpired(updated), content: contentChanged ? content : undefined })
     } catch (e) {
         res.status(500).json({ error: e.response?.data?.message || e.message })
     }
@@ -476,6 +540,7 @@ router.post('/:shortId/fork', requireAuth, async (req, res) => {
             isPublic: true,
             isLocked: false,
             pinHash: null,
+            expiresAt: null,
             forkedFrom: { shortId: snippet.shortId, ownerUsername: snippet.ownerUsername },
             rawUrl: newFile.raw_url,
             htmlUrl: newGist.html_url,

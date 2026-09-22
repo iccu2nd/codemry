@@ -5,7 +5,12 @@ async function renderCodeDetail(authReady) {
   if (!shortId) { app.innerHTML = `<div class="card">${emptyStateHtml({ title: 'Code not found' })}</div>`; return }
   try {
     const [s] = await Promise.all([api(`/codes/${shortId}`), authReady])
-    if (s.locked && s.content == null && !(me && me.username === s.ownerUsername)) {
+    const isOwner = !!(me && me.username === s.ownerUsername)
+    if (s.expired && s.content == null && !isOwner) {
+      renderExpiredCard(app, s)
+      return
+    }
+    if (s.locked && s.content == null && !isOwner) {
       renderLockedCard(app, shortId, s)
       return
     }
@@ -13,6 +18,18 @@ async function renderCodeDetail(authReady) {
   } catch (e) {
     app.innerHTML = `<div class="card">${emptyStateHtml({ title: escapeHtml(e.message) })}</div>`
   }
+}
+
+function renderExpiredCard(app, s) {
+  app.innerHTML = `
+    <div class="card">
+      <div class="lock-screen expired-screen">
+        ${hourglassIconSvg()}
+        <div class="lock-title">${t('expiredTitle')}</div>
+        <div class="lock-sub">${t('expiredSub')}</div>
+        <a class="btn btn-primary btn-block" href="/">${t('backToFeed')}</a>
+      </div>
+    </div>`
 }
 
 function renderLockedCard(app, shortId, s) {
@@ -54,7 +71,7 @@ function renderUnlockedDetail(app, shortId, s) {
             <div class="cd-name">${escapeHtml(s.ownerNickname || s.ownerUsername)}${badgesHtml(s.ownerBadges)}${devBadgeHtml(s.ownerIsDeveloper)}${roleBadgeHtml(s.ownerRole)}</div>
             <div class="cd-handle">@${escapeHtml(s.ownerUsername)}</div>
           </div>
-          <div class="cd-lang">${langIconHtml(s.language)}${s.locked ? `<span class="lock-badge" title="Password locked">${lockIconSvg()}</span>` : ''}</div>
+          <div class="cd-lang">${langIconHtml(s.language)}${s.expired ? expiredBadgeHtml() : (s.expiresAt ? expiryBadgeHtml(s.expiresAt) : '')}${s.locked ? `<span class="lock-badge" title="Password locked">${lockIconSvg()}</span>` : ''}</div>
         </header>
 
         <h1 class="cd-title">${escapeHtml(s.title)}</h1>
@@ -65,6 +82,7 @@ function renderUnlockedDetail(app, shortId, s) {
           <span class="cd-dot">·</span>
           <span class="sc-views-inline" title="${s.views || 0} ${t('viewsTitle')}">${eyeIconSvg()}<span>${formatViews(s.views)}</span></span>
         </div>
+        ${s.expired ? `<div class="expired-banner">${hourglassIconSvg()}<span>${t('expiredOwnerNotice')}</span><button type="button" class="link-btn-inline" id="removeExpiryBtn">${t('removeExpiry')}</button></div>` : ''}
         ${s.forkedFrom ? `<a class="forked-from-badge" href="${codeUrl(s.forkedFrom.shortId)}">${forkIconSvg()} Forked from <b>${escapeHtml(s.forkedFrom.ownerNickname)}</b></a>` : ''}
         ${s.description ? `<p class="cd-desc">${formatWaText(s.description)}</p>` : ''}
         ${s.tags && s.tags.length ? `<div class="cd-tags">${s.tags.map(tag => `<span class="tag-pill">#${escapeHtml(tag)}</span>`).join('')}</div>` : ''}
@@ -164,6 +182,11 @@ function renderUnlockedDetail(app, shortId, s) {
           <div class="field" id="editPinField" style="display:${s.locked ? 'block' : 'none'}">
             <label>Password ${s.locked ? 'new (optional)' : ''} (4-8 characters, letters/numbers)</label>
             <input type="password" id="editPinInput" maxlength="8" placeholder="${s.locked ? 'Leave empty to keep current password' : 'e.g. mypass1'}">
+          </div>
+          <div class="field">
+            <label>${t('expirationLabel')}</label>
+            ${expirySelectHtml('editExpiresSelect', 'edit', s.expiresAt)}
+            <div class="field-hint">${s.expiresAt ? `${t('expiresOn')}: ${escapeHtml(formatExpiryFull(s.expiresAt))}` : t('expiresPermanent')}</div>
           </div>
           <div class="btn-row">
             <button class="btn btn-white" id="cancelEditBtn">Cancel</button>
@@ -720,6 +743,16 @@ function renderUnlockedDetail(app, shortId, s) {
       catch (e) { toast(e.message) }
     }
 
+    const removeExpiryBtn = document.getElementById('removeExpiryBtn')
+    if (removeExpiryBtn) removeExpiryBtn.onclick = async () => {
+      removeExpiryBtn.disabled = true
+      try {
+        await api(`/codes/${shortId}`, { method: 'PATCH', body: JSON.stringify({ expiresAt: null }) })
+        toast(t('expiryRemoved'))
+        renderCodeDetail()
+      } catch (e) { toast(e.message); removeExpiryBtn.disabled = false }
+    }
+
     const editBtn = document.getElementById('editBtn')
     const editForm = document.getElementById('editForm')
     const cancelEditBtn = document.getElementById('cancelEditBtn')
@@ -775,6 +808,10 @@ function renderUnlockedDetail(app, shortId, s) {
       }
       if (nowWantsPin) { if (pinVal) body.pin = pinVal }
       else if (s.locked) { body.removePin = true }
+
+      const expiresChoice = document.getElementById('editExpiresSelect')?.value
+      if (expiresChoice === 'none') body.expiresAt = null
+      else if (expiresChoice && expiresChoice !== 'keep') body.expiresAt = Date.now() + Number(expiresChoice)
 
       saveEditBtn.disabled = true
       try {

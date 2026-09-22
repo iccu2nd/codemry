@@ -339,6 +339,21 @@ export function lockedSnippetStub(snippet) {
     return { ...rest, preview: null, locked: true }
 }
 
+// Fitur "expired code": defaultnya kode bersifat PERMANEN (expiresAt: null).
+// Kalau uploader/pemilik sengaja pasang expiresAt (timestamp ms), kode itu
+// otomatis dianggap kadaluarsa begitu waktunya lewat -- kontennya gak lagi
+// bisa diakses publik (mirip kode terkunci, tapi gak bisa "dibuka" lagi
+// pakai password). Pemilik kode sendiri tetap bisa lihat isinya (ditandai
+// expired) supaya masih bisa diperpanjang/dihapus/dijadikan permanen lagi.
+export function isSnippetExpired(snippet) {
+    return !!(snippet && snippet.expiresAt && Date.now() >= snippet.expiresAt)
+}
+
+export function expiredSnippetStub(snippet) {
+    const { pinHash, rawUrl, htmlUrl, preview, ...rest } = snippet
+    return { ...rest, preview: null, expired: true }
+}
+
 export const Bookmarks = {
     async all() { return (await readDbFile('bookmarks.json')).data },
     async toggle(username, shortId) {

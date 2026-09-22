@@ -73,6 +73,26 @@ const I18N = {
   hourAgo: 'h ago',
   dayAgo: 'd ago',
   secAgo: 's ago',
+  expired: 'Expired',
+  expiredTitle: 'This code has expired',
+  expiredSub: 'The owner set this code to expire and it is no longer available.',
+  backToFeed: 'Back to feed',
+  expirationLabel: 'Expiration',
+  expirationHint: 'Choose when this code stops being accessible. Default is permanent.',
+  expiresPermanent: 'Permanent (never expires)',
+  expiresIn1h: 'Expires in 1 hour',
+  expiresIn1d: 'Expires in 1 day',
+  expiresIn3d: 'Expires in 3 days',
+  expiresIn7d: 'Expires in 7 days',
+  expiresIn30d: 'Expires in 30 days',
+  expiresIn90d: 'Expires in 90 days',
+  expiresIn1y: 'Expires in 1 year',
+  expiresOn: 'Expires',
+  expiresBadgeTitle: 'This code will expire',
+  keepCurrentExpiry: 'Keep current expiration',
+  removeExpiry: 'Remove expiration',
+  expiredOwnerNotice: 'This code has expired — only visible to you now.',
+  expiryRemoved: 'Expiration removed',
 }
 function t(key) {
   return I18N[key] || key
@@ -798,6 +818,7 @@ function snippetCard(s) {
         </div>
       </div>
       <div class="sc-badges">
+        ${s.expired ? expiredBadgeHtml() : (s.expiresAt ? expiryBadgeHtml(s.expiresAt) : '')}
         ${s.isLocked ? `<span class="lock-badge" title="${t('passwordLocked')}">${lockIconSvg()}</span>` : ''}
       </div>
     </header>
@@ -809,7 +830,11 @@ function snippetCard(s) {
 
     ${s.tags && s.tags.length ? `<div class="sc-tags">${s.tags.map(tag => `<span class="tag-pill">#${escapeHtml(tag)}</span>`).join('')}</div>` : ''}
 
-    ${s.isLocked
+    ${s.expired
+      ? `<a class="sc-preview sc-preview-expired" href="${codeUrl(s.shortId)}">
+           <span class="sc-lock-msg">${hourglassIconSvg()} ${t('expiredTitle')}</span>
+         </a>`
+      : s.isLocked
       ? `<a class="sc-preview sc-preview-locked" href="${codeUrl(s.shortId)}">
            <span class="sc-lock-msg">${lockIconSvg()} ${t('passwordLocked')}</span>
          </a>`
@@ -847,6 +872,71 @@ function snippetCard(s) {
 function lockIconSvg() {
   return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10.5" width="16" height="11" rx="3"/><path d="M8 10.5V7.2a4 4 0 0 1 8 0v3.3"/><circle cx="12" cy="15.5" r="1.4" fill="currentColor" stroke="none"/><path d="M12 16.5v1.8"/></svg>`
 }
+
+// ============================================================
+// Expired code feature: preset durations shared between the upload
+// wizard and the edit form, plus small helpers for rendering
+// expiry badges/screens consistently everywhere a snippet shows up.
+// ============================================================
+const EXPIRY_PRESETS = [
+  { value: '3600000', labelKey: 'expiresIn1h' },
+  { value: '86400000', labelKey: 'expiresIn1d' },
+  { value: '259200000', labelKey: 'expiresIn3d' },
+  { value: '604800000', labelKey: 'expiresIn7d' },
+  { value: '2592000000', labelKey: 'expiresIn30d' },
+  { value: '7776000000', labelKey: 'expiresIn90d' },
+  { value: '31536000000', labelKey: 'expiresIn1y' },
+]
+
+function hourglassIconSvg() {
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h12"/><path d="M6 20.5h12"/><path d="M7 3.5v3.2c0 1.8 1.9 3.3 3.3 4.3.5.35.5 1.05 0 1.4C8.9 13.4 7 14.9 7 16.7v3.8"/><path d="M17 3.5v3.2c0 1.8-1.9 3.3-3.3 4.3-.5.35-.5 1.05 0 1.4 1.4 1 3.3 2.5 3.3 4.3v3.8"/></svg>`
+}
+
+// Format a future expiresAt timestamp as a short relative label, e.g.
+// "Expires in 3d" / "Expires in 2h" / "Expires in 40m". Falls back to a
+// plain date once it's far enough out.
+function formatExpiryShort(expiresAt) {
+  const ms = expiresAt - Date.now()
+  if (ms <= 0) return t('expired')
+  const min = Math.round(ms / 60000)
+  if (min < 60) return `${t('expiresOn')} ${min}m`
+  const hr = Math.round(min / 60)
+  if (hr < 24) return `${t('expiresOn')} ${hr}h`
+  const day = Math.round(hr / 24)
+  if (day <= 30) return `${t('expiresOn')} ${day}d`
+  return `${t('expiresOn')} ${new Date(expiresAt).toLocaleDateString()}`
+}
+
+function formatExpiryFull(expiresAt) {
+  try { return new Date(expiresAt).toLocaleString() } catch { return '' }
+}
+
+// Small pill shown on snippet cards / detail header when a snippet has an
+// expiration set but hasn't expired yet (a quiet heads-up, not an alarm).
+function expiryBadgeHtml(expiresAt) {
+  if (!expiresAt) return ''
+  return `<span class="expiry-badge" title="${t('expiresBadgeTitle')}: ${escapeHtml(formatExpiryFull(expiresAt))}">${hourglassIconSvg()}<span>${formatExpiryShort(expiresAt)}</span></span>`
+}
+
+function expiredBadgeHtml() {
+  return `<span class="expired-badge" title="${t('expired')}">${hourglassIconSvg()}</span>`
+}
+
+// <select> markup reused by both the upload wizard (step 3) and the edit
+// form on the code detail page. `mode` controls the first option:
+// - 'create': first option is "Permanent" and is the default
+// - 'edit': first option is "Keep current expiration" (a no-op sentinel so
+//   editing a code never resets its expiry unless the user explicitly
+//   picks something else)
+function expirySelectHtml(id, mode, currentExpiresAt) {
+  const first = mode === 'edit'
+    ? `<option value="keep" selected>${currentExpiresAt ? t('keepCurrentExpiry') : t('expiresPermanent')}</option>`
+    : `<option value="" selected>${t('expiresPermanent')}</option>`
+  const permanentOption = mode === 'edit' ? `<option value="none">${t('removeExpiry')}</option>` : ''
+  const presets = EXPIRY_PRESETS.map(p => `<option value="${p.value}">${t(p.labelKey)}</option>`).join('')
+  return `<select id="${id}">${first}${permanentOption}${presets}</select>`
+}
+
 
 function heartIconSvg() {
   return `<svg class="t-like-heart" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"><path d="M12 5.2c2.1-2.4 5.8-2.6 8.1-.4 2.3 2.2 2.4 5.9.2 8.3L12.6 20.8a.9.9 0 0 1-1.2 0L3.7 13.1c-2.2-2.4-2.1-6.1.2-8.3 2.3-2.2 6-2 8.1.4z"/></svg>`
