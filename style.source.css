@@ -706,15 +706,33 @@ img.clickable:hover { outline: 2px solid rgba(var(--accent-rgb),.4); outline-off
 .sc-who { flex: 1; min-width: 0; }
 .sc-name {
   font-weight: 600; font-size: 13.5px; color: var(--text);
-  display: flex; align-items: center; flex-wrap: wrap; gap: 4px;
-  line-height: 1.3;
+  display: flex; align-items: center; flex-wrap: wrap; gap: 5px;
+  line-height: 1.25;
+  min-height: 20px;
 }
 .sc-meta {
   display: flex; align-items: center; flex-wrap: wrap; gap: 0 2px;
   font-size: 12px; color: var(--text-muted); margin-top: 2px;
   line-height: 1.35;
 }
-.sc-badges { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.sc-badges {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  min-height: 22px;
+}
+.sc-badges .expiry-badge,
+.sc-badges .expired-badge,
+.sc-badges .lock-badge {
+  align-self: center;
+}
+.expiry-badge span,
+.expired-badge span {
+  display: inline-block;
+  line-height: 1;
+  transform: translateY(0.5px); /* optical align with 12px icon */
+}
 .sc-body {
   display: block; padding: 10px 16px 0;
   text-decoration: none; color: inherit;
@@ -880,23 +898,28 @@ img.clickable:hover { outline: 2px solid rgba(var(--accent-rgb),.4); outline-off
    premium/rapi -- bukan berkesan "warna-warni". */
 .role-badge {
   display: inline-flex; align-items: center;
-  font-size: 10.5px; font-weight: 700;
-  padding: 3px 10px; border-radius: 20px;
+  height: 20px; box-sizing: border-box;
+  font-size: 11px; font-weight: 700; line-height: 1;
+  padding: 0 8px; border-radius: 999px;
   background: var(--bg-muted);
-  color: var(--accent-bg-hover); text-shadow: none;
-  letter-spacing: .3px; margin-left: 4px; vertical-align: middle;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.1);
+  color: var(--text-secondary);
+  letter-spacing: .2px; margin: 0;
+  border: 1px solid var(--border);
 }
 
 .dev-badge {
-  display: inline-flex; align-items: center; gap: 3px;
-  font-size: 10.5px; font-weight: 700;
-  padding: 2px 8px 2px 6px; border-radius: 20px;
-  background: var(--bg-muted); color: var(--text-muted);
-  letter-spacing: .2px; margin-left: 4px; vertical-align: middle;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.1);
+  display: inline-flex; align-items: center; gap: 4px;
+  height: 20px; box-sizing: border-box;
+  font-size: 11px; font-weight: 700; line-height: 1;
+  padding: 0 8px 0 6px; border-radius: 999px;
+  background: var(--bg-muted); color: var(--text-secondary);
+  letter-spacing: .15px; margin: 0;
+  border: 1px solid var(--border);
 }
-.dev-badge svg { width: 10px; height: 10px; flex-shrink: 0; }
+.dev-badge svg {
+  width: 11px; height: 11px; flex-shrink: 0;
+  display: block; stroke-width: 2.4;
+}
 .detail-divider { height: 1px; background: var(--accent-border); margin: 18px 0 14px; }
 
 .section-label {
@@ -1032,12 +1055,13 @@ img.clickable:hover { outline: 2px solid rgba(var(--accent-rgb),.4); outline-off
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 1em; height: 1em;
-  margin-left: 3px;
-  vertical-align: -0.15em;
+  width: 15px; height: 15px;
+  margin: 0;
   flex-shrink: 0;
+  line-height: 0;
+  vertical-align: middle;
 }
-.verified-icon svg { width: 100%; height: 100%; display: block; }
+.verified-icon svg { width: 15px; height: 15px; display: block; }
 
 .code-preview-wrap {
   position: relative;
@@ -1212,30 +1236,49 @@ mark.code-grep-hit.code-grep-current {
 }
 .code-preview-footer svg { width: 13px; height: 13px; flex-shrink: 0; }
 
+.expired-badge,
+.expiry-badge,
 .lock-badge {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 26px; height: 26px; border-radius: 8px;
-  background: #fef3c7; color: #b45309;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 22px;
+  box-sizing: border-box;
+  padding: 0 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
 }
-.lock-badge svg { width: 13px; height: 13px; }
+.expired-badge svg,
+.expiry-badge svg,
+.lock-badge svg {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+  display: block;
+}
 .expired-badge {
-  display: inline-flex; align-items: center; gap: 5px;
-  padding: 3px 9px; border-radius: 999px;
-  background: rgba(185,28,28,.12); border: 1px solid rgba(185,28,28,.28);
-  color: #ef4444; font-size: 11px; font-weight: 700;
-  white-space: nowrap;
+  background: rgba(239,68,68,.12);
+  border: 1px solid rgba(239,68,68,.3);
+  color: #f87171;
 }
-.expired-badge svg { width: 12px; height: 12px; flex-shrink: 0; }
-html.light .expired-badge { background: #fef2f2; color: #b91c1c; }
+html.light .expired-badge { background: #fef2f2; border-color: #fecaca; color: #b91c1c; }
 .expiry-badge {
-  display: inline-flex; align-items: center; gap: 5px;
-  padding: 3px 9px; border-radius: 999px;
-  background: rgba(217,119,6,.1); border: 1px solid rgba(217,119,6,.28);
-  color: #f59e0b; font-size: 11px; font-weight: 700;
-  white-space: nowrap;
+  background: rgba(245,158,11,.12);
+  border: 1px solid rgba(245,158,11,.32);
+  color: #fbbf24;
 }
-.expiry-badge svg { width: 12px; height: 12px; flex-shrink: 0; }
-html.light .expiry-badge { background: #fffbeb; color: #b45309; }
+html.light .expiry-badge { background: #fffbeb; border-color: #fde68a; color: #b45309; }
+.lock-badge {
+  justify-content: center;
+  width: 22px;
+  padding: 0;
+  background: var(--bg-muted);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+}
 .expired-banner {
   display: flex; align-items: center; gap: 10px;
   margin: 4px 0 12px; padding: 10px 14px;
@@ -2130,7 +2173,8 @@ body:not([data-no-bottom-nav]) .app { padding-bottom: 116px; }
 .bottom-nav.bnav-visible { opacity: 1; transform: translateY(0); }
 
 @media (max-width: 360px) {
-  .role-badge, .dev-badge { font-size: 9.5px; padding: 2px 8px; }
+  .role-badge, .dev-badge { font-size: 10.5px; height: 18px; padding: 0 7px; }
+  .verified-icon, .verified-icon svg { width: 14px !important; height: 14px !important; }
   .profile-nickname { font-size: 20px; }
 }
 
@@ -3608,50 +3652,78 @@ html.light .toast {
 .notif-text b { color: var(--text) !important; font-weight: 700; }
 .notif-target { color: var(--text-muted) !important; }
 
-/* Clearer badges */
+/* Unified badge alignment — icons sit on the same optical line as text */
 .verified-icon {
   display: inline-flex !important;
-  align-items: center;
-  justify-content: center;
-  width: 18px !important;
-  height: 18px !important;
-  vertical-align: -3px;
-  margin-left: 3px;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 15px !important;
+  height: 15px !important;
+  margin: 0 !important;
+  vertical-align: middle !important;
+  line-height: 0 !important;
+  flex-shrink: 0 !important;
 }
-.verified-icon svg { width: 18px !important; height: 18px !important; display: block; }
+.verified-icon svg {
+  width: 15px !important;
+  height: 15px !important;
+  display: block !important;
+}
 .dev-badge {
   display: inline-flex !important;
-  align-items: center;
-  gap: 4px;
-  margin-left: 6px;
-  padding: 3px 8px !important;
+  align-items: center !important;
+  gap: 4px !important;
+  height: 20px !important;
+  margin: 0 !important;
+  padding: 0 8px 0 6px !important;
   font-size: 11px !important;
   font-weight: 700 !important;
-  border-radius: 6px !important;
-  background: var(--accent) !important;
-  color: var(--on-accent) !important;
-  border: none !important;
-  vertical-align: middle;
+  line-height: 1 !important;
+  border-radius: 999px !important;
+  background: var(--bg-muted) !important;
+  color: var(--text-secondary) !important;
+  border: 1px solid var(--border) !important;
+  vertical-align: middle !important;
+  box-sizing: border-box !important;
 }
-.dev-badge svg { width: 12px; height: 12px; }
+.dev-badge svg {
+  width: 11px !important;
+  height: 11px !important;
+  display: block !important;
+  flex-shrink: 0 !important;
+}
 .role-badge {
   display: inline-flex !important;
-  align-items: center;
-  margin-left: 5px;
-  padding: 3px 8px !important;
+  align-items: center !important;
+  height: 20px !important;
+  margin: 0 !important;
+  padding: 0 8px !important;
   font-size: 11px !important;
   font-weight: 700 !important;
-  border-radius: 6px !important;
+  line-height: 1 !important;
+  border-radius: 999px !important;
   background: var(--bg-muted) !important;
-  color: var(--text) !important;
-  border: 1px solid var(--border-strong) !important;
-  vertical-align: middle;
+  color: var(--text-secondary) !important;
+  border: 1px solid var(--border) !important;
+  vertical-align: middle !important;
+  box-sizing: border-box !important;
+}
+.profile-nickname,
+.sc-name,
+.comment-nickname,
+.lb-row-name,
+.snippet-uploader {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
 }
 .profile-nickname .verified-icon,
-.sc-nick .verified-icon,
-.comment-nickname .verified-icon {
-  width: 17px !important;
-  height: 17px !important;
+.sc-name .verified-icon,
+.comment-nickname .verified-icon,
+.lb-row-name .verified-icon {
+  width: 15px !important;
+  height: 15px !important;
 }
 
 .related-card-desc {
