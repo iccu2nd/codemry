@@ -3,7 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<!-- Site identity / favicon -->
 <meta name="theme-color" content="#0c0c0c" media="(prefers-color-scheme: dark)">
 <meta name="theme-color" content="#f5f5f5" media="(prefers-color-scheme: light)">
 <meta name="application-name" content="Codery">
@@ -14,7 +13,6 @@
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
 <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
 <link rel="manifest" href="/site.webmanifest">
-
 <title>Codery - API Docs</title>
 <link rel="preload" href="fonts/Utendo-Regular.woff" as="font" type="font/woff" crossorigin>
 <link rel="preload" href="fonts/Utendo-Bold.woff" as="font" type="font/woff" crossorigin>
@@ -25,7 +23,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
 </head>
 <body>
-
 <header class="topbar">
   <div class="brand">Codery</div>
   <button class="hamburger" id="hamburgerBtn" aria-label="Open menu">
@@ -35,55 +32,27 @@
     <div id="authArea"></div>
   </nav>
 </header>
-
 <div class="nav-backdrop" id="navBackdrop"></div>
-
 <main class="app" id="app">
   <div class="card">
-    <div class="hero-title" style="font-size:22px">API Docs</div>
+    <div class="hero-title" style="font-size:22px">API Documentation</div>
     <div class="hero-rule"></div>
-    <div class="hero-sub" style="margin-bottom:0">Baru pertama kali menggunakan API Codery? Setiap endpoint di bawah ini dijelaskan secara lengkap: endpoint, method, kebutuhan API key, parameter, hingga contoh kode yang siap digunakan.</div>
+    <div class="hero-sub" style="margin-bottom:0">Loading docs…</div>
   </div>
-
   <div class="card">
-    <div class="dev-section-title">API Key Anda</div>
-    <div class="snippet-desc" id="apiKeyIntroText">API key digunakan untuk mengakses endpoint yang membutuhkan autentikasi (data akun Anda sendiri). Key tidak dibuat secara otomatis — Anda perlu membuatnya sendiri saat akan mulai menggunakan API.</div>
-    <div id="apiKeySection"></div>
+    <div class="skeleton skel-line" style="width:40%;height:14px;margin-bottom:12px"></div>
+    <div class="skeleton skel-line" style="width:90%;height:12px;margin-bottom:8px"></div>
+    <div class="skeleton skel-line" style="width:70%;height:12px;margin-bottom:16px"></div>
+    <div class="skeleton" style="width:140px;height:36px;border-radius:12px"></div>
   </div>
-
   <div class="card">
-    <div class="dev-section-title">Dasar-dasar Sebelum Memulai</div>
-    <table class="doc-param-table">
-      <thead><tr><th>Istilah</th><th>Keterangan</th></tr></thead>
-      <tbody>
-        <tr><td><span class="apikey-badge apikey-badge-free">Tanpa Key</span></td><td>Dapat diakses langsung oleh siapa saja, tanpa login atau API key.</td></tr>
-        <tr><td><span class="apikey-badge apikey-badge-required">Butuh Key</span></td><td>Wajib menyertakan API key Anda pada header <code>X-API-Key</code> (atau query <code>?key=</code>).</td></tr>
-        <tr><td><code>Base URL</code></td><td><code id="apiBaseUrl">/api/public</code> — semua endpoint di bawah ini mengacu pada URL dasar ini.</td></tr>
-      </tbody>
-    </table>
-  </div>
-
-  <div class="section-label" id="apiListLabel">Daftar API</div>
-  <div id="apiIndexList"></div>
-
-  <div class="section-label">Tanpa API Key</div>
-  <div id="apiListFree"></div>
-
-  <div class="section-label">Butuh API Key</div>
-  <div id="apiListAuth"></div>
-
-  <div class="card">
-    <div class="dev-section-title">Contoh Respons Error</div>
-    <div class="snippet-desc">Jika terjadi kesalahan (key tidak valid, data tidak ditemukan, dan lain-lain), API akan mengembalikan format error yang sama di semua endpoint:</div>
-    <div class="doc-code-window">
-      <div class="code-window-bar"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span><span class="code-window-filename">response.json</span></div>
-      <div class="doc-code-block"><pre><code class="language-json">{ "error": "API key tidak valid" }</code></pre></div>
-    </div>
+    <div class="skeleton skel-line" style="width:30%;height:14px;margin-bottom:14px"></div>
+    <div class="skeleton skel-line" style="width:80%;height:12px;margin-bottom:10px"></div>
+    <div class="skeleton skel-line" style="width:75%;height:12px;margin-bottom:10px"></div>
+    <div class="skeleton skel-line" style="width:65%;height:12px"></div>
   </div>
 </main>
-
 <div id="toast" class="toast"></div>
-
 <script src="js/config.js"></script>
 <script src="js/common.js"></script>
 <script src="js/api-docs.js"></script>

@@ -22,21 +22,27 @@ async function renderCodeDetail(authReady) {
 
 function renderExpiredCard(app, s) {
   const ownerName = escapeHtml(s.ownerNickname || s.ownerUsername || 'Unknown')
+  const ownerUser = escapeHtml(s.ownerUsername || '')
   const expiredWhen = s.expiresAt ? formatExpiryFull(s.expiresAt) : ''
+  const title = escapeHtml(s.title || s.filename || 'Untitled')
   app.innerHTML = `
-    <div class="card">
-      <div class="lock-screen expired-screen">
-        <div class="expired-icon-wrap">${hourglassIconSvg()}</div>
+    <div class="card expired-card">
+      <div class="expired-screen">
+        <div class="expired-icon-wrap">${expiredIconSvg()}</div>
+        <div class="expired-status">${t('expired')}</div>
         <div class="lock-title">${t('expiredTitle')}</div>
         <div class="lock-sub">${t('expiredSub')}</div>
-        ${expiredWhen ? `<div class="expired-meta">Expired on ${escapeHtml(expiredWhen)}</div>` : ''}
-        <div class="expired-owner">
-          ${avatarHtml(s.ownerAvatar, s.ownerNickname || s.ownerUsername, 'avatar-circle-sm')}
-          <div>
-            <div class="expired-owner-name">${ownerName}</div>
-            <a class="link-btn-inline" href="${profileUrl(s.ownerUsername)}">${t('viewProfile')}</a>
-          </div>
+        <div class="expired-snippet-meta">
+          <div class="expired-snippet-title">${title}</div>
+          ${expiredWhen ? `<div class="expired-meta">${hourglassIconSvg()} <span>${escapeHtml(expiredWhen)}</span></div>` : ''}
         </div>
+        <a class="expired-owner" href="${profileUrl(s.ownerUsername)}">
+          ${avatarHtml(s.ownerAvatar, s.ownerNickname || s.ownerUsername, 'avatar-circle-sm')}
+          <div class="expired-owner-text">
+            <div class="expired-owner-name">${ownerName}</div>
+            <div class="expired-owner-user">@${ownerUser}</div>
+          </div>
+        </a>
         <a class="btn btn-primary btn-block" href="/">${t('backToFeed')}</a>
       </div>
     </div>`

@@ -838,7 +838,7 @@ function snippetCard(s) {
 
     ${s.expired
       ? `<a class="sc-preview sc-preview-expired" href="${codeUrl(s.shortId)}">
-           <span class="sc-lock-msg">${hourglassIconSvg()} ${t('expiredTitle')}</span>
+           <span class="sc-lock-msg">${expiredIconSvg()} ${t('expiredTitle')}</span>
          </a>`
       : s.isLocked
       ? `<a class="sc-preview sc-preview-locked" href="${codeUrl(s.shortId)}">
@@ -897,19 +897,25 @@ const EXPIRY_PRESETS = [
 const EXPIRY_UNIT_MS = { hours: 3600000, days: 86400000, weeks: 604800000 }
 
 function hourglassIconSvg() {
-  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h12"/><path d="M6 20.5h12"/><path d="M7 3.5v3.2c0 1.8 1.9 3.3 3.3 4.3.5.35.5 1.05 0 1.4C8.9 13.4 7 14.9 7 16.7v3.8"/><path d="M17 3.5v3.2c0 1.8-1.9 3.3-3.3 4.3-.5.35-.5 1.05 0 1.4 1.4 1 3.3 2.5 3.3 4.3v3.8"/></svg>`
+  // Clean clock icon — used for both expiry badges and expired screens
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>`
+}
+
+function expiredIconSvg() {
+  // Clock with a subtle slash for fully-expired state
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/><path d="M5 5l14 14" opacity=".45"/></svg>`
 }
 
 function formatExpiryShort(expiresAt) {
   const ms = expiresAt - Date.now()
   if (ms <= 0) return t('expired')
   const min = Math.round(ms / 60000)
-  if (min < 60) return `${t('expiresOn')} ${min}m`
+  if (min < 60) return `${min}m`
   const hr = Math.round(min / 60)
-  if (hr < 24) return `${t('expiresOn')} ${hr}h`
+  if (hr < 24) return `${hr}h`
   const day = Math.round(hr / 24)
-  if (day <= 30) return `${t('expiresOn')} ${day}d`
-  return `${t('expiresOn')} ${new Date(expiresAt).toLocaleDateString()}`
+  if (day <= 30) return `${day}d`
+  return new Date(expiresAt).toLocaleDateString()
 }
 
 function formatExpiryFull(expiresAt) {
@@ -918,11 +924,11 @@ function formatExpiryFull(expiresAt) {
 
 function expiryBadgeHtml(expiresAt) {
   if (!expiresAt) return ''
-  return `<span class="expiry-badge" title="${t('expiresBadgeTitle')}: ${escapeHtml(formatExpiryFull(expiresAt))}">${hourglassIconSvg()}<span>${formatExpiryShort(expiresAt)}</span></span>`
+  return `<span class="expiry-badge" title="${t('expiresBadgeTitle')}: ${escapeHtml(formatExpiryFull(expiresAt))}">${hourglassIconSvg()}<span>${t('expiresOn')} ${formatExpiryShort(expiresAt)}</span></span>`
 }
 
 function expiredBadgeHtml() {
-  return `<span class="expired-badge" title="${t('expired')}">${hourglassIconSvg()}</span>`
+  return `<span class="expired-badge" title="${t('expired')}">${expiredIconSvg()}<span>${t('expired')}</span></span>`
 }
 
 // Select + optional custom duration row. Used by upload wizard & edit form.

@@ -1,7 +1,7 @@
 const LB_TABS = [
-  { key: 'topUploaders', label: 'Top Upload', unit: 'codes', icon: 'upload' },
-  { key: 'topLiked', label: 'Most Liked', unit: 'likes', icon: 'heart' },
-  { key: 'topFollowed', label: 'Top Followers', unit: 'followers', icon: 'users' }
+  { key: 'topUploaders', label: 'Top Upload', unit: 'codes' },
+  { key: 'topLiked', label: 'Most Liked', unit: 'likes' },
+  { key: 'topFollowed', label: 'Top Followers', unit: 'followers' }
 ]
 
 function trophyIconSvg() {
@@ -11,26 +11,25 @@ function trophyIconSvg() {
 function medalHtml(rank) {
   if (rank > 3) return `<span class="lb-rank">${rank}</span>`
   const tier = rank === 1 ? 'gold' : rank === 2 ? 'silver' : 'bronze'
-  return `<span class="lb-medal lb-medal-${tier}" title="Rank ${rank}">${trophyIconSvg()}</span>`
+  return `<span class="lb-medal lb-medal-${tier}" aria-label="Rank ${rank}">${rank}</span>`
 }
 
 function lbRowHtml(row, rank, unit) {
-  const podium = rank <= 3 ? ` lb-row-top${rank}` : ''
   return `
-  <a class="lb-row${podium}" href="${profileUrl(row.username)}">
+  <a class="lb-row" href="${profileUrl(row.username)}">
     ${medalHtml(rank)}
     ${avatarHtml(row.avatar, row.nickname || row.username, 'avatar-circle-sm')}
     <div class="lb-row-info">
-      <div class="snippet-uploader">${escapeHtml(row.nickname)}${badgesHtml(row.badges)}${devBadgeHtml(row.isDeveloper)}${roleBadgeHtml(row.role)}</div>
-      <div class="snippet-meta">@${escapeHtml(row.username)}</div>
+      <div class="lb-row-name">${escapeHtml(row.nickname || row.username)}${badgesHtml(row.badges)}${devBadgeHtml(row.isDeveloper)}${roleBadgeHtml(row.role)}</div>
+      <div class="lb-row-user">@${escapeHtml(row.username)}</div>
     </div>
-    <div class="lb-row-value">${Number(row.value).toLocaleString()} <span>${unit}</span></div>
+    <div class="lb-row-value">${Number(row.value).toLocaleString()}<span>${unit}</span></div>
   </a>`
 }
 
 function podiumHtml(rows, unit) {
   if (!rows.length) return ''
-  // Visual order: 2nd | 1st | 3rd (center is tallest)
+  // Visual order: 2nd | 1st | 3rd
   const order = [
     { row: rows[1] || null, rank: 2 },
     { row: rows[0] || null, rank: 1 },
@@ -43,11 +42,11 @@ function podiumHtml(rows, unit) {
       const tier = rank === 1 ? 'gold' : rank === 2 ? 'silver' : 'bronze'
       return `
       <a class="lb-podium-slot lb-podium-${tier}" href="${profileUrl(row.username)}">
-        <div class="lb-podium-medal">${medalHtml(rank)}</div>
+        <span class="lb-podium-rank lb-medal lb-medal-${tier}">${rank}</span>
         ${avatarHtml(row.avatar, row.nickname || row.username, rank === 1 ? 'avatar-circle' : 'avatar-circle-sm')}
-        <div class="lb-podium-name">${escapeHtml(row.nickname || row.username)}</div>
+        <div class="lb-podium-name" title="${escapeHtml(row.nickname || row.username)}">${escapeHtml(row.nickname || row.username)}</div>
         <div class="lb-podium-user">@${escapeHtml(row.username)}</div>
-        <div class="lb-podium-value">${Number(row.value).toLocaleString()} <span>${unit}</span></div>
+        <div class="lb-podium-value">${Number(row.value).toLocaleString()}<span>${unit}</span></div>
       </a>`
     }).join('')}
   </div>`
@@ -67,18 +66,18 @@ async function renderLeaderboard() {
 
       app.innerHTML = `
         <div class="card lb-card">
-          <div class="hero-title" style="font-size:22px">Leaderboard</div>
-          <div class="hero-rule"></div>
-          <div class="hero-sub" style="margin-bottom:14px">Top developers on Codery this season.</div>
-          <div class="lb-tabs">
-            ${LB_TABS.map(t => `<button type="button" class="lb-tab-btn ${t.key === activeKey ? 'active' : ''}" data-key="${t.key}">${t.label}</button>`).join('')}
+          <div class="lb-hero">
+            <div class="lb-hero-icon">${trophyIconSvg()}</div>
+            <div class="hero-title" style="font-size:22px;margin:0">Leaderboard</div>
+            <div class="hero-sub" style="margin:6px 0 0">Top developers on Codery</div>
+          </div>
+          <div class="lb-tabs" role="tablist">
+            ${LB_TABS.map(t => `<button type="button" role="tab" class="lb-tab-btn ${t.key === activeKey ? 'active' : ''}" data-key="${t.key}">${t.label}</button>`).join('')}
           </div>
           ${rows.length ? `
             ${podiumHtml(top3, tab.unit)}
-            <div class="lb-list">
-              ${rest.map((row, i) => lbRowHtml(row, i + 4, tab.unit)).join('')}
-            </div>
-          ` : `${emptyStateHtml({ title: 'No data yet', sub: 'Be the first to upload!' })}`}
+            ${rest.length ? `<div class="lb-list">${rest.map((row, i) => lbRowHtml(row, i + 4, tab.unit)).join('')}</div>` : ''}
+          ` : emptyStateHtml({ title: 'No data yet', sub: 'Be the first to upload!' })}
         </div>
       `
       app.querySelectorAll('.lb-tab-btn').forEach(btn => {
