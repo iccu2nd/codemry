@@ -170,6 +170,30 @@ export async function editGist(id, files, description) {
     const res = await axios.patch(`${API}/gists/${id}`, body, { headers: headers() })
     cacheSetGist(id, res.data)
     gistListCache = null
+    historyCache.delete(id)
+    return res.data
+}
+
+// Riwayat versi kode: GitHub otomatis bikin commit baru tiap kali gist
+// di-PATCH (lihat editGist di atas), jadi kita gak perlu nyimpen histori
+// konten kita sendiri -- tinggal baca commit log gist itu. Cache pendek
+// biar gak nembak GitHub API tiap kali modal history dibuka berkali-kali.
+const HISTORY_TTL_MS = 30_000
+const historyCache = new Map()
+
+export async function getGistCommits(id) {
+    const hit = historyCache.get(id)
+    if (hit && Date.now() - hit.at < HISTORY_TTL_MS) return hit.data
+    const res = await axios.get(`${API}/gists/${id}/commits`, { headers: headers(), params: { per_page: 100 } })
+    historyCache.set(id, { data: res.data, at: Date.now() })
+    return res.data
+}
+
+// Ambil isi gist persis di satu revisi (sha commit) tertentu -- dipakai
+// buat nampilin/restore versi lama. Gak di-cache karena isinya immutable
+// per-sha (gak ada gunanya di-refresh, tapi juga gak sering diakses).
+export async function getGistAtRevision(id, sha) {
+    const res = await axios.get(`${API}/gists/${id}/${sha}`, { headers: headers() })
     return res.data
 }
 

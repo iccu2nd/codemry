@@ -1,7 +1,7 @@
 import { Router } from 'express'
 import crypto from 'crypto'
 import { Snippets, Users, Views, Likes, Comments, Bookmarks, Notifications, Reports, Follows, REPORT_REASONS, DEV_USERNAME, avatarUrl, readBadges, badgeDisplay, hashPin, verifyPin, stripSnippetSecrets, lockedSnippetStub, isDeveloperUsername, isSnippetExpired, expiredSnippetStub } from '../db.js'
-import { createGist, getGist, editGist, deleteGist, listGists } from '../github.js'
+import { createGist, getGist, editGist, deleteGist, listGists, getGistCommits, getGistAtRevision } from '../github.js'
 import { createRateLimiter } from '../rate-limit.js'
 
 const router = Router()
@@ -469,6 +469,78 @@ router.patch('/:shortId', requireAuth, async (req, res) => {
         }
         const updated = await Snippets.update(snippet.id, patch)
         res.json({ ...stripSnippetSecrets(updated), locked: !!updated.isLocked, expired: isSnippetExpired(updated), content: contentChanged ? content : undefined })
+    } catch (e) {
+        res.status(500).json({ error: e.response?.data?.message || e.message })
+    }
+})
+
+// Siapa aja yang boleh liat konten snippet sekarang juga boleh liat riwayat
+// versinya -- aturan aksesnya sama kayak GET /:shortId (privat/terkunci
+// cuma buat owner, lihat handler view di atas).
+function canSeeHistory(snippet, username) {
+    if (snippet.ownerUsername === username) return true
+    if (snippet.isPublic === false) return false
+    if (snippet.isLocked) return false
+    return true
+}
+
+router.get('/:shortId/history', async (req, res) => {
+    const snippet = await Snippets.findByShort(req.params.shortId)
+    if (!snippet) return res.status(404).json({ error: 'Not found' })
+    if (!canSeeHistory(snippet, req.username)) return res.status(403).json({ error: 'Snippet ini privat/terkunci' })
+    try {
+        const commits = await getGistCommits(snippet.id)
+        // GitHub balikin dari yang paling baru duluan -- itu juga yang paling
+        // enak buat ditampilin (versi sekarang di atas).
+        const history = commits.map((c, i) => ({
+            version: c.version,
+            committedAt: c.committed_at,
+            changes: c.change_status ? { additions: c.change_status.additions, deletions: c.change_status.deletions } : null,
+            isCurrent: i === 0
+        }))
+        res.json({ history })
+    } catch (e) {
+        res.status(500).json({ error: e.response?.data?.message || e.message })
+    }
+})
+
+router.get('/:shortId/history/:sha', async (req, res) => {
+    const snippet = await Snippets.findByShort(req.params.shortId)
+    if (!snippet) return res.status(404).json({ error: 'Not found' })
+    if (!canSeeHistory(snippet, req.username)) return res.status(403).json({ error: 'Snippet ini privat/terkunci' })
+    try {
+        const gistAtRev = await getGistAtRevision(snippet.id, req.params.sha)
+        const files = Object.values(gistAtRev.files || {})
+        // Nama file bisa aja udah diganti (rename) di revisi setelahnya --
+        // coba cocokin nama file sekarang dulu, baru fallback ke file pertama
+        // yang ada di revisi itu.
+        const file = files.find(f => f.filename === snippet.filename) || files[0]
+        if (!file) return res.status(404).json({ error: 'File tidak ditemukan di revisi ini' })
+        res.json({ version: req.params.sha, filename: file.filename, content: file.content ?? '' })
+    } catch (e) {
+        if (e.response?.status === 404) return res.status(404).json({ error: 'Revisi tidak ditemukan' })
+        res.status(500).json({ error: e.response?.data?.message || e.message })
+    }
+})
+
+router.post('/:shortId/history/:sha/restore', requireAuth, async (req, res) => {
+    const snippet = await Snippets.findByShort(req.params.shortId)
+    if (!snippet) return res.status(404).json({ error: 'Not found' })
+    if (snippet.ownerUsername !== req.username) return res.status(403).json({ error: 'bukan milikmu' })
+    try {
+        const gistAtRev = await getGistAtRevision(snippet.id, req.params.sha)
+        const files = Object.values(gistAtRev.files || {})
+        const file = files.find(f => f.filename === snippet.filename) || files[0]
+        if (!file) return res.status(404).json({ error: 'Revisi tidak ditemukan' })
+        const content = file.content ?? ''
+        const gist = await editGist(snippet.id, { [snippet.filename]: { content } }, snippet.title)
+        const updatedFile = gist.files[snippet.filename]
+        const updated = await Snippets.update(snippet.id, {
+            rawUrl: updatedFile?.raw_url || snippet.rawUrl,
+            preview: buildPreview(content),
+            lineCount: countLines(content)
+        })
+        res.json({ ...stripSnippetSecrets(updated), content })
     } catch (e) {
         res.status(500).json({ error: e.response?.data?.message || e.message })
     }

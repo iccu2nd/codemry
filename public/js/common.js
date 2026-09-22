@@ -1179,6 +1179,10 @@ function downloadIconSvg() {
   return `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5v11"/><path d="M7.5 10.5 12 15l4.5-4.5"/><path d="M4.5 18.5h15" stroke-width="2.4"/></svg>`
 }
 
+function historyIconSvg() {
+  return `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 1 0 2.5-5.8"/><path d="M4 4.5V9h4.5"/><path d="M12 8v4.3l3 2"/></svg>`
+}
+
 function stickerIconSvg() {
   return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 3.5H6.2A2.7 2.7 0 0 0 3.5 6.2v11.6A2.7 2.7 0 0 0 6.2 20.5h8.3l6-6V6.2a2.7 2.7 0 0 0-2.7-2.7z"/><path d="M14.5 3.5v4.2a1.8 1.8 0 0 0 1.8 1.8h4.2"/><circle cx="9" cy="11" r="1" fill="currentColor" stroke="none"/><circle cx="13.5" cy="11" r="1" fill="currentColor" stroke="none"/><path d="M9.2 14.2c.9 1.1 2.7 1.1 3.6 0"/></svg>`
 }
