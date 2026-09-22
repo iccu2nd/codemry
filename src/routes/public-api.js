@@ -1,7 +1,8 @@
 import { Router } from 'express'
-import { Users, Snippets, Views, Likes, Follows, ensureNickname, avatarUrl, stripSnippetSecrets, isSnippetExpired, readBadges } from '../db.js'
+import { Users, Snippets, Views, Likes, Follows, Comments, Bookmarks, ensureNickname, avatarUrl, stripSnippetSecrets, isSnippetExpired, readBadges } from '../db.js'
 import { createRateLimiter } from '../rate-limit.js'
 import { createSnippetForUser } from './codes.js'
+import { editGist, deleteGist } from '../github.js'
 
 // Public API for account holders — documented at /api-docs.
 // Key via header X-API-Key or query ?key=. Rate-limited per key.
@@ -207,7 +208,10 @@ router.get('/snippets', async (req, res) => {
 router.post('/snippets', async (req, res) => {
     if (tooManyUploads(req.apiUser.apiKey)) return res.status(429).json({ error: 'Too many uploads, try again later' })
     try {
-        const snippet = await createSnippetForUser(req.apiUser.username, req.body)
+        const body = { ...(req.body || {}) }
+        // Public API defaults to public visibility when omitted
+        if (body.isPublic === undefined) body.isPublic = true
+        const snippet = await createSnippetForUser(req.apiUser.username, body)
         res.status(201).json({ ...stripSnippetSecrets(snippet), expired: false })
     } catch (e) {
         res.status(e.status || 500).json({ error: e.response?.data?.message || e.message })
@@ -221,7 +225,18 @@ router.delete('/snippets/:shortId', async (req, res) => {
         if (snippet.ownerUsername !== req.apiUser.username) {
             return res.status(403).json({ error: 'You can only delete your own snippets' })
         }
+        try { await deleteGist(snippet.id) } catch {}
         await Snippets.remove(snippet.id)
+        try {
+            const owner = await Users.find(snippet.ownerUsername)
+            const pins = (owner?.pinnedShortIds || []).filter(id => id !== snippet.shortId)
+            if (owner && pins.length !== (owner.pinnedShortIds || []).length) {
+                await Users.update(snippet.ownerUsername, { pinnedShortIds: pins })
+            }
+        } catch {}
+        await Comments.removeAllForSnippet(snippet.shortId).catch(() => {})
+        await Likes.removeAllForSnippet(snippet.shortId).catch(() => {})
+        Bookmarks.removeAllForSnippet(snippet.shortId).catch(() => {})
         res.json({ ok: true, shortId: snippet.shortId })
     } catch (e) {
         res.status(500).json({ error: e.response?.data?.message || e.message })
@@ -235,27 +250,50 @@ router.patch('/snippets/:shortId', async (req, res) => {
         if (snippet.ownerUsername !== req.apiUser.username) {
             return res.status(403).json({ error: 'You can only edit your own snippets' })
         }
-        // Delegate body sanitization to the same path as the web UI when possible
         const { title, description, filename, language, content, isPublic, tags, expiresAt } = req.body || {}
-        const updates = {}
-        if (title != null) updates.title = String(title).slice(0, 120)
-        if (description != null) updates.description = String(description).slice(0, 500)
-        if (filename != null) updates.filename = String(filename).slice(0, 80)
-        if (language != null) updates.language = String(language)
-        if (content != null) updates.content = String(content)
-        if (isPublic != null) updates.isPublic = !!isPublic
+        const newFilename = filename != null ? String(filename).slice(0, 80) || snippet.filename : snippet.filename
+        const newTitle = title != null ? (String(title).trim().slice(0, 120) || newFilename) : snippet.title
+        const contentChanged = content != null
+        const filenameChanged = newFilename !== snippet.filename
+
+        let rawUrl = snippet.rawUrl
+        if (contentChanged || filenameChanged || (title != null && newTitle !== snippet.title)) {
+            const files = filenameChanged
+                ? { [snippet.filename]: { filename: newFilename, content: contentChanged ? String(content) : undefined } }
+                : { [snippet.filename]: { content: contentChanged ? String(content) : undefined } }
+            const gist = await editGist(snippet.id, files, newTitle)
+            const file = gist.files[newFilename]
+            rawUrl = file?.raw_url || rawUrl
+        }
+
+        const patch = {
+            title: newTitle,
+            filename: newFilename,
+            rawUrl,
+        }
+        if (description != null) patch.description = String(description).slice(0, 500)
+        if (language != null) patch.language = String(language)
+        if (isPublic != null) patch.isPublic = !!isPublic
         if (tags != null) {
             const list = Array.isArray(tags) ? tags : String(tags).split(',')
-            updates.tags = list.map(t => String(t).trim().toLowerCase()).filter(Boolean).slice(0, 5)
+            patch.tags = list.map(t => String(t).trim().toLowerCase()).filter(Boolean).slice(0, 5)
+        }
+        if (contentChanged) {
+            const body = String(content)
+            patch.preview = body.split('\n').slice(0, 12).join('\n').slice(0, 600)
+            patch.lineCount = body.split('\n').length
         }
         if (expiresAt !== undefined) {
-            if (expiresAt === null || expiresAt === '' || expiresAt === 0) updates.expiresAt = null
+            if (expiresAt === null || expiresAt === '' || expiresAt === 0) patch.expiresAt = null
             else {
                 const n = Number(expiresAt)
-                updates.expiresAt = Number.isFinite(n) && n > Date.now() ? n : null
+                const now = Date.now()
+                const max = now + 5 * 365 * 24 * 60 * 60 * 1000
+                patch.expiresAt = Number.isFinite(n) && n > now ? Math.min(n, max) : null
             }
         }
-        const updated = await Snippets.update(snippet.id, updates)
+
+        const updated = await Snippets.update(snippet.id, patch)
         res.json({ ...stripSnippetSecrets(updated), expired: isSnippetExpired(updated) })
     } catch (e) {
         res.status(500).json({ error: e.response?.data?.message || e.message })

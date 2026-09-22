@@ -470,7 +470,7 @@ app.get('/api-docs', (req, res) => {
     if (!req.username) return res.redirect('/auth')
     sendHtml(res, apiDocsHtmlTemplate)
 })
-app.get(/^\/(index|upload|code|profile|follow|auth|devpanel|moderasi|leaderboard|search|panduan)\.html$/, (req, res) => {
+app.get(/^\/(index|upload|code|profile|follow|auth|devpanel|moderasi|leaderboard|search|panduan|contributors)\.html$/, (req, res) => {
     if (req.path === '/upload.html' && !req.username) return res.redirect('/auth')
     const clean = req.path.replace(/\.html$/, '').replace(/^\/index$/, '/')
     const qsStr = req.originalUrl.includes('?') ? req.originalUrl.slice(req.originalUrl.indexOf('?')) : ''

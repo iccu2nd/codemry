@@ -148,6 +148,16 @@ router.post('/me/apikey/regenerate', async (req, res) => {
     }
 })
 
+router.delete('/me/apikey', async (req, res) => {
+    if (!req.username) return res.status(401).json({ error: 'Please sign in' })
+    try {
+        await Users.update(req.username, { apiKey: null, apiKeyCreatedAt: null })
+        res.json({ ok: true })
+    } catch (e) {
+        res.status(500).json({ error: e.response?.data?.message || e.message })
+    }
+})
+
 router.get('/leaderboard', async (req, res) => {
     try {
         const [users, snippets, follows, likes] = await Promise.all([
@@ -201,13 +211,19 @@ router.get('/contributors', async (req, res) => {
         const users = await Users.all()
         const list = users
             .filter(u => readBadges(u).includes('contributor'))
-            .map(u => ({
-                username: u.username,
-                nickname: u.nickname || u.username,
-                avatar: avatarUrl(u),
-                badges: readBadges(u),
-                ...badgeDisplay(u, readBadges(u))
-            }))
+            .map(u => {
+                const badges = readBadges(u)
+                const display = badgeDisplay(u, badges)
+                return {
+                    username: u.username,
+                    nickname: u.nickname || u.username,
+                    avatar: avatarUrl(u),
+                    badges: display.badges,
+                    role: display.role,
+                    isDeveloper: display.isDeveloper,
+                    isModerator: display.isModerator
+                }
+            })
             .sort((a, b) => a.nickname.localeCompare(b.nickname))
         res.json(list)
     } catch (e) {

@@ -271,8 +271,8 @@ function wireEndpointCards(root) {
 async function loadKey() {
   if (!me) return
   try {
-    const data = await api('/dev/api-key')
-    currentKey = data.key || null
+    const data = await api('/users/me/apikey')
+    currentKey = data.apiKey || null
   } catch { currentKey = null }
 }
 
@@ -311,8 +311,8 @@ async function render() {
 
   if (gen) gen.onclick = async () => {
     try {
-      const data = await api('/dev/api-key', { method: 'POST' })
-      currentKey = data.key
+      const data = await api('/users/me/apikey/generate', { method: 'POST' })
+      currentKey = data.apiKey
       keyVisible = true
       toast('API key created')
       render()
@@ -321,8 +321,8 @@ async function render() {
   if (regen) regen.onclick = async () => {
     if (!confirm('Regenerate? The old key will stop working immediately.')) return
     try {
-      const data = await api('/dev/api-key', { method: 'POST' })
-      currentKey = data.key
+      const data = await api('/users/me/apikey/regenerate', { method: 'POST' })
+      currentKey = data.apiKey
       keyVisible = true
       toast('New key generated')
       render()
@@ -331,7 +331,7 @@ async function render() {
   if (revoke) revoke.onclick = async () => {
     if (!confirm('Revoke this key?')) return
     try {
-      await api('/dev/api-key', { method: 'DELETE' })
+      await api('/users/me/apikey', { method: 'DELETE' })
       currentKey = null
       toast('Key revoked')
       render()

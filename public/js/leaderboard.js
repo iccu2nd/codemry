@@ -30,12 +30,15 @@ function lbRowHtml(row, rank, unit) {
 
 function podiumHtml(rows, unit) {
   if (!rows.length) return ''
-  const slots = [rows[1], rows[0], rows[2]].filter(Boolean)
-  const ranks = [2, 1, 3]
+  // Visual order: 2nd | 1st | 3rd (center is tallest)
+  const order = [
+    { row: rows[1] || null, rank: 2 },
+    { row: rows[0] || null, rank: 1 },
+    { row: rows[2] || null, rank: 3 }
+  ]
   return `
   <div class="lb-podium">
-    ${slots.map((row, i) => {
-      const rank = ranks[i]
+    ${order.map(({ row, rank }) => {
       if (!row) return '<div class="lb-podium-slot empty"></div>'
       const tier = rank === 1 ? 'gold' : rank === 2 ? 'silver' : 'bronze'
       return `
