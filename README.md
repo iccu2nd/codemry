@@ -73,6 +73,16 @@ Struktur tambahan yang khusus buat Vercel:
 - Tab Trending (skor `likes*3 + views`) vs Terbaru di feed
 - Leaderboard (`/leaderboard`): Top Upload, Paling Disukai, Top Followers
 
+## CLI
+
+Ada command-line client kecil (tanpa dependency, cuma butuh Node >= 18) buat push/pull/list snippet dari terminal — lihat `cli/README.md`. Install cepat:
+
+```
+cd cli && npm install -g .
+codery login <api-key> --server https://domain-codery-kamu.com
+codery push ./script.py --title "My script"
+```
+
 ## Catatan
 
 - Token GitHub cuma hidup di server (`.env`), tidak pernah dikirim ke browser - aman dari inspect element.

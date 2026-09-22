@@ -1,0 +1,13 @@
+{
+  "name": "codery-cli",
+  "version": "1.0.0",
+  "description": "Command-line client for Codery — push, pull, list, and manage your code snippets from the terminal.",
+  "type": "module",
+  "bin": {
+    "codery": "./bin/codery.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "license": "MIT"
+}
