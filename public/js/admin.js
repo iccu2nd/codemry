@@ -202,13 +202,18 @@ function wireDeleteSnippet() {
   btn.onclick = async () => {
     const shortId = document.getElementById('devSnippetId')?.value.trim()
     if (!shortId) { toast('Enter a short ID first'); return }
-    if (!confirm(`Delete code "${shortId}"? This cannot be undone.`)) return
-    try {
-      await api(`/dev/snippets/${encodeURIComponent(shortId)}`, { method: 'DELETE' })
-      toast('Code deleted')
-      const input = document.getElementById('devSnippetId')
-      if (input) input.value = ''
-    } catch (e) { toast(e.message) }
+    await confirmAction({
+      title: 'Delete this code?',
+      message: `"${shortId}" will be permanently removed. This cannot be undone.`,
+      confirmLabel: 'Delete',
+      danger: true,
+      onConfirm: async () => {
+        await api(`/dev/snippets/${encodeURIComponent(shortId)}`, { method: 'DELETE' })
+        toast('Code deleted')
+        const input = document.getElementById('devSnippetId')
+        if (input) input.value = ''
+      }
+    })
   }
 }
 
@@ -328,16 +333,18 @@ function renderDevReportsList(reports) {
 
   list.querySelectorAll('.dev-report-delete').forEach(btn => {
     btn.onclick = async () => {
-      if (!confirm('Delete this reported code? Cannot be undone.')) return
-      if (btn.dataset.busy) return
-      btn.dataset.busy = '1'
-      try {
-        await api(`/dev/snippets/${btn.dataset.shortId}`, { method: 'DELETE' })
-        await api(`/dev/reports/${btn.dataset.reportId}/status`, { method: 'POST', body: JSON.stringify({ status: 'resolved' }) })
-        toast('Code deleted · report resolved')
-        loadDevReports()
-      } catch (e) { toast(e.message) }
-      finally { delete btn.dataset.busy }
+      await confirmAction({
+        title: 'Delete reported code?',
+        message: 'This code will be permanently removed and the report marked resolved.',
+        confirmLabel: 'Delete',
+        danger: true,
+        onConfirm: async () => {
+          await api(`/dev/snippets/${btn.dataset.shortId}`, { method: 'DELETE' })
+          await api(`/dev/reports/${btn.dataset.reportId}/status`, { method: 'POST', body: JSON.stringify({ status: 'resolved' }) })
+          toast('Code deleted · report resolved')
+          loadDevReports()
+        }
+      })
     }
   })
 }
@@ -477,15 +484,17 @@ function openUserManageModal(u) {
   }
 
   document.getElementById('mUmDeleteBtn').onclick = async () => {
-    if (!confirm(`Delete @${u.username}? This cannot be undone.`)) return
-    const btn = document.getElementById('mUmDeleteBtn')
-    setBtnLoading(btn, true)
-    try {
-      await api(`/dev/users/${encodeURIComponent(u.username)}`, { method: 'DELETE' })
-      toast(`@${u.username} deleted`)
-      closeModal()
-      loadDevUsers()
-    } catch (e) { toast(e.message); setBtnLoading(btn, false) }
+    await confirmAction({
+      title: `Delete @${u.username}?`,
+      message: 'This cannot be undone. The account and related data will be removed.',
+      confirmLabel: 'Delete',
+      danger: true,
+      onConfirm: async () => {
+        await api(`/dev/users/${encodeURIComponent(u.username)}`, { method: 'DELETE' })
+        toast(`@${u.username} deleted`)
+        loadDevUsers()
+      }
+    })
   }
 }
 

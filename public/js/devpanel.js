@@ -189,15 +189,18 @@ function openUserManageModal(u) {
   }
 
   document.getElementById('mUmDeleteBtn').onclick = async () => {
-    if (!confirm(`Yakin hapus akun @${u.username}? Semua kode, komentar, like, bookmark, dan follow milik akun ini akan ikut terhapus permanen.`)) return
-    const btn = document.getElementById('mUmDeleteBtn')
-    setBtnLoading(btn, true)
-    try {
-      await api(`/dev/users/${u.username}`, { method: 'DELETE' })
-      toast(`Akun @${u.username} berhasil dihapus`)
-      closeModal()
-      loadDevUsers()
-    } catch (e) { toast(e.message); setBtnLoading(btn, false) }
+    await confirmAction({
+      title: `Hapus @${u.username}?`,
+      message: 'Semua kode, komentar, like, bookmark, dan follow milik akun ini akan ikut terhapus permanen.',
+      confirmLabel: 'Hapus',
+      cancelLabel: 'Batal',
+      danger: true,
+      onConfirm: async () => {
+        await api(`/dev/users/${u.username}`, { method: 'DELETE' })
+        toast(`Akun @${u.username} berhasil dihapus`)
+        loadDevUsers()
+      }
+    })
   }
 }
 

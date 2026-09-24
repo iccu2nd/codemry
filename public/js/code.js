@@ -412,17 +412,18 @@ function renderUnlockedDetail(app, shortId, s) {
         }
         const restoreBtn = document.getElementById('restoreHistoryBtn')
         if (restoreBtn) restoreBtn.onclick = async () => {
-          if (!confirm('Replace the current version with this one?')) return
-          setBtnLoading(restoreBtn, true)
-          try {
-            await api(`/codes/${shortId}/history/${sha}/restore`, { method: 'POST' })
-            toast('Version restored')
-            closeModal()
-            window.location.reload()
-          } catch (e) {
-            toast(e.message)
-            setBtnLoading(restoreBtn, false)
-          }
+          await confirmAction({
+            title: 'Restore this version?',
+            message: 'The current code will be replaced with this revision.',
+            confirmLabel: 'Restore',
+            cancelLabel: 'Cancel',
+            danger: false,
+            onConfirm: async () => {
+              await api(`/codes/${shortId}/history/${sha}/restore`, { method: 'POST' })
+              toast('Version restored')
+              window.location.reload()
+            }
+          })
         }
       } catch (e) {
         body.innerHTML = `<div class="modal-loading">${escapeHtml(e.message)}</div>`
@@ -867,13 +868,23 @@ function renderUnlockedDetail(app, shortId, s) {
 
     const delBtn = document.getElementById('delBtn')
     if (delBtn) delBtn.onclick = async () => {
-      if (!confirm('Delete this code?')) return
-      await withBtnLoading(delBtn, async () => {
-        try {
+      // Tutup dropdown ⋯ dulu biar tidak mengganggu dialog
+      const moreMenu = document.getElementById('cdMoreMenu')
+      const moreBtn = document.getElementById('cdMoreBtn')
+      if (moreMenu) moreMenu.setAttribute('hidden', '')
+      if (moreBtn) moreBtn.setAttribute('aria-expanded', 'false')
+
+      await confirmAction({
+        title: 'Delete this code?',
+        message: 'This cannot be undone. The code will be permanently removed.',
+        confirmLabel: 'Delete',
+        cancelLabel: 'Cancel',
+        danger: true,
+        onConfirm: async () => {
           await api(`/codes/${shortId}`, { method: 'DELETE' })
           toast('Code deleted')
           window.location.href = '/'
-        } catch (e) { toast(e.message) }
+        }
       })
     }
 
@@ -1172,10 +1183,16 @@ async function setupComments(shortId, ownerUsername) {
       listEl.querySelectorAll('[data-role="delete-comment"]').forEach(btn => {
         btn.onclick = async () => {
           const id = btn.closest('.comment-item').dataset.id
-          if (!confirm('Delete this comment?')) return
-          await withBtnLoading(btn, async () => {
-            try { await api(`/codes/${shortId}/comments/${id}`, { method: 'DELETE' }); loadComments() }
-            catch (e) { toast(e.message) }
+          await confirmAction({
+            title: 'Delete this comment?',
+            message: 'This comment will be permanently removed.',
+            confirmLabel: 'Delete',
+            cancelLabel: 'Cancel',
+            danger: true,
+            onConfirm: async () => {
+              await api(`/codes/${shortId}/comments/${id}`, { method: 'DELETE' })
+              loadComments()
+            }
           })
         }
       })
@@ -1218,10 +1235,16 @@ async function setupComments(shortId, ownerUsername) {
         btn.onclick = async () => {
           const commentId = btn.dataset.commentId
           const replyId = btn.dataset.replyId
-          if (!confirm('Delete this reply?')) return
-          await withBtnLoading(btn, async () => {
-            try { await api(`/codes/${shortId}/comments/${commentId}/reply/${replyId}`, { method: 'DELETE' }); loadComments() }
-            catch (e) { toast(e.message) }
+          await confirmAction({
+            title: 'Delete this reply?',
+            message: 'This reply will be permanently removed.',
+            confirmLabel: 'Delete',
+            cancelLabel: 'Cancel',
+            danger: true,
+            onConfirm: async () => {
+              await api(`/codes/${shortId}/comments/${commentId}/reply/${replyId}`, { method: 'DELETE' })
+              loadComments()
+            }
           })
         }
       })

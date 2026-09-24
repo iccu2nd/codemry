@@ -1167,7 +1167,11 @@ function ensureModalOverlay() {
 
 function openModal(innerHtml) {
   const overlay = ensureModalOverlay()
-  document.getElementById('modalBox').innerHTML = innerHtml
+  const box = document.getElementById('modalBox')
+  if (box) {
+    box.classList.remove('modal-box-confirm')
+    box.innerHTML = innerHtml
+  }
   overlay.style.display = 'flex'
   requestAnimationFrame(() => requestAnimationFrame(() => overlay.classList.add('open')))
 }
@@ -1177,6 +1181,101 @@ function closeModal() {
   if (!overlay) return
   overlay.classList.remove('open')
   setTimeout(() => { overlay.style.display = 'none' }, 180)
+  if (typeof overlay._confirmResolve === 'function') {
+    const resolve = overlay._confirmResolve
+    overlay._confirmResolve = null
+    resolve(false)
+  }
+}
+
+/**
+ * Dialog konfirmasi custom (bukan window.confirm).
+ * @param {object} opts
+ * @param {string} opts.title
+ * @param {string} [opts.message]
+ * @param {string} [opts.confirmLabel='Delete']
+ * @param {string} [opts.cancelLabel='Cancel']
+ * @param {boolean} [opts.danger=true]
+ * @param {() => Promise<void>} [opts.onConfirm] — kalau ada, spinner di tombol confirm sampai selesai
+ * @returns {Promise<boolean>} true jika dikonfirmasi & onConfirm sukses (atau tanpa onConfirm)
+ */
+function confirmAction(opts = {}) {
+  const {
+    title = 'Are you sure?',
+    message = '',
+    confirmLabel = 'Delete',
+    cancelLabel = 'Cancel',
+    danger = true,
+    onConfirm = null
+  } = opts
+
+  return new Promise((resolve) => {
+    const overlay = ensureModalOverlay()
+    // Batalkan resolve sebelumnya jika modal confirm diganti
+    if (typeof overlay._confirmResolve === 'function') {
+      const prev = overlay._confirmResolve
+      overlay._confirmResolve = null
+      prev(false)
+    }
+    overlay._confirmResolve = resolve
+
+    const iconHtml = danger
+      ? `<div class="confirm-icon confirm-icon-danger" aria-hidden="true"><i class="fa-regular fa-trash-can"></i></div>`
+      : `<div class="confirm-icon" aria-hidden="true"><i class="fa-regular fa-circle-question"></i></div>`
+
+    openModal(`
+      <div class="confirm-dialog">
+        ${iconHtml}
+        <div class="confirm-title">${escapeHtml(title)}</div>
+        ${message ? `<div class="confirm-message">${escapeHtml(message)}</div>` : ''}
+        <div class="confirm-actions">
+          <button type="button" class="btn btn-white confirm-cancel-btn" id="confirmCancelBtn">${escapeHtml(cancelLabel)}</button>
+          <button type="button" class="btn ${danger ? 'btn-confirm-danger' : 'btn-primary'} confirm-ok-btn" id="confirmOkBtn">${escapeHtml(confirmLabel)}</button>
+        </div>
+      </div>
+    `)
+
+    // Modal confirm lebih kecil
+    const box = document.getElementById('modalBox')
+    if (box) box.classList.add('modal-box-confirm')
+
+    const finish = (ok) => {
+      const o = document.getElementById('modalOverlay')
+      if (o) o._confirmResolve = null
+      if (box) box.classList.remove('modal-box-confirm')
+      closeModal()
+      resolve(ok)
+    }
+
+    const cancelBtn = document.getElementById('confirmCancelBtn')
+    const okBtn = document.getElementById('confirmOkBtn')
+
+    if (cancelBtn) cancelBtn.onclick = () => finish(false)
+
+    if (okBtn) okBtn.onclick = async () => {
+      if (!onConfirm) {
+        finish(true)
+        return
+      }
+      // Spinner hanya di tombol konfirmasi di dalam dialog
+      await withBtnLoading(okBtn, async () => {
+        try {
+          await onConfirm()
+          // Sukses: tutup modal tanpa restore button (navigasi mungkin terjadi)
+          const o = document.getElementById('modalOverlay')
+          if (o) o._confirmResolve = null
+          if (box) box.classList.remove('modal-box-confirm')
+          closeModal()
+          resolve(true)
+        } catch (e) {
+          toast(e.message || 'Something went wrong')
+          // Biarkan dialog terbuka, spinner hilang lewat withBtnLoading
+        }
+      })
+    }
+
+    // Escape / klik luar: closeModal sudah resolve(false) via _confirmResolve
+  })
 }
 
 function flagIconSvg() {

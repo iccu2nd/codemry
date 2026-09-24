@@ -37,12 +37,18 @@ async function renderModerasiPanel() {
   document.getElementById('devDeleteSnippetBtn').onclick = async () => {
     const shortId = document.getElementById('devSnippetId').value.trim()
     if (!shortId) { toast('Isi short ID dulu'); return }
-    if (!confirm(`Yakin ingin menghapus kode "${shortId}"? Tindakan ini tidak dapat dibatalkan.`)) return
-    try {
-      await api(`/dev/snippets/${shortId}`, { method: 'DELETE' })
-      toast('Kode berhasil dihapus')
-      document.getElementById('devSnippetId').value = ''
-    } catch (e) { toast(e.message) }
+    await confirmAction({
+      title: 'Hapus kode ini?',
+      message: `"${shortId}" akan dihapus permanen. Tindakan ini tidak dapat dibatalkan.`,
+      confirmLabel: 'Hapus',
+      cancelLabel: 'Batal',
+      danger: true,
+      onConfirm: async () => {
+        await api(`/dev/snippets/${shortId}`, { method: 'DELETE' })
+        toast('Kode berhasil dihapus')
+        document.getElementById('devSnippetId').value = ''
+      }
+    })
   }
 }
 
@@ -136,16 +142,19 @@ function renderDevReportsList(reports) {
 
   list.querySelectorAll('.dev-report-delete').forEach(btn => {
     btn.onclick = async () => {
-      if (!confirm('Hapus kode yang dilaporkan ini? Tindakan ini tidak dapat dibatalkan.')) return
-      if (btn.dataset.busy) return
-      btn.dataset.busy = '1'
-      try {
-        await api(`/dev/snippets/${btn.dataset.shortId}`, { method: 'DELETE' })
-        await api(`/dev/reports/${btn.dataset.reportId}/status`, { method: 'POST', body: JSON.stringify({ status: 'resolved' }) })
-        toast('Kode dihapus & laporan ditandai selesai')
-        loadDevReports()
-      } catch (e) { toast(e.message) }
-      finally { delete btn.dataset.busy }
+      await confirmAction({
+        title: 'Hapus kode yang dilaporkan?',
+        message: 'Kode akan dihapus permanen dan laporan ditandai selesai.',
+        confirmLabel: 'Hapus',
+        cancelLabel: 'Batal',
+        danger: true,
+        onConfirm: async () => {
+          await api(`/dev/snippets/${btn.dataset.shortId}`, { method: 'DELETE' })
+          await api(`/dev/reports/${btn.dataset.reportId}/status`, { method: 'POST', body: JSON.stringify({ status: 'resolved' }) })
+          toast('Kode dihapus & laporan ditandai selesai')
+          loadDevReports()
+        }
+      })
     }
   })
 }

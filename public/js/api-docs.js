@@ -319,23 +319,35 @@ async function render() {
     } catch (e) { toast(e.message) }
   }
   if (regen) regen.onclick = async () => {
-    if (!confirm('Regenerate? The old key will stop working immediately.')) return
-    try {
-      const data = await api('/users/me/apikey/regenerate', { method: 'POST' })
-      currentKey = data.apiKey
-      keyVisible = true
-      toast('New key generated')
-      render()
-    } catch (e) { toast(e.message) }
+    await confirmAction({
+      title: 'Regenerate API key?',
+      message: 'The old key will stop working immediately.',
+      confirmLabel: 'Regenerate',
+      cancelLabel: 'Cancel',
+      danger: true,
+      onConfirm: async () => {
+        const data = await api('/users/me/apikey/regenerate', { method: 'POST' })
+        currentKey = data.apiKey
+        keyVisible = true
+        toast('New key generated')
+        render()
+      }
+    })
   }
   if (revoke) revoke.onclick = async () => {
-    if (!confirm('Revoke this key?')) return
-    try {
-      await api('/users/me/apikey', { method: 'DELETE' })
-      currentKey = null
-      toast('Key revoked')
-      render()
-    } catch (e) { toast(e.message) }
+    await confirmAction({
+      title: 'Revoke this key?',
+      message: 'Apps using this key will no longer be able to access the API.',
+      confirmLabel: 'Revoke',
+      cancelLabel: 'Cancel',
+      danger: true,
+      onConfirm: async () => {
+        await api('/users/me/apikey', { method: 'DELETE' })
+        currentKey = null
+        toast('Key revoked')
+        render()
+      }
+    })
   }
   if (toggle) toggle.onclick = () => { keyVisible = !keyVisible; render() }
   if (copy) copy.onclick = () => {
