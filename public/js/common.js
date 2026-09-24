@@ -41,6 +41,9 @@ const I18N = {
   locationHint: 'Where you are based. Shown under your bio.',
   connections: 'Connections',
   connectionsHint: 'Tap + to add Instagram, WhatsApp, GitHub, and more.',
+  changePhoto: 'Change photo',
+  basicInfo: 'Basic info',
+  other: 'Other',
 
   joined: 'Joined',
   hideBadges: 'Hide badges (including Developer tag)',

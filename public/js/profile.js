@@ -147,78 +147,111 @@ function collectSocialsFromForm() {
   return out
 }
 
-function openEditProfileModal(p, username) {
+function openEditProfileScreen(p, username) {
   editSocialState = {}
   const existing = (p.socials && typeof p.socials === 'object') ? p.socials : {}
   SOCIAL_PLATFORMS.forEach(plat => {
     if (existing[plat.id]) editSocialState[plat.id] = existing[plat.id]
   })
 
-  openModal(`
-    <div class="modal-head">
-      <div class="modal-head-title">${t('editProfile')}</div>
-      <button type="button" class="modal-close-btn" id="editProfileCloseBtn" aria-label="Close">${closeIconSvg()}</button>
-    </div>
-    <div class="modal-body profile-edit-modal">
-      <div class="pe-section">
-        <div class="pe-section-title">Basic</div>
-        <div class="field"><label>${t('nickname')}</label><input id="nicknameInput" value="${escapeHtml(p.nickname || '')}" maxlength="32"></div>
-        <div class="field">
-          <label>${t('username')}</label>
-          <input id="usernameInput" value="${escapeHtml(p.username)}" maxlength="20">
-          <div class="field-hint">${usernameCooldownHint(p.usernameChangedAt)}</div>
+  const app = document.getElementById('app')
+  const avatarSrc = p.avatar || ''
+
+  app.innerHTML = `
+    <div class="ep-screen">
+      <header class="ep-topbar">
+        <button type="button" class="ep-back" id="epBackBtn" aria-label="Back">${chevronLeftSvg()}</button>
+        <h1 class="ep-title">${t('editProfile')}</h1>
+        <button type="button" class="ep-save-link" id="saveBioBtn">${t('save')}</button>
+      </header>
+
+      <div class="ep-avatar-block">
+        <div class="ep-avatar-wrap">
+          <img class="ep-avatar" id="epAvatarImg" src="${escapeHtml(avatarSrc)}" alt="">
+          <button type="button" class="ep-avatar-cam" id="epAvatarBtn" aria-label="Change photo">${cameraIconSvg()}</button>
         </div>
-        <div class="field"><label>${t('bio')}</label><textarea id="bioInput" class="textarea-autogrow" style="min-height:72px">${escapeHtml(p.bio || '')}</textarea></div>
+        <button type="button" class="ep-change-photo" id="epChangePhotoBtn">${t('changePhoto')}</button>
+        <input type="file" id="epAvatarInput" accept="image/*" hidden>
       </div>
-      <div class="pe-section">
-        <div class="pe-section-title">About</div>
-        <div class="field">
-          <label>${t('location')} <span class="label-opt">(${t('optional')})</span></label>
-          <input id="locationInput" type="text" maxlength="64" placeholder="${t('locationPlaceholder')}" value="${escapeHtml(p.location || '')}">
+
+      <div class="ep-group">
+        <div class="ep-row">
+          <span class="ep-label">${t('nickname')}</span>
+          <input class="ep-input" id="nicknameInput" value="${escapeHtml(p.nickname || '')}" maxlength="32" placeholder="${t('nickname')}">
         </div>
-        <div class="field">
-          <label>${t('website')} <span class="label-opt">(${t('optional')})</span></label>
-          <input id="websiteInput" type="text" inputmode="url" placeholder="${t('websitePlaceholder')}" value="${escapeHtml(p.website || '')}" maxlength="300">
+        <div class="ep-row">
+          <span class="ep-label">${t('username')}</span>
+          <input class="ep-input" id="usernameInput" value="${escapeHtml(p.username)}" maxlength="20" placeholder="@username">
+        </div>
+        <div class="ep-row">
+          <span class="ep-label">${t('website')}</span>
+          <input class="ep-input" id="websiteInput" type="text" inputmode="url" value="${escapeHtml(p.website || '')}" maxlength="300" placeholder="${t('websitePlaceholder')}">
         </div>
       </div>
-      <div class="pe-section">
-        <div class="pe-section-title">${t('connections')}</div>
-        <div class="field-hint" style="margin-bottom:10px">${t('connectionsHint')}</div>
-        <div id="connEditorRoot"></div>
-      </div>
-      <div class="pe-section">
-        <div class="pe-section-title">Extras</div>
-        <div class="field">
-          <label>${t('musicUrl')} <span class="label-opt">(${t('optional')})</span></label>
-          <input id="musicInput" type="url" placeholder="https://…/audio.mp3" value="${escapeHtml(p.profileMusic || '')}">
+      <div class="ep-hint">${usernameCooldownHint(p.usernameChangedAt)}</div>
+
+      <div class="ep-section-label">${t('basicInfo')}</div>
+      <div class="ep-group">
+        <div class="ep-row ep-row-tall">
+          <span class="ep-label">${t('bio')}</span>
+          <textarea class="ep-input ep-textarea" id="bioInput" rows="2" placeholder="${t('noBio')}">${escapeHtml(p.bio || '')}</textarea>
         </div>
-        <label class="checkbox-row">
-          <input type="checkbox" id="hideBadgesInput" ${p.hideBadges ? 'checked' : ''}>
-          ${t('hideBadges')}
+        <div class="ep-row">
+          <span class="ep-label">${t('location')}</span>
+          <input class="ep-input" id="locationInput" type="text" maxlength="64" value="${escapeHtml(p.location || '')}" placeholder="${t('locationPlaceholder')}">
+        </div>
+      </div>
+
+      <div class="ep-section-label">${t('connections')}</div>
+      <div class="ep-group ep-conn-group">
+        <div id="connEditorRoot" class="ep-conn-root"></div>
+      </div>
+
+      <div class="ep-section-label">${t('other')}</div>
+      <div class="ep-group">
+        <div class="ep-row">
+          <span class="ep-label">${t('musicUrl')}</span>
+          <input class="ep-input" id="musicInput" type="url" value="${escapeHtml(p.profileMusic || '')}" placeholder="https://…/audio.mp3">
+        </div>
+        <label class="ep-row ep-row-check">
+          <span class="ep-label">${t('hideBadges')}</span>
+          <input type="checkbox" id="hideBadgesInput" class="ep-check" ${p.hideBadges ? 'checked' : ''}>
         </label>
       </div>
     </div>
-    <div class="profile-edit-footer">
-      <button type="button" class="btn btn-white" id="editProfileCancelBtn">Cancel</button>
-      <button type="button" class="btn btn-primary" id="saveBioBtn">${t('save')}</button>
-    </div>
-  `)
-
-  const box = document.getElementById('modalBox')
-  if (box) box.classList.add('modal-box-profile-edit')
+  `
 
   const connRoot = document.getElementById('connEditorRoot')
   renderConnectionsEditor(connRoot)
 
-  const closeEdit = () => {
-    if (box) box.classList.remove('modal-box-profile-edit')
-    closeModal(true)
+  document.getElementById('epBackBtn').onclick = () => renderProfile()
+
+  // Avatar change from edit screen
+  const avatarInput = document.getElementById('epAvatarInput')
+  const openPicker = () => avatarInput.click()
+  document.getElementById('epAvatarBtn').onclick = openPicker
+  document.getElementById('epChangePhotoBtn').onclick = openPicker
+  avatarInput.onchange = async () => {
+    const file = avatarInput.files[0]
+    if (!file) return
+    try {
+      const { base64, mime, ext } = await openImageCropper(file, { outW: 256, outH: 256, shape: 'circle', quality: 0.82 })
+      const previewUrl = `data:${mime};base64,${base64}`
+      const img = document.getElementById('epAvatarImg')
+      if (img) img.src = previewUrl
+      if (me && me.username === username) { me.avatar = previewUrl; renderAuthArea() }
+      toast('Uploading photo…')
+      await api('/users/me/avatar', { method: 'POST', body: JSON.stringify({ imageBase64: base64, ext }) })
+      toast('Photo updated')
+    } catch (e) {
+      if (e.message !== 'cancelled') toast(e.message)
+    } finally {
+      avatarInput.value = ''
+    }
   }
-  document.getElementById('editProfileCloseBtn')?.addEventListener('click', closeEdit)
-  document.getElementById('editProfileCancelBtn')?.addEventListener('click', closeEdit)
 
   const saveBioBtn = document.getElementById('saveBioBtn')
-  if (saveBioBtn) saveBioBtn.onclick = async () => {
+  saveBioBtn.onclick = async () => {
     await withBtnLoading(saveBioBtn, async () => {
       try {
         const body = {
@@ -235,16 +268,12 @@ function openEditProfileModal(p, username) {
 
         const r = await api('/users/me', { method: 'PATCH', body: JSON.stringify(body) })
         toast('Profile updated')
-        closeEdit()
         if (r.username !== username) window.location.href = profileUrl(r.username)
         else renderProfile()
       } catch (e) { toast(e.message) }
     })
   }
 }
-
-
-
 
 async function renderProfile() {
   const app = document.getElementById('app')
@@ -438,7 +467,7 @@ async function renderProfile() {
     }
 
     const editBtn = document.getElementById('editProfileBtn')
-    if (editBtn) editBtn.onclick = () => openEditProfileModal(p, username)
+    if (editBtn) editBtn.onclick = () => openEditProfileScreen(p, username)
 
     // Penting: tombol kamera (avatar & banner) TIDAK PERNAH dipindah posisinya.
     // Selama upload berlangsung, tombolnya cuma dikasih class "is-uploading"

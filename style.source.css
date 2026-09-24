@@ -5304,3 +5304,192 @@ html:not(.light) .api-method.m-del { background: rgba(239,68,68,.15); color: #f8
   border-radius: 50%;
 }
 
+
+
+/* —— Edit profile full screen (TikTok-style list) —— */
+.ep-screen {
+  max-width: 480px;
+  margin: 0 auto;
+  padding-bottom: 32px;
+}
+.ep-topbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 4px 12px;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: var(--bg);
+}
+.ep-back {
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.ep-back:hover { background: var(--bg-muted); }
+.ep-back svg { width: 22px; height: 22px; }
+.ep-title {
+  flex: 1;
+  text-align: center;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+}
+.ep-save-link {
+  border: none;
+  background: transparent;
+  color: var(--accent);
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 8px 6px;
+  min-width: 48px;
+  text-align: right;
+}
+.ep-save-link:disabled { opacity: 0.55; cursor: wait; }
+
+.ep-avatar-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 0 22px;
+}
+.ep-avatar-wrap {
+  position: relative;
+  width: 96px;
+  height: 96px;
+}
+.ep-avatar {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--bg-muted);
+  border: 2px solid var(--border);
+  display: block;
+}
+.ep-avatar-cam {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0,0,0,0.55);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+}
+.ep-avatar-cam svg { width: 18px; height: 18px; }
+.ep-change-photo {
+  margin-top: 10px;
+  border: none;
+  background: transparent;
+  color: var(--accent);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+.ep-section-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+  padding: 14px 6px 8px;
+}
+.ep-group {
+  background: var(--bg-card);
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+.ep-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 14px;
+  border-bottom: 1px solid var(--border);
+  min-height: 52px;
+}
+.ep-row:last-child { border-bottom: none; }
+.ep-row-tall {
+  align-items: flex-start;
+  padding-top: 14px;
+  padding-bottom: 14px;
+}
+.ep-row-tall .ep-label { padding-top: 2px; }
+.ep-label {
+  flex: 0 0 108px;
+  font-size: 14.5px;
+  font-weight: 500;
+  color: var(--text);
+  line-height: 1.3;
+}
+.ep-input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 14.5px;
+  text-align: right;
+  padding: 0;
+  outline: none;
+}
+.ep-input::placeholder { color: var(--text-muted); }
+.ep-textarea {
+  text-align: right;
+  resize: none;
+  line-height: 1.4;
+  min-height: 40px;
+}
+.ep-row-check {
+  cursor: pointer;
+  margin: 0;
+}
+.ep-check {
+  width: 18px;
+  height: 18px;
+  margin-left: auto;
+  accent-color: var(--accent);
+}
+.ep-hint {
+  font-size: 12px;
+  color: var(--text-muted);
+  padding: 8px 8px 0;
+  line-height: 1.4;
+}
+
+/* Connections inside edit screen */
+.ep-conn-group { padding: 10px 12px 12px; }
+.ep-conn-root .conn-empty {
+  font-size: 13.5px;
+  color: var(--text-muted);
+  padding: 6px 2px 8px;
+  text-align: right;
+}
+.ep-conn-root .conn-list { gap: 8px; }
+.ep-conn-root .conn-row input {
+  text-align: left;
+  background: var(--bg-muted);
+}
+
