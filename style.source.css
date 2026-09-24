@@ -2433,7 +2433,7 @@ body:not([data-no-bottom-nav]) .app { padding-bottom: 116px; }
 }
 
 .modal-overlay {
-  position: fixed; inset: 0; z-index: 60;
+  position: fixed; inset: 0; z-index: 200;
   background: rgba(20,17,50,.55);
   display: flex; align-items: center; justify-content: center;
   padding: 20px;

@@ -910,20 +910,29 @@ function renderUnlockedDetail(app, shortId, s) {
     }, { signal: _pageSig })
 
     const delBtn = document.getElementById('delBtn')
-    if (delBtn) delBtn.onclick = async () => {
-      // Tutup dropdown ⋯ dulu biar tidak mengganggu dialog
-      if (typeof window.__closeCdMoreMenu === 'function') window.__closeCdMoreMenu()
-
-      await confirmAction({
-        title: 'Delete this code?',
-        message: 'This cannot be undone. The code will be permanently removed.',
-        confirmLabel: 'Delete',
-        cancelLabel: 'Cancel',
-        danger: true,
-        onConfirm: async () => {
-          await api(`/codes/${shortId}`, { method: 'DELETE' })
-          toast('Code deleted')
-          window.location.href = '/'
+    if (delBtn) {
+      delBtn.addEventListener('click', async (e) => {
+        e.preventDefault()
+        e.stopPropagation()
+        // Tutup dropdown ⋯ dulu, lalu buka dialog di tick berikutnya
+        // supaya event klik ini tidak bentrok dengan modal baru
+        if (typeof window.__closeCdMoreMenu === 'function') window.__closeCdMoreMenu()
+        await new Promise(r => setTimeout(r, 30))
+        try {
+          await confirmAction({
+            title: 'Delete this code?',
+            message: 'This cannot be undone. The code will be permanently removed.',
+            confirmLabel: 'Delete',
+            cancelLabel: 'Cancel',
+            danger: true,
+            onConfirm: async () => {
+              await api(`/codes/${shortId}`, { method: 'DELETE' })
+              toast('Code deleted')
+              window.location.href = '/'
+            }
+          })
+        } catch (err) {
+          toast(err.message || 'Could not delete')
         }
       })
     }
@@ -1223,8 +1232,11 @@ async function setupComments(shortId, ownerUsername) {
         : emptyStateHtml({ title: t('noComments'), compact: true })
 
       listEl.querySelectorAll('[data-role="delete-comment"]').forEach(btn => {
-        btn.onclick = async () => {
-          const id = btn.closest('.comment-item').dataset.id
+        btn.onclick = async (e) => {
+          e.preventDefault()
+          e.stopPropagation()
+          const id = btn.closest('.comment-item')?.dataset?.id
+          if (!id) return
           await confirmAction({
             title: 'Delete this comment?',
             message: 'This comment will be permanently removed.',
@@ -1274,9 +1286,12 @@ async function setupComments(shortId, ownerUsername) {
       })
 
       listEl.querySelectorAll('[data-role="delete-reply"]').forEach(btn => {
-        btn.onclick = async () => {
+        btn.onclick = async (e) => {
+          e.preventDefault()
+          e.stopPropagation()
           const commentId = btn.dataset.commentId
           const replyId = btn.dataset.replyId
+          if (!commentId || !replyId) return
           await confirmAction({
             title: 'Delete this reply?',
             message: 'This reply will be permanently removed.',
