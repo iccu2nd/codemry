@@ -42,6 +42,8 @@ const I18N = {
   connections: 'Connections',
   connectionsHint: 'Tap + to add Instagram, WhatsApp, GitHub, and more.',
   changePhoto: 'Change photo',
+  changeBanner: 'Change banner',
+  addBanner: 'Add banner',
   basicInfo: 'Basic info',
   other: 'Other',
 

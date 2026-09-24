@@ -5493,3 +5493,137 @@ html:not(.light) .api-method.m-del { background: rgba(239,68,68,.15); color: #f8
   background: var(--bg-muted);
 }
 
+
+
+/* Saat edit profile: sembunyikan chrome app */
+body.edit-profile-open {
+  /* bottom nav & topbar di-hide via JS; kurangi padding bawah */
+}
+body.edit-profile-open .app {
+  padding-bottom: 24px !important;
+  padding-top: 0;
+}
+body.edit-profile-open header.topbar,
+body.edit-profile-open .bottom-nav,
+body.edit-profile-open #topnav {
+  display: none !important;
+}
+
+/* Cover / banner on edit profile */
+.ep-cover-block {
+  position: relative;
+  margin: 0 -4px 0;
+}
+.ep-cover {
+  height: 120px;
+  border-radius: 16px;
+  background: var(--bg-muted) center/cover no-repeat;
+  border: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+}
+.ep-cover.is-empty {
+  background: linear-gradient(135deg, var(--bg-muted) 0%, var(--border) 100%);
+}
+.ep-cover-btn {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  border: none;
+  background: rgba(0,0,0,0.55);
+  color: #fff;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+}
+.ep-cover-btn i { font-size: 12px; }
+.ep-avatar-overlap {
+  display: flex;
+  justify-content: center;
+  margin-top: -40px;
+  position: relative;
+  z-index: 2;
+}
+.ep-avatar-actions {
+  text-align: center;
+  margin: 8px 0 18px;
+}
+.ep-avatar-wrap {
+  width: 88px;
+  height: 88px;
+}
+.ep-avatar {
+  width: 88px;
+  height: 88px;
+  border: 3px solid var(--bg);
+  box-shadow: 0 0 0 1px var(--border);
+}
+.ep-avatar-cam {
+  width: 32px;
+  height: 32px;
+  font-size: 13px;
+}
+
+/* Toggle switch */
+.ep-row-toggle {
+  justify-content: space-between;
+}
+.ep-toggle-text {
+  flex: 1;
+  min-width: 0;
+  padding-right: 12px;
+}
+.ep-label-block {
+  display: block;
+  font-size: 14.5px;
+  font-weight: 500;
+  color: var(--text);
+  line-height: 1.35;
+}
+.ep-switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.ep-switch input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.ep-switch-track {
+  width: 46px;
+  height: 28px;
+  border-radius: 999px;
+  background: var(--border-strong);
+  display: block;
+  position: relative;
+  transition: background .18s ease;
+}
+.ep-switch-thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+  transition: transform .18s ease;
+}
+.ep-switch input:checked + .ep-switch-track {
+  background: var(--accent);
+}
+.ep-switch input:checked + .ep-switch-track .ep-switch-thumb {
+  transform: translateX(18px);
+}
+

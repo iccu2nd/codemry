@@ -147,6 +147,27 @@ function collectSocialsFromForm() {
   return out
 }
 
+function setEditProfileChrome(hidden) {
+  document.body.classList.toggle('edit-profile-open', !!hidden)
+  const topbar = document.querySelector('header.topbar')
+  if (topbar) topbar.style.display = hidden ? 'none' : ''
+  const bnav = document.querySelector('.bottom-nav')
+  if (bnav) bnav.style.display = hidden ? 'none' : ''
+  const nav = document.getElementById('topnav')
+  if (nav) {
+    nav.classList.remove('open')
+    if (hidden) nav.style.display = 'none'
+    else nav.style.display = ''
+  }
+  const backdrop = document.getElementById('navBackdrop')
+  if (backdrop) backdrop.classList.remove('open')
+}
+
+function leaveEditProfile() {
+  setEditProfileChrome(false)
+  renderProfile()
+}
+
 function openEditProfileScreen(p, username) {
   editSocialState = {}
   const existing = (p.socials && typeof p.socials === 'object') ? p.socials : {}
@@ -154,8 +175,11 @@ function openEditProfileScreen(p, username) {
     if (existing[plat.id]) editSocialState[plat.id] = existing[plat.id]
   })
 
+  setEditProfileChrome(true)
+
   const app = document.getElementById('app')
   const avatarSrc = p.avatar || ''
+  const bannerSrc = p.banner || ''
 
   app.innerHTML = `
     <div class="ep-screen">
@@ -165,11 +189,24 @@ function openEditProfileScreen(p, username) {
         <button type="button" class="ep-save-link" id="saveBioBtn">${t('save')}</button>
       </header>
 
-      <div class="ep-avatar-block">
-        <div class="ep-avatar-wrap">
-          <img class="ep-avatar" id="epAvatarImg" src="${escapeHtml(avatarSrc)}" alt="">
-          <button type="button" class="ep-avatar-cam" id="epAvatarBtn" aria-label="Change photo">${cameraIconSvg()}</button>
+      <div class="ep-cover-block">
+        <div class="ep-cover ${bannerSrc ? '' : 'is-empty'}" id="epCover" style="${bannerSrc ? `background-image:url('${escapeHtml(bannerSrc)}')` : ''}">
+          <button type="button" class="ep-cover-btn" id="epBannerBtn">
+            <i class="fa-solid fa-camera" aria-hidden="true"></i>
+            <span>${bannerSrc ? t('changeBanner') : t('addBanner')}</span>
+          </button>
         </div>
+        <input type="file" id="epBannerInput" accept="image/*" hidden>
+        <div class="ep-avatar-overlap">
+          <div class="ep-avatar-wrap">
+            <img class="ep-avatar" id="epAvatarImg" src="${escapeHtml(avatarSrc)}" alt="">
+            <button type="button" class="ep-avatar-cam" id="epAvatarBtn" aria-label="Change photo">
+              <i class="fa-solid fa-camera" aria-hidden="true"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="ep-avatar-actions">
         <button type="button" class="ep-change-photo" id="epChangePhotoBtn">${t('changePhoto')}</button>
         <input type="file" id="epAvatarInput" accept="image/*" hidden>
       </div>
@@ -213,10 +250,15 @@ function openEditProfileScreen(p, username) {
           <span class="ep-label">${t('musicUrl')}</span>
           <input class="ep-input" id="musicInput" type="url" value="${escapeHtml(p.profileMusic || '')}" placeholder="https://…/audio.mp3">
         </div>
-        <label class="ep-row ep-row-check">
-          <span class="ep-label">${t('hideBadges')}</span>
-          <input type="checkbox" id="hideBadgesInput" class="ep-check" ${p.hideBadges ? 'checked' : ''}>
-        </label>
+        <div class="ep-row ep-row-toggle">
+          <div class="ep-toggle-text">
+            <span class="ep-label-block">${t('hideBadges')}</span>
+          </div>
+          <label class="ep-switch">
+            <input type="checkbox" id="hideBadgesInput" ${p.hideBadges ? 'checked' : ''}>
+            <span class="ep-switch-track" aria-hidden="true"><span class="ep-switch-thumb"></span></span>
+          </label>
+        </div>
       </div>
     </div>
   `
@@ -224,13 +266,13 @@ function openEditProfileScreen(p, username) {
   const connRoot = document.getElementById('connEditorRoot')
   renderConnectionsEditor(connRoot)
 
-  document.getElementById('epBackBtn').onclick = () => renderProfile()
+  document.getElementById('epBackBtn').onclick = () => leaveEditProfile()
 
-  // Avatar change from edit screen
+  // Avatar
   const avatarInput = document.getElementById('epAvatarInput')
-  const openPicker = () => avatarInput.click()
-  document.getElementById('epAvatarBtn').onclick = openPicker
-  document.getElementById('epChangePhotoBtn').onclick = openPicker
+  const openAvatar = () => avatarInput.click()
+  document.getElementById('epAvatarBtn').onclick = openAvatar
+  document.getElementById('epChangePhotoBtn').onclick = openAvatar
   avatarInput.onchange = async () => {
     const file = avatarInput.files[0]
     if (!file) return
@@ -247,6 +289,32 @@ function openEditProfileScreen(p, username) {
       if (e.message !== 'cancelled') toast(e.message)
     } finally {
       avatarInput.value = ''
+    }
+  }
+
+  // Banner
+  const bannerInput = document.getElementById('epBannerInput')
+  document.getElementById('epBannerBtn').onclick = () => bannerInput.click()
+  bannerInput.onchange = async () => {
+    const file = bannerInput.files[0]
+    if (!file) return
+    try {
+      const { base64, mime, ext } = await openImageCropper(file, { outW: 800, outH: 333, shape: 'rect', quality: 0.78 })
+      const previewUrl = `data:${mime};base64,${base64}`
+      const cover = document.getElementById('epCover')
+      if (cover) {
+        cover.style.backgroundImage = `url('${previewUrl}')`
+        cover.classList.remove('is-empty')
+        const btn = cover.querySelector('.ep-cover-btn span')
+        if (btn) btn.textContent = t('changeBanner')
+      }
+      toast('Uploading banner…')
+      await api('/users/me/banner', { method: 'POST', body: JSON.stringify({ imageBase64: base64, ext }) })
+      toast('Banner updated')
+    } catch (e) {
+      if (e.message !== 'cancelled') toast(e.message)
+    } finally {
+      bannerInput.value = ''
     }
   }
 
@@ -268,6 +336,7 @@ function openEditProfileScreen(p, username) {
 
         const r = await api('/users/me', { method: 'PATCH', body: JSON.stringify(body) })
         toast('Profile updated')
+        setEditProfileChrome(false)
         if (r.username !== username) window.location.href = profileUrl(r.username)
         else renderProfile()
       } catch (e) { toast(e.message) }
