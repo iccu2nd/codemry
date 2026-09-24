@@ -1,4 +1,99 @@
 
+/** Platform koneksi sosial — value bisa handle, nomor, atau URL penuh */
+const SOCIAL_PLATFORMS = [
+  { id: 'instagram', label: 'Instagram', icon: 'fa-brands fa-instagram', placeholder: 'username', color: '#E4405F' },
+  { id: 'twitter', label: 'X / Twitter', icon: 'fa-brands fa-x-twitter', placeholder: 'username', color: '#111' },
+  { id: 'github', label: 'GitHub', icon: 'fa-brands fa-github', placeholder: 'username', color: '#333' },
+  { id: 'youtube', label: 'YouTube', icon: 'fa-brands fa-youtube', placeholder: '@channel or URL', color: '#FF0000' },
+  { id: 'tiktok', label: 'TikTok', icon: 'fa-brands fa-tiktok', placeholder: 'username', color: '#010101' },
+  { id: 'whatsapp', label: 'WhatsApp', icon: 'fa-brands fa-whatsapp', placeholder: '62812… (with country code)', color: '#25D366' },
+  { id: 'telegram', label: 'Telegram', icon: 'fa-brands fa-telegram', placeholder: 'username', color: '#26A5E4' },
+  { id: 'linkedin', label: 'LinkedIn', icon: 'fa-brands fa-linkedin-in', placeholder: 'username or URL', color: '#0A66C2' },
+  { id: 'discord', label: 'Discord', icon: 'fa-brands fa-discord', placeholder: 'username', color: '#5865F2' }
+]
+
+function socialToUrl(id, value) {
+  if (!value) return null
+  const v = String(value).trim()
+  if (!v) return null
+  if (/^https?:\/\//i.test(v)) return v
+  const handle = v.replace(/^@+/, '')
+  switch (id) {
+    case 'instagram': return 'https://instagram.com/' + encodeURIComponent(handle)
+    case 'twitter': return 'https://x.com/' + encodeURIComponent(handle)
+    case 'github': return 'https://github.com/' + encodeURIComponent(handle)
+    case 'youtube':
+      if (handle.startsWith('@')) return 'https://youtube.com/' + handle
+      return 'https://youtube.com/@' + encodeURIComponent(handle)
+    case 'tiktok': return 'https://tiktok.com/@' + encodeURIComponent(handle)
+    case 'whatsapp': {
+      const phone = v.replace(/[^\d]/g, '')
+      return phone ? 'https://wa.me/' + phone : null
+    }
+    case 'telegram': return 'https://t.me/' + encodeURIComponent(handle)
+    case 'linkedin':
+      if (handle.includes('/')) return 'https://linkedin.com/' + handle.replace(/^\//, '')
+      return 'https://linkedin.com/in/' + encodeURIComponent(handle)
+    case 'discord': return 'https://discord.com/users/' + encodeURIComponent(handle)
+    default: return v
+  }
+}
+
+function socialDisplayLabel(id, value) {
+  if (!value) return ''
+  const v = String(value).trim()
+  if (/^https?:\/\//i.test(v)) {
+    try {
+      const u = new URL(v)
+      return u.host.replace(/^www\./, '') + (u.pathname !== '/' ? u.pathname.replace(/\/$/, '') : '')
+    } catch { return v }
+  }
+  if (id === 'whatsapp') return v.replace(/[^\d+]/g, '')
+  return v.startsWith('@') ? v : '@' + v.replace(/^@+/, '')
+}
+
+function profileSocialsHtml(socials) {
+  const data = socials && typeof socials === 'object' ? socials : {}
+  const items = SOCIAL_PLATFORMS.filter(p => data[p.id]).map(p => {
+    const raw = data[p.id]
+    const href = socialToUrl(p.id, raw)
+    if (!href) return ''
+    const title = p.label + ': ' + socialDisplayLabel(p.id, raw)
+    return `<a class="profile-social-btn" href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer" title="${escapeHtml(title)}" aria-label="${escapeHtml(title)}" style="--social-color:${p.color}">
+      <i class="${p.icon}" aria-hidden="true"></i>
+    </a>`
+  }).filter(Boolean)
+  if (!items.length) return ''
+  return `<div class="profile-socials" role="list">${items.join('')}</div>`
+}
+
+function socialsEditFieldsHtml(socials) {
+  const data = socials && typeof socials === 'object' ? socials : {}
+  const fields = SOCIAL_PLATFORMS.map(p => {
+    const val = data[p.id] || ''
+    return `<div class="social-edit-row">
+      <span class="social-edit-icon" style="--social-color:${p.color}" aria-hidden="true"><i class="${p.icon}"></i></span>
+      <div class="social-edit-field">
+        <label for="social_${p.id}">${escapeHtml(p.label)}</label>
+        <input id="social_${p.id}" data-social="${p.id}" type="text" maxlength="120" placeholder="${escapeHtml(p.placeholder)}" value="${escapeHtml(val)}" autocomplete="off">
+      </div>
+    </div>`
+  }).join('')
+  return `<div class="social-edit-grid">${fields}</div>`
+}
+
+function collectSocialsFromForm() {
+  const out = {}
+  SOCIAL_PLATFORMS.forEach(p => {
+    const el = document.getElementById('social_' + p.id)
+    if (!el) return
+    const v = (el.value || '').trim()
+    if (v) out[p.id] = v
+  })
+  return out
+}
+
+
 
 async function renderProfile() {
   const app = document.getElementById('app')
@@ -39,17 +134,22 @@ async function renderProfile() {
           ${(() => {
             const joined = formatJoined(p.createdAt)
             const site = (p.website || '').trim()
-            if (!joined && !site) return ''
-            return `<div class="profile-meta-list">
-              ${joined ? `<div class="profile-meta-item" title="${escapeHtml(formatJoinedFull(p.createdAt))}">
+            const loc = (p.location || '').trim()
+            const items = []
+            if (joined) items.push(`<div class="profile-meta-item" title="${escapeHtml(formatJoinedFull(p.createdAt))}">
                 <i class="fa-regular fa-calendar profile-meta-icon" aria-hidden="true"></i>
                 <span class="profile-meta-text">${t('joined')} ${escapeHtml(joined)}</span>
-              </div>` : ''}
-              ${site ? `<a class="profile-meta-item profile-meta-link" href="${escapeHtml(site)}" target="_blank" rel="noopener noreferrer" title="${escapeHtml(site)}">
+              </div>`)
+            if (loc) items.push(`<div class="profile-meta-item" title="${escapeHtml(loc)}">
+                <i class="fa-solid fa-location-dot profile-meta-icon" aria-hidden="true"></i>
+                <span class="profile-meta-text">${escapeHtml(loc)}</span>
+              </div>`)
+            if (site) items.push(`<a class="profile-meta-item profile-meta-link" href="${escapeHtml(site)}" target="_blank" rel="noopener noreferrer" title="${escapeHtml(site)}">
                 <i class="fa-solid fa-arrow-up-right-from-square profile-meta-icon" aria-hidden="true"></i>
                 <span class="profile-meta-text">${escapeHtml(websiteDisplayHost(site))}</span>
-              </a>` : ''}
-            </div>`
+              </a>`)
+            const meta = items.length ? `<div class="profile-meta-list">${items.join('')}</div>` : ''
+            return meta + profileSocialsHtml(p.socials)
           })()}
           ${p.profileMusic ? `
           <div class="profile-music" id="profileMusicBar">
@@ -86,6 +186,16 @@ async function renderProfile() {
                  <label>${t('website')} <span class="label-opt">(${t('optional')})</span></label>
                  <input id="websiteInput" type="text" inputmode="url" autocomplete="url" placeholder="${t('websitePlaceholder')}" value="${escapeHtml(p.website || '')}" maxlength="300">
                  <div class="field-hint">${t('websiteHint')}</div>
+               </div>
+               <div class="field">
+                 <label>${t('location')} <span class="label-opt">(${t('optional')})</span></label>
+                 <input id="locationInput" type="text" maxlength="64" placeholder="${t('locationPlaceholder')}" value="${escapeHtml(p.location || '')}" autocomplete="address-level2">
+                 <div class="field-hint">${t('locationHint')}</div>
+               </div>
+               <div class="field social-edit-block">
+                 <label>${t('connections')} <span class="label-opt">(${t('optional')})</span></label>
+                 <div class="field-hint" style="margin-bottom:10px">${t('connectionsHint')}</div>
+                 ${socialsEditFieldsHtml(p.socials)}
                </div>
                <div class="field">
                  <label>${t('musicUrl')} <span class="label-opt">(${t('optional')})</span></label>
@@ -224,6 +334,8 @@ async function renderProfile() {
             nickname: document.getElementById('nicknameInput').value,
             profileMusic: (document.getElementById('musicInput')?.value || '').trim(),
             website: (document.getElementById('websiteInput')?.value || '').trim(),
+            location: (document.getElementById('locationInput')?.value || '').trim(),
+            socials: collectSocialsFromForm(),
             hideBadges: document.getElementById('hideBadgesInput').checked
           }
           const newUsername = document.getElementById('usernameInput').value.trim()

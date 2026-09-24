@@ -1954,6 +1954,93 @@ a.profile-meta-link:hover .profile-meta-text {
   text-underline-offset: 2px;
 }
 
+/* Profile social connections */
+.profile-socials {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+.profile-social-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-muted);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 15px;
+  transition: background .12s ease, border-color .12s ease, color .12s ease, transform .12s ease;
+}
+.profile-social-btn:hover {
+  background: var(--bg-card);
+  border-color: var(--border-strong);
+  color: var(--social-color, var(--text));
+  transform: translateY(-1px);
+}
+.profile-social-btn:active {
+  transform: translateY(0);
+}
+
+/* Edit form — social fields */
+.social-edit-block {
+  margin-top: 4px;
+}
+.social-edit-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.social-edit-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.social-edit-icon {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-muted);
+  border: 1px solid var(--border);
+  color: var(--social-color, var(--text-muted));
+  font-size: 15px;
+}
+.social-edit-field {
+  flex: 1;
+  min-width: 0;
+}
+.social-edit-field label {
+  display: block;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 3px;
+}
+.social-edit-field input {
+  width: 100%;
+  padding: 9px 12px;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: var(--bg-muted);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 13.5px;
+}
+.social-edit-field input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), .15);
+  background: var(--bg-card);
+}
+
+
 .devpanel-head { display: flex; align-items: center; gap: 14px; }
 .devpanel-head svg { width: 26px; height: 26px; color: var(--text); flex-shrink: 0; }
 .devpanel-title { font-size: 19px; font-weight: 800; color: var(--text); margin-bottom: 2px; }

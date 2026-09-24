@@ -549,11 +549,18 @@ router.post('/:shortId/history/:sha/restore', requireAuth, async (req, res) => {
 router.delete('/:shortId', requireAuth, async (req, res) => {
     const snippet = await Snippets.findByShort(req.params.shortId)
     if (!snippet) return res.status(404).json({ error: 'Not found' })
-    if (snippet.ownerUsername !== req.username) return res.status(403).json({ error: 'bukan milikmu' })
+    if (snippet.ownerUsername !== req.username) return res.status(403).json({ error: 'Not your code' })
     try {
-        await deleteGist(snippet.id)
+        // Hapus di GitHub; kalau gist sudah hilang (404/410) tetap lanjut hapus lokal
+        try {
+            await deleteGist(snippet.id)
+        } catch (ge) {
+            const status = ge.response?.status
+            if (status !== 404 && status !== 410) {
+                console.error('[delete] gist failed', snippet.shortId, ge.message)
+            }
+        }
         await Snippets.remove(snippet.id)
-        // Drop from owner's pinned list if present
         try {
             const owner = await Users.find(snippet.ownerUsername)
             const pins = (owner?.pinnedShortIds || []).filter(id => id !== snippet.shortId)
@@ -561,12 +568,13 @@ router.delete('/:shortId', requireAuth, async (req, res) => {
                 await Users.update(snippet.ownerUsername, { pinnedShortIds: pins })
             }
         } catch {}
-        await Comments.removeAllForSnippet(snippet.shortId)
-        await Likes.removeAllForSnippet(snippet.shortId)
-        Bookmarks.removeAllForSnippet(snippet.shortId)
+        try { await Comments.removeAllForSnippet(snippet.shortId) } catch {}
+        try { await Likes.removeAllForSnippet(snippet.shortId) } catch {}
+        try { Bookmarks.removeAllForSnippet(snippet.shortId) } catch {}
         res.json({ ok: true })
     } catch (e) {
-        res.status(500).json({ error: e.response?.data?.message || e.message })
+        console.error('[delete] failed', req.params.shortId, e.message)
+        res.status(500).json({ error: e.response?.data?.message || e.message || 'Delete failed' })
     }
 })
 

@@ -12,11 +12,52 @@ function genApiKey() {
     return `cdy_${crypto.randomBytes(24).toString('hex')}`
 }
 
+const SOCIAL_KEYS = ['instagram', 'twitter', 'github', 'youtube', 'tiktok', 'whatsapp', 'telegram', 'linkedin', 'discord']
+
+function normalizeHttpUrl(raw, maxLen = 300) {
+    let url = String(raw || '').trim()
+    if (!url) return null
+    if (!/^https?:\/\//i.test(url)) url = 'https://' + url
+    try {
+        const parsed = new URL(url)
+        if (!['http:', 'https:'].includes(parsed.protocol)) return null
+        url = parsed.href
+    } catch {
+        return null
+    }
+    if (url.length > maxLen) return null
+    return url
+}
+
+/** Sanitize socials object from client. Values may be username, phone, or full URL. */
+function sanitizeSocials(input) {
+    if (!input || typeof input !== 'object') return {}
+    const out = {}
+    for (const key of SOCIAL_KEYS) {
+        if (typeof input[key] !== 'string') continue
+        let v = input[key].trim()
+        if (!v) continue
+        if (v.length > 120) v = v.slice(0, 120)
+        // strip leading @ for handle-like platforms
+        if (['instagram', 'twitter', 'tiktok', 'telegram', 'github'].includes(key)) {
+            v = v.replace(/^@+/, '')
+        }
+        // whatsapp: keep digits and +
+        if (key === 'whatsapp') {
+            v = v.replace(/[^\d+]/g, '')
+            if (v.length < 8) continue
+        }
+        out[key] = v
+    }
+    return out
+}
+
+
 router.patch('/me', async (req, res) => {
     if (!req.username) return res.status(401).json({ error: 'Please sign in' })
     const user = await Users.find(req.username)
     if (!user) return res.status(401).json({ error: 'Please sign in' })
-    const { bio, nickname, username, hideBadges, profileMusic, website } = req.body
+    const { bio, nickname, username, hideBadges, profileMusic, website, location, socials } = req.body
 
     try {
         if (typeof bio === 'string') await Users.update(req.username, { bio })
@@ -53,6 +94,13 @@ router.patch('/me', async (req, res) => {
             }
             await Users.update(req.username, { website: url || null })
         }
+        if (typeof location === 'string') {
+            const loc = location.trim().slice(0, 64)
+            await Users.update(req.username, { location: loc || null })
+        }
+        if (socials !== undefined) {
+            await Users.update(req.username, { socials: sanitizeSocials(socials) })
+        }
 
         let finalUsername = req.username
         if (typeof username === 'string' && username.trim() && username.trim().toLowerCase() !== req.username.toLowerCase()) {
@@ -80,6 +128,8 @@ router.patch('/me', async (req, res) => {
             nickname: finalNickname,
             profileMusic: updated.profileMusic || null,
             website: updated.website || null,
+            location: updated.location || null,
+            socials: updated.socials || {},
             avatar: avatarUrl(updated),
             hideBadges: !!updated.hideBadges,
             usernameChangedAt: updated.usernameChangedAt || null
@@ -329,6 +379,8 @@ router.get('/:username', async (req, res) => {
         bio: user.bio || '',
         profileMusic: user.profileMusic || null,
         website: user.website || null,
+        location: user.location || null,
+        socials: user.socials && typeof user.socials === 'object' ? user.socials : {},
         avatar: avatarUrl(user),
         banner: bannerUrl(user),
         createdAt: user.createdAt,
@@ -343,10 +395,16 @@ router.get('/:username', async (req, res) => {
             const mapped = visibleSnippets.map(s => {
                 const isOwnerViewing = req.username && req.username === s.ownerUsername
                 const base = s.isLocked && !isOwnerViewing ? lockedSnippetStub(s) : stripSnippetSecrets(s)
+                const ownerDisplay = badgeDisplay(user, badges)
                 return {
                     ...base,
                     tags: s.tags || [],
+                    ownerUsername: user.username,
+                    ownerNickname: nickname || user.username,
                     ownerAvatar: avatarUrl(user),
+                    ownerBadges: ownerDisplay.badges,
+                    ownerRole: ownerDisplay.role,
+                    ownerIsDeveloper: ownerDisplay.isDeveloper,
                     views: viewCounts[s.shortId] || 0,
                     likes: likeCounts[s.shortId] || 0,
                     likedByMe: likedByMe.has(s.shortId),

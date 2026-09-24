@@ -36,6 +36,12 @@ const I18N = {
   website: 'Website',
   websiteHint: 'Your personal site, portfolio, GitHub, or social link. Shown on your profile.',
   websitePlaceholder: 'https://yoursite.com',
+  location: 'Location',
+  locationPlaceholder: 'City, Country',
+  locationHint: 'Where you are based. Shown under your bio.',
+  connections: 'Connections',
+  connectionsHint: 'Add Instagram, WhatsApp, GitHub, and more. Shown as icons on your profile.',
+
   joined: 'Joined',
   hideBadges: 'Hide badges (including Developer tag)',
   save: 'Save',
@@ -1333,11 +1339,12 @@ function openModal(innerHtml) {
   requestAnimationFrame(() => requestAnimationFrame(() => overlay.classList.add('open')))
 }
 
-function closeModal() {
+function closeModal(force) {
   const overlay = document.getElementById('modalOverlay')
   if (!overlay) return
-  // Jangan tutup saat aksi konfirmasi sedang loading
-  if (overlay._confirmBusy) return
+  // Jangan tutup saat aksi konfirmasi sedang loading (kecuali force)
+  if (overlay._confirmBusy && !force) return
+  overlay._confirmBusy = false
   overlay.classList.remove('open')
   setTimeout(() => {
     if (!overlay.classList.contains('open')) overlay.style.display = 'none'
@@ -1372,13 +1379,12 @@ function confirmAction(opts = {}) {
 
   return new Promise((resolve) => {
     const overlay = ensureModalOverlay()
-    // Batalkan resolve sebelumnya jika modal confirm diganti
     if (typeof overlay._confirmResolve === 'function') {
-      const prev = overlay._confirmResolve
+      try { overlay._confirmResolve(false) } catch {}
       overlay._confirmResolve = null
-      prev(false)
     }
     overlay._confirmResolve = resolve
+    overlay._confirmBusy = false
 
     const iconHtml = danger
       ? `<div class="confirm-icon confirm-icon-danger" aria-hidden="true"><i class="fa-regular fa-trash-can"></i></div>`
@@ -1390,24 +1396,27 @@ function confirmAction(opts = {}) {
         <div class="confirm-title">${escapeHtml(title)}</div>
         ${message ? `<div class="confirm-message">${escapeHtml(message)}</div>` : ''}
         <div class="confirm-actions">
-          <button type="button" class="btn btn-white confirm-cancel-btn" id="confirmCancelBtn">${escapeHtml(cancelLabel)}</button>
-          <button type="button" class="btn ${danger ? 'btn-confirm-danger' : 'btn-primary'} confirm-ok-btn" id="confirmOkBtn">${escapeHtml(confirmLabel)}</button>
+          <button type="button" class="btn btn-white" id="confirmCancelBtn">${escapeHtml(cancelLabel)}</button>
+          <button type="button" class="btn ${danger ? 'btn-confirm-danger' : 'btn-primary'}" id="confirmOkBtn">${escapeHtml(confirmLabel)}</button>
         </div>
       </div>
     `)
 
-    // Modal confirm lebih kecil
     const box = document.getElementById('modalBox')
     if (box) box.classList.add('modal-box-confirm')
 
-    const finish = (ok) => {
+    const cleanup = (ok) => {
       const o = document.getElementById('modalOverlay')
       if (o) {
         o._confirmResolve = null
         o._confirmBusy = false
       }
       if (box) box.classList.remove('modal-box-confirm')
-      closeModal()
+      // Force close even if busy flag was set
+      if (o) {
+        o.classList.remove('open')
+        setTimeout(() => { if (o && !o.classList.contains('open')) o.style.display = 'none' }, 180)
+      }
       resolve(ok)
     }
 
@@ -1415,58 +1424,45 @@ function confirmAction(opts = {}) {
     const okBtn = document.getElementById('confirmOkBtn')
 
     if (cancelBtn) {
-      cancelBtn.onclick = (e) => {
-        e.preventDefault()
-        e.stopPropagation()
-        finish(false)
+      cancelBtn.onclick = (ev) => {
+        ev.preventDefault()
+        ev.stopPropagation()
+        if (overlay._confirmBusy) return
+        cleanup(false)
       }
     }
 
     if (okBtn) {
-      okBtn.onclick = async (e) => {
-        e.preventDefault()
-        e.stopPropagation()
+      okBtn.onclick = async (ev) => {
+        ev.preventDefault()
+        ev.stopPropagation()
+        if (overlay._confirmBusy) return
+
         if (!onConfirm) {
-          finish(true)
+          cleanup(true)
           return
         }
-        const oBusy = document.getElementById('modalOverlay')
-        if (oBusy && oBusy._confirmBusy) return
-        if (oBusy) oBusy._confirmBusy = true
-        if (cancelBtn) cancelBtn.disabled = true
 
-        let succeeded = false
+        overlay._confirmBusy = true
+        if (cancelBtn) cancelBtn.disabled = true
+        const origHtml = okBtn.innerHTML
+        okBtn.disabled = true
+        okBtn.classList.add('btn-loading')
+        okBtn.innerHTML = loadSpinnerHtml()
+
         try {
-          const result = await withBtnLoading(okBtn, async () => {
-            await onConfirm()
-            succeeded = true
-          })
-          // withBtnLoading bisa return undefined jika tombol sudah busy
-          if (result === undefined && !succeeded) {
-            if (oBusy) oBusy._confirmBusy = false
-            if (cancelBtn) cancelBtn.disabled = false
-            return
-          }
-          if (succeeded) {
-            const o = document.getElementById('modalOverlay')
-            if (o) {
-              o._confirmResolve = null
-              o._confirmBusy = false
-              o.classList.remove('open')
-              setTimeout(() => { if (o && !o.classList.contains('open')) o.style.display = 'none' }, 180)
-            }
-            if (box) box.classList.remove('modal-box-confirm')
-            resolve(true)
-          }
+          await onConfirm()
+          cleanup(true)
         } catch (err) {
-          toast(err.message || 'Something went wrong')
-          if (oBusy) oBusy._confirmBusy = false
+          toast(err && err.message ? err.message : 'Something went wrong')
+          overlay._confirmBusy = false
           if (cancelBtn) cancelBtn.disabled = false
+          okBtn.disabled = false
+          okBtn.classList.remove('btn-loading')
+          okBtn.innerHTML = origHtml
         }
       }
     }
-
-    // Escape / klik luar: closeModal sudah resolve(false) via _confirmResolve
   })
 }
 

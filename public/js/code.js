@@ -143,7 +143,7 @@ function renderUnlockedDetail(app, shortId, s) {
               ${(!me || me.username !== s.ownerUsername) || (me && me.username === s.ownerUsername) ? `
               <div class="cd-more-divider" role="separator"></div>
               ${!me || me.username !== s.ownerUsername ? `<button type="button" class="cd-more-item cd-more-danger" role="menuitem" id="reportBtn">${flagIconSvg()}<span>Report</span></button>` : ''}
-              ${me && me.username === s.ownerUsername ? `<button type="button" class="cd-more-item cd-more-danger" role="menuitem" id="delBtn">${trashIconSvg()}<span>Delete</span></button>` : ''}
+              ${me && me.username === s.ownerUsername ? `<button type="button" class="cd-more-item cd-more-danger" role="menuitem" id="delBtn" data-action="delete-code">${trashIconSvg()}<span>Delete</span></button>` : ''}
               ` : ''}
             </div>
           </div>
@@ -909,15 +909,17 @@ function renderUnlockedDetail(app, shortId, s) {
       }
     }, { signal: _pageSig })
 
-    const delBtn = document.getElementById('delBtn')
-    if (delBtn) {
-      delBtn.addEventListener('click', async (e) => {
+    // Delete code — pakai capture di menu supaya pasti ketangkap
+    const moreMenuEl = document.getElementById('cdMoreMenu')
+    if (moreMenuEl) {
+      moreMenuEl.addEventListener('click', async (e) => {
+        const btn = e.target.closest('[data-action="delete-code"], #delBtn')
+        if (!btn || !moreMenuEl.contains(btn)) return
         e.preventDefault()
         e.stopPropagation()
-        // Tutup dropdown ⋯ dulu, lalu buka dialog di tick berikutnya
-        // supaya event klik ini tidak bentrok dengan modal baru
         if (typeof window.__closeCdMoreMenu === 'function') window.__closeCdMoreMenu()
-        await new Promise(r => setTimeout(r, 30))
+        // Tunggu menu tertutup penuh sebelum buka dialog
+        await new Promise(r => setTimeout(r, 180))
         try {
           await confirmAction({
             title: 'Delete this code?',
@@ -926,13 +928,13 @@ function renderUnlockedDetail(app, shortId, s) {
             cancelLabel: 'Cancel',
             danger: true,
             onConfirm: async () => {
-              await api(`/codes/${shortId}`, { method: 'DELETE' })
+              await api('/codes/' + encodeURIComponent(shortId), { method: 'DELETE' })
               toast('Code deleted')
               window.location.href = '/'
             }
           })
         } catch (err) {
-          toast(err.message || 'Could not delete')
+          toast((err && err.message) || 'Could not delete')
         }
       })
     }
