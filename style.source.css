@@ -1698,60 +1698,57 @@ body[data-no-bottom-nav] .scroll-top-btn {
   font-weight: 500;
 }
 
-/* Meta chips: joined date + website — compact, tidy pills */
-.profile-meta-row {
+/* Profile meta: icon left + text right, clean & consistent */
+.profile-meta-list {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
+  flex-direction: column;
   gap: 8px;
   margin-top: 12px;
 }
-.profile-meta-chip {
-  display: inline-flex;
+.profile-meta-item {
+  display: flex;
   align-items: center;
-  gap: 6px;
-  max-width: min(100%, 280px);
-  box-sizing: border-box;
-  padding: 6px 11px;
-  border-radius: 999px;
-  background: var(--bg-muted);
-  border: 1px solid var(--border);
+  gap: 10px;
+  min-width: 0;
+  max-width: 100%;
   color: var(--text-muted);
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 500;
-  line-height: 1.25;
+  line-height: 1.35;
   text-decoration: none;
-  transition: background .12s ease, border-color .12s ease, color .12s ease;
 }
-.profile-meta-chip > span {
+.profile-meta-icon {
+  flex-shrink: 0;
+  width: 1em;
+  text-align: center;
+  font-size: 13px;
+  line-height: 1;
+  color: var(--text-muted);
+  opacity: 0.9;
+}
+.profile-meta-text {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  min-width: 0;
-}
-.profile-meta-chip .meta-ico {
-  flex-shrink: 0;
-  opacity: 0.72;
-}
-.profile-meta-chip .meta-ext {
-  flex-shrink: 0;
-  opacity: 0.5;
-  margin-left: 1px;
 }
 a.profile-meta-link {
-  color: var(--accent-dark);
-  border-color: var(--accent-border);
-  background: var(--accent-bg);
-  font-weight: 600;
-  cursor: pointer;
+  color: var(--text-secondary);
+  width: fit-content;
+  max-width: 100%;
+  transition: color .12s ease;
 }
-a.profile-meta-link:hover {
-  background: var(--accent-bg-hover);
-  border-color: var(--border-strong);
-  color: var(--accent-dark);
+a.profile-meta-link .profile-meta-icon {
+  color: var(--text-secondary);
 }
-a.profile-meta-link:hover .meta-ext { opacity: 0.9; }
-a.profile-meta-link:active { transform: scale(0.98); }
+a.profile-meta-link:hover,
+a.profile-meta-link:hover .profile-meta-icon {
+  color: var(--text);
+}
+a.profile-meta-link:hover .profile-meta-text {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
 
 .devpanel-head { display: flex; align-items: center; gap: 14px; }
 .devpanel-head svg { width: 26px; height: 26px; color: var(--text); flex-shrink: 0; }
