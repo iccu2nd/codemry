@@ -80,12 +80,12 @@ function renderLockedCard(app, shortId, s) {
   unlockBtn.onclick = async () => {
     const pin = pinInput.value.trim()
     if (!pin) { toast('Enter the password'); return }
-    unlockBtn.disabled = true
-    try {
-      const full = await api(`/codes/${shortId}/unlock`, { method: 'POST', body: JSON.stringify({ pin }) })
-      renderUnlockedDetail(app, shortId, full)
-    } catch (e) { toast(e.message) }
-    finally { unlockBtn.disabled = false }
+    await withBtnLoading(unlockBtn, async () => {
+      try {
+        const full = await api(`/codes/${shortId}/unlock`, { method: 'POST', body: JSON.stringify({ pin }) })
+        renderUnlockedDetail(app, shortId, full)
+      } catch (e) { toast(e.message) }
+    })
   }
 }
 
@@ -279,21 +279,31 @@ function renderUnlockedDetail(app, shortId, s) {
     document.getElementById('pinBtn')?.addEventListener('click', async () => {
       if (!me) { toast('Sign in first'); return }
       const btn = document.getElementById('pinBtn')
-      const label = document.getElementById('pinBtnLabel')
-      try {
-        const profile = await api(`/users/${encodeURIComponent(me.username)}`)
-        const pins = Array.isArray(profile.pinnedShortIds) ? profile.pinnedShortIds : []
-        const isPinned = pins.includes(s.shortId)
-        if (isPinned) {
-          await api(`/users/me/pins/${encodeURIComponent(s.shortId)}`, { method: 'DELETE' })
-          toast('Unpinned from profile')
-          if (label) label.textContent = 'Pin to profile'
-        } else {
-          await api('/users/me/pins', { method: 'POST', body: JSON.stringify({ shortId: s.shortId }) })
-          toast('Pinned to profile')
-          if (label) label.textContent = 'Unpin from profile'
+      let nextLabel = null
+      await withBtnLoading(btn, async () => {
+        try {
+          const profile = await api(`/users/${encodeURIComponent(me.username)}`)
+          const pins = Array.isArray(profile.pinnedShortIds) ? profile.pinnedShortIds : []
+          const isPinned = pins.includes(s.shortId)
+          if (isPinned) {
+            await api(`/users/me/pins/${encodeURIComponent(s.shortId)}`, { method: 'DELETE' })
+            toast('Unpinned from profile')
+            nextLabel = 'Pin to profile'
+          } else {
+            await api('/users/me/pins', { method: 'POST', body: JSON.stringify({ shortId: s.shortId }) })
+            toast('Pinned to profile')
+            nextLabel = 'Unpin from profile'
+          }
+        } catch (e) { toast(e.message) }
+      })
+      if (nextLabel) {
+        const label = document.getElementById('pinBtnLabel')
+        if (label) label.textContent = nextLabel
+        else {
+          const span = btn?.querySelector('span')
+          if (span) span.textContent = nextLabel
         }
-      } catch (e) { toast(e.message) }
+      }
     })
 
     ;(async () => {
@@ -484,14 +494,13 @@ function renderUnlockedDetail(app, shortId, s) {
     const forkBtn = document.getElementById('forkBtn')
     if (forkBtn) forkBtn.onclick = async () => {
       if (!me) { window.location.href = '/auth'; return }
-      if (forkBtn.dataset.busy) return
-      forkBtn.dataset.busy = '1'
-      try {
-        const forked = await api(`/codes/${shortId}/fork`, { method: 'POST' })
-        toast('Code forked!')
-        window.location.href = codeUrl(forked.shortId)
-      } catch (e) { toast(e.message) }
-      finally { delete forkBtn.dataset.busy }
+      await withBtnLoading(forkBtn, async () => {
+        try {
+          const forked = await api(`/codes/${shortId}/fork`, { method: 'POST' })
+          toast('Code forked!')
+          window.location.href = codeUrl(forked.shortId)
+        } catch (e) { toast(e.message) }
+      })
     }
 
     const reportBtn = document.getElementById('reportBtn')
@@ -525,17 +534,16 @@ function renderUnlockedDetail(app, shortId, s) {
       }
       cancelReportBtn.onclick = exitReportMode
       sendReportBtn.onclick = async () => {
-        if (sendReportBtn.dataset.busy) return
-        sendReportBtn.dataset.busy = '1'
-        try {
-          const reason = document.getElementById('reportReason').value
-          const detail = document.getElementById('reportDetail').value.trim()
-          await api(`/codes/${shortId}/report`, { method: 'POST', body: JSON.stringify({ reason, detail }) })
-          toast('Report sent. Thanks for helping keep Codery safe.')
-          document.getElementById('reportDetail').value = ''
-          exitReportMode()
-        } catch (e) { toast(e.message) }
-        finally { delete sendReportBtn.dataset.busy }
+        await withBtnLoading(sendReportBtn, async () => {
+          try {
+            const reason = document.getElementById('reportReason').value
+            const detail = document.getElementById('reportDetail').value.trim()
+            await api(`/codes/${shortId}/report`, { method: 'POST', body: JSON.stringify({ reason, detail }) })
+            toast('Report sent. Thanks for helping keep Codery safe.')
+            document.getElementById('reportDetail').value = ''
+            exitReportMode()
+          } catch (e) { toast(e.message) }
+        })
       }
     }
 
@@ -860,18 +868,24 @@ function renderUnlockedDetail(app, shortId, s) {
     const delBtn = document.getElementById('delBtn')
     if (delBtn) delBtn.onclick = async () => {
       if (!confirm('Delete this code?')) return
-      try { await api(`/codes/${shortId}`, { method: 'DELETE' }); toast('Code deleted'); window.location.href = '/' }
-      catch (e) { toast(e.message) }
+      await withBtnLoading(delBtn, async () => {
+        try {
+          await api(`/codes/${shortId}`, { method: 'DELETE' })
+          toast('Code deleted')
+          window.location.href = '/'
+        } catch (e) { toast(e.message) }
+      })
     }
 
     const removeExpiryBtn = document.getElementById('removeExpiryBtn')
     if (removeExpiryBtn) removeExpiryBtn.onclick = async () => {
-      removeExpiryBtn.disabled = true
-      try {
-        await api(`/codes/${shortId}`, { method: 'PATCH', body: JSON.stringify({ expiresAt: null }) })
-        toast(t('expiryRemoved'))
-        renderCodeDetail()
-      } catch (e) { toast(e.message); removeExpiryBtn.disabled = false }
+      await withBtnLoading(removeExpiryBtn, async () => {
+        try {
+          await api(`/codes/${shortId}`, { method: 'PATCH', body: JSON.stringify({ expiresAt: null }) })
+          toast(t('expiryRemoved'))
+          renderCodeDetail()
+        } catch (e) { toast(e.message) }
+      })
     }
 
     const editBtn = document.getElementById('editBtn')
@@ -936,13 +950,13 @@ function renderUnlockedDetail(app, shortId, s) {
       else if (typeof expiresMs === 'number') body.expiresAt = Date.now() + expiresMs
       // undefined = keep current (don't send expiresAt)
 
-      saveEditBtn.disabled = true
-      try {
-        await api(`/codes/${shortId}`, { method: 'PATCH', body: JSON.stringify(body) })
-        toast('Code updated!')
-        renderCodeDetail()
-      } catch (e) { toast(e.message) }
-      finally { saveEditBtn.disabled = false }
+      await withBtnLoading(saveEditBtn, async () => {
+        try {
+          await api(`/codes/${shortId}`, { method: 'PATCH', body: JSON.stringify(body) })
+          toast('Code updated!')
+          renderCodeDetail()
+        } catch (e) { toast(e.message) }
+      })
     }
 
     setupComments(shortId, s.ownerUsername)
@@ -1159,8 +1173,10 @@ async function setupComments(shortId, ownerUsername) {
         btn.onclick = async () => {
           const id = btn.closest('.comment-item').dataset.id
           if (!confirm('Delete this comment?')) return
-          try { await api(`/codes/${shortId}/comments/${id}`, { method: 'DELETE' }); loadComments() }
-          catch (e) { toast(e.message) }
+          await withBtnLoading(btn, async () => {
+            try { await api(`/codes/${shortId}/comments/${id}`, { method: 'DELETE' }); loadComments() }
+            catch (e) { toast(e.message) }
+          })
         }
       })
 
@@ -1203,8 +1219,10 @@ async function setupComments(shortId, ownerUsername) {
           const commentId = btn.dataset.commentId
           const replyId = btn.dataset.replyId
           if (!confirm('Delete this reply?')) return
-          try { await api(`/codes/${shortId}/comments/${commentId}/reply/${replyId}`, { method: 'DELETE' }); loadComments() }
-          catch (e) { toast(e.message) }
+          await withBtnLoading(btn, async () => {
+            try { await api(`/codes/${shortId}/comments/${commentId}/reply/${replyId}`, { method: 'DELETE' }); loadComments() }
+            catch (e) { toast(e.message) }
+          })
         }
       })
     } catch (e) {
@@ -1217,23 +1235,23 @@ async function setupComments(shortId, ownerUsername) {
     sendBtn.onclick = async () => {
       const text = input.value.trim()
       if (!text && !selectedStickerUrl) return
-      sendBtn.disabled = true
-      try {
-        if (replyTarget) {
-          await api(`/codes/${shortId}/comments/${replyTarget.commentId}/reply`, {
-            method: 'POST',
-            body: JSON.stringify({ text, stickerUrl: selectedStickerUrl, replyToUsername: replyTarget.username })
-          })
-        } else {
-          await api(`/codes/${shortId}/comments`, { method: 'POST', body: JSON.stringify({ text, stickerUrl: selectedStickerUrl }) })
-        }
-        input.value = ''
-        autoGrow(input)
-        setSticker('')
-        exitReplyMode()
-        loadComments()
-      } catch (e) { toast(e.message) }
-      finally { sendBtn.disabled = false }
+      await withBtnLoading(sendBtn, async () => {
+        try {
+          if (replyTarget) {
+            await api(`/codes/${shortId}/comments/${replyTarget.commentId}/reply`, {
+              method: 'POST',
+              body: JSON.stringify({ text, stickerUrl: selectedStickerUrl, replyToUsername: replyTarget.username })
+            })
+          } else {
+            await api(`/codes/${shortId}/comments`, { method: 'POST', body: JSON.stringify({ text, stickerUrl: selectedStickerUrl }) })
+          }
+          input.value = ''
+          autoGrow(input)
+          setSticker('')
+          exitReplyMode()
+          loadComments()
+        } catch (e) { toast(e.message) }
+      })
     }
   }
 

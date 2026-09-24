@@ -204,8 +204,10 @@ async function renderProfile() {
     const followBtn = document.getElementById('followBtn')
     if (followBtn) followBtn.onclick = async () => {
       if (!me) { window.location.href = '/auth'; return }
-      try { await api(`/users/${username}/follow`, { method: 'POST' }); renderProfile() }
-      catch (e) { toast(e.message) }
+      await withBtnLoading(followBtn, async () => {
+        try { await api(`/users/${username}/follow`, { method: 'POST' }); renderProfile() }
+        catch (e) { toast(e.message) }
+      })
     }
 
     const editBtn = document.getElementById('editProfileBtn')
@@ -215,23 +217,24 @@ async function renderProfile() {
     }
     const saveBioBtn = document.getElementById('saveBioBtn')
     if (saveBioBtn) saveBioBtn.onclick = async () => {
-      setBtnLoading(saveBioBtn, true)
-      try {
-        const body = {
-          bio: document.getElementById('bioInput').value,
-          nickname: document.getElementById('nicknameInput').value,
-          profileMusic: (document.getElementById('musicInput')?.value || '').trim(),
-          website: (document.getElementById('websiteInput')?.value || '').trim(),
-          hideBadges: document.getElementById('hideBadgesInput').checked
-        }
-        const newUsername = document.getElementById('usernameInput').value.trim()
-        if (newUsername && newUsername !== username) body.username = newUsername
+      await withBtnLoading(saveBioBtn, async () => {
+        try {
+          const body = {
+            bio: document.getElementById('bioInput').value,
+            nickname: document.getElementById('nicknameInput').value,
+            profileMusic: (document.getElementById('musicInput')?.value || '').trim(),
+            website: (document.getElementById('websiteInput')?.value || '').trim(),
+            hideBadges: document.getElementById('hideBadgesInput').checked
+          }
+          const newUsername = document.getElementById('usernameInput').value.trim()
+          if (newUsername && newUsername !== username) body.username = newUsername
 
-        const r = await api('/users/me', { method: 'PATCH', body: JSON.stringify(body) })
-        toast('Profil diperbarui!')
-        if (r.username !== username) window.location.href = profileUrl(r.username)
-        else renderProfile()
-      } catch (e) { toast(e.message); setBtnLoading(saveBioBtn, false) }
+          const r = await api('/users/me', { method: 'PATCH', body: JSON.stringify(body) })
+          toast('Profil diperbarui!')
+          if (r.username !== username) window.location.href = profileUrl(r.username)
+          else renderProfile()
+        } catch (e) { toast(e.message) }
+      })
     }
 
     // Penting: tombol kamera (avatar & banner) TIDAK PERNAH dipindah posisinya.
@@ -324,9 +327,11 @@ async function renderProfile() {
 
     const signOutBtn = document.getElementById('signOutBtn')
     if (signOutBtn) signOutBtn.onclick = async () => {
-      await api('/auth/logout', { method: 'POST' }).catch(() => {})
-      me = null
-      window.location.href = '/'
+      await withBtnLoading(signOutBtn, async () => {
+        await api('/auth/logout', { method: 'POST' }).catch(() => {})
+        me = null
+        window.location.href = '/'
+      })
     }
   } catch (e) {
     app.innerHTML = `<div class="card">${emptyStateHtml({ title: escapeHtml(e.message) })}</div>`

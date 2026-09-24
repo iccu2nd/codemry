@@ -43,20 +43,23 @@ async function init() {
 
   document.getElementById('authForm').onsubmit = async (e) => {
     e.preventDefault()
+    const submitBtn = document.getElementById('authSubmit')
     const f = new FormData(e.target)
-    try {
-      const body = { username: f.get('username'), password: f.get('password') }
-      if (mode === 'register') {
-        body.captchaToken = captchaToken
-        body.captchaAnswer = Number(f.get('captchaAnswer'))
+    await withBtnLoading(submitBtn, async () => {
+      try {
+        const body = { username: f.get('username'), password: f.get('password') }
+        if (mode === 'register') {
+          body.captchaToken = captchaToken
+          body.captchaAnswer = Number(f.get('captchaAnswer'))
+        }
+        await api(`/auth/${mode}`, { method: 'POST', body: JSON.stringify(body) })
+        toast(mode === 'login' ? t('loginSuccess') : t('registerSuccess'))
+        window.location.href = '/'
+      } catch (err) {
+        toast(err.message)
+        if (mode === 'register') newCaptcha()
       }
-      await api(`/auth/${mode}`, { method: 'POST', body: JSON.stringify(body) })
-      toast(mode === 'login' ? t('loginSuccess') : t('registerSuccess'))
-      window.location.href = '/'
-    } catch (err) {
-      toast(err.message)
-      if (mode === 'register') newCaptcha()
-    }
+    })
   }
 }
 

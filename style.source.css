@@ -422,10 +422,44 @@ img.clickable:hover { outline: 2px solid rgba(var(--accent-rgb),.4); outline-off
   filter: brightness(0.96);
 }
 .btn:disabled { opacity: .65; cursor: default; }
-.btn.btn-loading { cursor: default; }
+.btn.btn-loading { cursor: wait; }
 .btn.btn-loading .load-spinner { --load-color: var(--on-accent); }
 .btn-white.btn-loading .load-spinner,
 .btn-white .load-spinner { --load-color: var(--accent-dark); }
+
+/* Loading state untuk menu, ikon, inline — biar user tahu aksi sedang jalan */
+.cd-more-item.btn-loading,
+.cd-btn.btn-loading,
+.send-icon-btn.btn-loading,
+.comment-del.btn-loading,
+.link-btn-inline.btn-loading,
+.link-btn.btn-loading,
+.comment-action-btn.btn-loading {
+  pointer-events: none;
+  cursor: wait;
+  opacity: 0.7;
+}
+.link-btn.btn-loading .load-spinner {
+  --load-color: var(--text-muted);
+  font-size: 12px;
+}
+.cd-more-item.btn-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+}
+.cd-more-item.btn-loading .load-spinner,
+.cd-btn.btn-loading .load-spinner,
+.send-icon-btn.btn-loading .load-spinner,
+.comment-del.btn-loading .load-spinner,
+.link-btn-inline.btn-loading .load-spinner {
+  --load-color: var(--text-muted);
+  font-size: 12px;
+}
+.cd-btn.btn-loading .load-spinner {
+  --load-color: var(--text);
+}
 
 /* Spinner "blades" -- dipakai buat semua state loading (tombol, upload
    avatar/banner, dll). Markup 12 blade-nya disuntik lewat JS (lihat

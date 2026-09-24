@@ -115,7 +115,7 @@ function t(key) {
 // gak bisa cuma modal CSS ::after doang.
 // ============================================================
 function loadSpinnerHtml(cls) {
-  return `<span class="load-spinner${cls ? ' ' + cls : ''}">${'<i class="load-blade"></i>'.repeat(12)}</span>`
+  return `<span class="load-spinner${cls ? ' ' + cls : ''}" aria-hidden="true">${'<i class="load-blade"></i>'.repeat(12)}</span>`
 }
 function setBtnLoading(btn, loading) {
   if (!btn) return
@@ -125,16 +125,30 @@ function setBtnLoading(btn, loading) {
       btn.dataset.loadingSaved = '1'
     }
     btn.disabled = true
+    btn.setAttribute('aria-busy', 'true')
     btn.classList.add('btn-loading')
     btn.innerHTML = loadSpinnerHtml()
   } else {
     btn.disabled = false
+    btn.removeAttribute('aria-busy')
     btn.classList.remove('btn-loading')
     if (btn.dataset.loadingSaved === '1') {
       btn.innerHTML = btn.dataset.origHtml
       delete btn.dataset.origHtml
       delete btn.dataset.loadingSaved
     }
+  }
+}
+/** Jalankan async action dengan spinner di tombol. Aman double-click. */
+async function withBtnLoading(btn, fn) {
+  if (!btn || btn.dataset.busy === '1' || btn.classList.contains('btn-loading')) return
+  btn.dataset.busy = '1'
+  setBtnLoading(btn, true)
+  try {
+    return await fn()
+  } finally {
+    setBtnLoading(btn, false)
+    delete btn.dataset.busy
   }
 }
 function addUploadingSpinner(btn) {
@@ -458,9 +472,11 @@ function renderAuthArea() {
   const logoutBtn = document.getElementById('logoutBtn')
   if (logoutBtn) {
     logoutBtn.onclick = async () => {
-      await api('/auth/logout', { method: 'POST' }).catch(() => {})
-      me = null
-      window.location.href = '/'
+      await withBtnLoading(logoutBtn, async () => {
+        await api('/auth/logout', { method: 'POST' }).catch(() => {})
+        me = null
+        window.location.href = '/'
+      })
     }
   }
   injectDevMenuLink()
