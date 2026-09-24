@@ -121,7 +121,7 @@ function renderUnlockedDetail(app, shortId, s) {
         ${s.expired ? `<div class="expired-banner">${hourglassIconSvg()}<span>${t('expiredOwnerNotice')}</span><button type="button" class="link-btn-inline" id="removeExpiryBtn">${t('removeExpiry')}</button></div>` : ''}
         ${s.forkedFrom ? `<a class="forked-from-badge" href="${codeUrl(s.forkedFrom.shortId)}">${forkIconSvg()} Forked from <b>${escapeHtml(s.forkedFrom.ownerNickname)}</b></a>` : ''}
         ${s.description ? `<p class="cd-desc">${formatWaText(s.description)}</p>` : ''}
-        ${s.tags && s.tags.length ? `<div class="cd-tags">${s.tags.map(tag => `<span class="tag-pill">#${escapeHtml(tag)}</span>`).join('')}</div>` : ''}
+        ${s.tags && s.tags.length ? `<div class="cd-tags">${s.tags.map(tag => `<a class="tag-pill" href="/search?q=${encodeURIComponent(tag)}"><span class="tag-hash">#</span>${escapeHtml(tag)}</a>`).join('')}</div>` : ''}
 
         <div class="cd-toolbar">
           <button class="cd-btn cd-btn-primary" id="copyBtn" type="button">${copyIconSvg()}<span>Copy</span></button>
@@ -954,6 +954,8 @@ function renderUnlockedDetail(app, shortId, s) {
     wireFilenameSpaces(document.getElementById('editFilename'))
     wireAutoGrowTextarea(document.getElementById('editDescription'))
     wireExpiryField('editExpiresSelect', 'editExpiresHint')
+    enhanceAllSelects(document.getElementById('editForm'))
+    enhanceAllSelects(document.getElementById('reportForm'))
 
     function enterEditMode() {
       editForm.style.display = 'block'
@@ -1318,7 +1320,60 @@ async function setupComments(shortId, ownerUsername) {
     }
   }
 
-  loadComments()
+
+  function highlightAndScroll(el) {
+    if (!el) return
+    el.classList.add('notif-target-highlight')
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    setTimeout(() => el.classList.remove('notif-target-highlight'), 2800)
+  }
+
+  function scrollToNotifTarget() {
+    const commentId = qs('comment')
+    const replyId = qs('reply')
+    const focus = qs('focus')
+    if (!commentId && !replyId && focus !== 'code') return
+
+    if (focus === 'code' && !commentId && !replyId) {
+      const win = document.getElementById('codeWindow')
+      if (win) highlightAndScroll(win)
+      return
+    }
+
+    // Expand reply thread if needed
+    if (commentId) {
+      const thread = document.getElementById('replies-' + commentId)
+      const viewBtn = listEl.querySelector(`.view-replies-btn[data-id="${commentId}"]`)
+      if (thread && thread.style.display === 'none' && viewBtn) {
+        viewBtn.click()
+      }
+    }
+
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        let target = null
+        if (replyId) {
+          target = Array.from(listEl.querySelectorAll('.reply-item')).find(el => el.dataset.replyId === replyId) || null
+        }
+        if (!target && commentId) {
+          target = Array.from(listEl.querySelectorAll('.comment-item[data-id]')).find(el => el.dataset.id === commentId) || null
+        }
+        if (target) {
+          highlightAndScroll(target)
+          // Clean query params from URL without reload
+          try {
+            const url = new URL(location.href)
+            url.searchParams.delete('comment')
+            url.searchParams.delete('reply')
+            url.searchParams.delete('focus')
+            history.replaceState(null, '', url.pathname + url.search + url.hash)
+          } catch {}
+        }
+      }, 80)
+    })
+  }
+
+  loadComments().then(() => scrollToNotifTarget())
 }
 
 renderCodeDetail(refreshAuth())

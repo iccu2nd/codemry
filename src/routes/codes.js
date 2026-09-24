@@ -692,7 +692,13 @@ router.post('/:shortId/comments', requireAuth, async (req, res) => {
         replies: []
     }
     await Comments.add(comment)
-    Notifications.create({ username: snippet.ownerUsername, fromUsername: req.username, type: 'comment', shortId: snippet.shortId }).catch(() => {})
+    Notifications.create({
+        username: snippet.ownerUsername,
+        fromUsername: req.username,
+        type: 'comment',
+        shortId: snippet.shortId,
+        commentId: comment.id
+    }).catch(() => {})
     const user = await Users.find(req.username)
     res.json({
         ...comment,
@@ -758,7 +764,14 @@ router.post('/:shortId/comments/:commentId/reply', requireAuth, async (req, res)
 
     // Notif ke orang yang benar-benar dibalas (bukan selalu penulis komentar
     // utama), biar semua peserta thread ikut ke-notif giliran mereka dibalas.
-    Notifications.create({ username: replyToUsername, fromUsername: req.username, type: 'reply', shortId: snippet.shortId }).catch(() => {})
+    Notifications.create({
+        username: replyToUsername,
+        fromUsername: req.username,
+        type: 'reply',
+        shortId: snippet.shortId,
+        commentId: req.params.commentId,
+        replyId: reply.id
+    }).catch(() => {})
 
     const users = await Users.all()
     const byUsername = new Map(users.map(u => [u.username, u]))

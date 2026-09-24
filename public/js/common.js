@@ -854,7 +854,7 @@ function snippetCard(s) {
       ${s.description ? `<p class="sc-desc">${formatWaText(truncateText(s.description, 120))}</p>` : ''}
     </a>
 
-    ${s.tags && s.tags.length ? `<div class="sc-tags">${s.tags.map(tag => `<span class="tag-pill">#${escapeHtml(tag)}</span>`).join('')}</div>` : ''}
+    ${s.tags && s.tags.length ? `<div class="sc-tags">${s.tags.map(tag => `<a class="tag-pill" href="/search?q=${encodeURIComponent(tag)}" onclick="event.stopPropagation()"><span class="tag-hash">#</span>${escapeHtml(tag)}</a>`).join('')}</div>` : ''}
 
     ${s.expired
       ? `<a class="sc-preview sc-preview-expired" href="${codeUrl(s.shortId)}">
@@ -1000,6 +1000,147 @@ function wireExpiryField(selectId, hintId) {
   customVal?.addEventListener('input', update)
   customUnit?.addEventListener('change', update)
   update()
+  enhanceCustomSelect(sel)
+  if (customUnit) enhanceCustomSelect(customUnit)
+}
+
+/** Custom dropdown UI for <select> — keeps native select for form value / change events */
+function enhanceCustomSelect(select) {
+  if (!select || select.tagName !== 'SELECT' || select.dataset.cselect === '1') return
+  // Jangan double-wrap
+  if (select.closest('.cselect')) {
+    select.dataset.cselect = '1'
+    return
+  }
+  select.dataset.cselect = '1'
+
+  const wrap = document.createElement('div')
+  wrap.className = 'cselect'
+  select.parentNode.insertBefore(wrap, select)
+  wrap.appendChild(select)
+  select.classList.add('cselect-native')
+  select.setAttribute('tabindex', '-1')
+  select.setAttribute('aria-hidden', 'true')
+
+  const trigger = document.createElement('button')
+  trigger.type = 'button'
+  trigger.className = 'cselect-trigger'
+  trigger.setAttribute('aria-haspopup', 'listbox')
+  trigger.setAttribute('aria-expanded', 'false')
+  trigger.innerHTML = `<span class="cselect-label"></span><i class="fa-solid fa-chevron-down cselect-chevron" aria-hidden="true"></i>`
+
+  const menu = document.createElement('div')
+  menu.className = 'cselect-menu'
+  menu.setAttribute('role', 'listbox')
+  menu.hidden = true
+
+  wrap.appendChild(trigger)
+  wrap.appendChild(menu)
+
+  const labelEl = trigger.querySelector('.cselect-label')
+
+  function optionLabel(opt) {
+    return (opt && (opt.textContent || opt.label || opt.value)) || ''
+  }
+
+  function syncFromSelect() {
+    const opt = select.options[select.selectedIndex]
+    labelEl.textContent = optionLabel(opt)
+    menu.querySelectorAll('.cselect-option').forEach(btn => {
+      const on = btn.dataset.value === select.value
+      btn.classList.toggle('is-selected', on)
+      btn.setAttribute('aria-selected', on ? 'true' : 'false')
+    })
+  }
+
+  function buildMenu() {
+    menu.innerHTML = ''
+    Array.from(select.options).forEach(opt => {
+      if (opt.disabled && opt.hidden) return
+      const btn = document.createElement('button')
+      btn.type = 'button'
+      btn.className = 'cselect-option' + (opt.selected ? ' is-selected' : '')
+      btn.dataset.value = opt.value
+      btn.setAttribute('role', 'option')
+      btn.setAttribute('aria-selected', opt.selected ? 'true' : 'false')
+      btn.innerHTML = `<span class="cselect-option-text">${escapeHtml(optionLabel(opt))}</span><i class="fa-solid fa-check cselect-check" aria-hidden="true"></i>`
+      if (opt.disabled) {
+        btn.disabled = true
+        btn.classList.add('is-disabled')
+      }
+      btn.addEventListener('click', (e) => {
+        e.preventDefault()
+        e.stopPropagation()
+        if (opt.disabled) return
+        select.value = opt.value
+        select.dispatchEvent(new Event('change', { bubbles: true }))
+        syncFromSelect()
+        closeMenu()
+      })
+      menu.appendChild(btn)
+    })
+    syncFromSelect()
+  }
+
+  function openMenu() {
+    buildMenu()
+    menu.hidden = false
+    trigger.setAttribute('aria-expanded', 'true')
+    wrap.classList.add('is-open')
+    requestAnimationFrame(() => menu.classList.add('is-open'))
+    // Posisi: buka ke atas jika dekat bawah viewport
+    const rect = trigger.getBoundingClientRect()
+    const spaceBelow = window.innerHeight - rect.bottom
+    menu.classList.toggle('cselect-menu-up', spaceBelow < 220 && rect.top > spaceBelow)
+  }
+
+  function closeMenu() {
+    menu.classList.remove('is-open')
+    trigger.setAttribute('aria-expanded', 'false')
+    wrap.classList.remove('is-open')
+    setTimeout(() => {
+      if (!wrap.classList.contains('is-open')) menu.hidden = true
+    }, 140)
+  }
+
+  trigger.addEventListener('click', (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    // Tutup select lain dulu
+    document.querySelectorAll('.cselect.is-open').forEach(w => {
+      if (w !== wrap) w.__cselectClose && w.__cselectClose()
+    })
+    if (wrap.classList.contains('is-open')) closeMenu()
+    else openMenu()
+  })
+
+  wrap.__cselectClose = closeMenu
+
+  // Sync jika value diubah dari JS (draft restore, auto language, dll.)
+  select.addEventListener('change', syncFromSelect)
+
+  buildMenu()
+}
+
+// Satu listener global — tutup semua custom select saat klik di luar / Escape
+if (!window.__cselectGlobalWired) {
+  window.__cselectGlobalWired = true
+  document.addEventListener('click', (e) => {
+    document.querySelectorAll('.cselect.is-open').forEach(wrap => {
+      if (!wrap.contains(e.target)) wrap.__cselectClose && wrap.__cselectClose()
+    })
+  })
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return
+    document.querySelectorAll('.cselect.is-open').forEach(wrap => {
+      wrap.__cselectClose && wrap.__cselectClose()
+    })
+  })
+}
+
+function enhanceAllSelects(root) {
+  const scope = root || document
+  scope.querySelectorAll('select').forEach(enhanceCustomSelect)
 }
 
 // Resolve select value (+ custom inputs) to milliseconds duration, or special sentinels.

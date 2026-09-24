@@ -40,7 +40,9 @@ router.get('/', requireAuth, async (req, res) => {
                 fromNickname: fromUser?.nickname || n.fromUsername,
                 fromAvatar: fromUser ? avatarUrl(fromUser) : null,
                 shortId: n.shortId || null,
-                snippetTitle: snippet ? (snippet.title || snippet.filename) : null
+                snippetTitle: snippet ? (snippet.title || snippet.filename) : null,
+                commentId: n.commentId || null,
+                replyId: n.replyId || null
             }
         }))
     } catch (e) {

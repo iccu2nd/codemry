@@ -9,7 +9,16 @@ function notifIconSvg(type) {
 }
 
 function notifTargetUrl(n) {
-  if (n.shortId) return codeUrl(n.shortId)
+  if (n.shortId) {
+    let url = codeUrl(n.shortId)
+    const extra = []
+    if (n.commentId) extra.push('comment=' + encodeURIComponent(n.commentId))
+    if (n.replyId) extra.push('reply=' + encodeURIComponent(n.replyId))
+    // Highlight focus area for like/fork/upload too (scroll to code)
+    if (n.type === 'like' || n.type === 'fork') extra.push('focus=code')
+    if (extra.length) url += (url.includes('?') ? '&' : '?') + extra.join('&')
+    return url
+  }
   if (n.type === 'follow') return profileUrl(n.fromUsername)
   return '#'
 }

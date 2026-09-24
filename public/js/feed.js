@@ -266,6 +266,8 @@ async function loadFeed() {
     ])
     feedAll = Array.isArray(codes) ? codes : []
     const pageFromUrl = parseInt(qs('page'), 10)
+const tagFromUrl = (qs('tag') || '').trim()
+if (tagFromUrl) feedActiveTag = tagFromUrl.replace(/^#/, '')
     feedPage = Number.isInteger(pageFromUrl) && pageFromUrl > 0 ? pageFromUrl : 1
     buildTagPills()
     buildLangPills()

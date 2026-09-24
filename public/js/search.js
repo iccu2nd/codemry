@@ -191,4 +191,21 @@ document.getElementById('backToIdleBtn')?.addEventListener('click', () => {
 
 renderSearchHistory()
 loadTrendingSearch()
-showSearchIdleView()
+
+// Deep-link: /search?q=tag  → langsung filter hasil
+;(function initSearchFromUrl() {
+  try {
+    const params = new URLSearchParams(location.search)
+    const q = (params.get('q') || params.get('tag') || '').trim()
+    if (q) {
+      // Hapus # di depan kalau user kirim #tag
+      const term = q.replace(/^#/, '')
+      if (term) {
+        showSearchResultsView()
+        runSearch(term)
+        return
+      }
+    }
+  } catch {}
+  showSearchIdleView()
+})()

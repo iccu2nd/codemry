@@ -306,6 +306,8 @@ async function init() {
     }
 
     wireExpiryField('expiresSelect', 'expiresHint')
+    // Custom dropdown untuk semua <select> di form upload (language, expiry, unit)
+    enhanceAllSelects(document.getElementById('uploadForm') || document.getElementById('app'))
 
     document.getElementById('pickFileBtn')?.addEventListener('click', () => fileInput?.click())
     if (fileInput) {
