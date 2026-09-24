@@ -1,15 +1,11 @@
 
 /** Platform koneksi sosial — value bisa handle, nomor, atau URL penuh */
 const SOCIAL_PLATFORMS = [
-  { id: 'instagram', label: 'Instagram', icon: 'fa-brands fa-instagram', placeholder: 'username', color: '#E4405F' },
-  { id: 'twitter', label: 'X / Twitter', icon: 'fa-brands fa-x-twitter', placeholder: 'username', color: '#111' },
-  { id: 'github', label: 'GitHub', icon: 'fa-brands fa-github', placeholder: 'username', color: '#333' },
-  { id: 'youtube', label: 'YouTube', icon: 'fa-brands fa-youtube', placeholder: '@channel or URL', color: '#FF0000' },
-  { id: 'tiktok', label: 'TikTok', icon: 'fa-brands fa-tiktok', placeholder: 'username', color: '#010101' },
-  { id: 'whatsapp', label: 'WhatsApp', icon: 'fa-brands fa-whatsapp', placeholder: '62812… (with country code)', color: '#25D366' },
-  { id: 'telegram', label: 'Telegram', icon: 'fa-brands fa-telegram', placeholder: 'username', color: '#26A5E4' },
-  { id: 'linkedin', label: 'LinkedIn', icon: 'fa-brands fa-linkedin-in', placeholder: 'username or URL', color: '#0A66C2' },
-  { id: 'discord', label: 'Discord', icon: 'fa-brands fa-discord', placeholder: 'username', color: '#5865F2' }
+  { id: 'instagram', label: 'Instagram', icon: 'fa-brands fa-instagram', placeholder: 'Instagram', color: '#E4405F' },
+  { id: 'whatsapp', label: 'WhatsApp', icon: 'fa-brands fa-whatsapp', placeholder: 'WhatsApp (62812…)', color: '#25D366' },
+  { id: 'github', label: 'GitHub', icon: 'fa-brands fa-github', placeholder: 'GitHub', color: '#333' },
+  { id: 'telegram', label: 'Telegram', icon: 'fa-brands fa-telegram', placeholder: 'Telegram', color: '#26A5E4' },
+  { id: 'twitter', label: 'X', icon: 'fa-brands fa-x-twitter', placeholder: 'X / Twitter', color: '#111' }
 ]
 
 function socialToUrl(id, value) {
@@ -67,31 +63,186 @@ function profileSocialsHtml(socials) {
   return `<div class="profile-socials" role="list">${items.join('')}</div>`
 }
 
-function socialsEditFieldsHtml(socials) {
-  const data = socials && typeof socials === 'object' ? socials : {}
-  const fields = SOCIAL_PLATFORMS.map(p => {
-    const val = data[p.id] || ''
-    return `<div class="social-edit-row">
-      <span class="social-edit-icon" style="--social-color:${p.color}" aria-hidden="true"><i class="${p.icon}"></i></span>
-      <div class="social-edit-field">
-        <label for="social_${p.id}">${escapeHtml(p.label)}</label>
-        <input id="social_${p.id}" data-social="${p.id}" type="text" maxlength="120" placeholder="${escapeHtml(p.placeholder)}" value="${escapeHtml(val)}" autocomplete="off">
-      </div>
-    </div>`
-  }).join('')
-  return `<div class="social-edit-grid">${fields}</div>`
+/** State untuk editor connections di modal (hanya platform yang ditambahkan) */
+let editSocialState = {}
+
+function renderConnectionsEditor(root) {
+  if (!root) return
+  const state = editSocialState || {}
+  const active = SOCIAL_PLATFORMS.filter(p => state[p.id] !== undefined)
+  const available = SOCIAL_PLATFORMS.filter(p => state[p.id] === undefined)
+
+  const rows = active.map(p => `
+    <div class="conn-row" data-conn="${p.id}">
+      <span class="conn-icon" style="--social-color:${p.color}" aria-hidden="true"><i class="${p.icon}"></i></span>
+      <input type="text" data-social="${p.id}" maxlength="120" placeholder="${escapeHtml(p.placeholder)}" value="${escapeHtml(state[p.id] || '')}" autocomplete="off" aria-label="${escapeHtml(p.label)}">
+      <button type="button" class="conn-remove" data-remove="${p.id}" aria-label="Remove ${escapeHtml(p.label)}" title="Remove">
+        <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+      </button>
+    </div>`).join('')
+
+  const addBtn = available.length
+    ? `<button type="button" class="conn-add-btn" id="connAddBtn"><i class="fa-solid fa-plus" aria-hidden="true"></i><span>Add</span></button>`
+    : ''
+
+  const picker = available.length ? `
+    <div class="conn-picker" id="connPicker" hidden>
+      ${available.map(p => `
+        <button type="button" class="conn-picker-item" data-add="${p.id}">
+          <span class="conn-icon" style="--social-color:${p.color}"><i class="${p.icon}"></i></span>
+          <span>${escapeHtml(p.label)}</span>
+        </button>`).join('')}
+    </div>` : ''
+
+  root.innerHTML = `
+    <div class="conn-list">${rows || `<div class="conn-empty">No connections yet</div>`}</div>
+    <div class="conn-actions">${addBtn}</div>
+    ${picker}`
+
+  // Sync inputs → state
+  root.querySelectorAll('input[data-social]').forEach(inp => {
+    inp.addEventListener('input', () => {
+      editSocialState[inp.dataset.social] = inp.value
+    })
+  })
+  root.querySelectorAll('[data-remove]').forEach(btn => {
+    btn.onclick = () => {
+      delete editSocialState[btn.dataset.remove]
+      renderConnectionsEditor(root)
+    }
+  })
+  const addBtnEl = root.querySelector('#connAddBtn')
+  const pickerEl = root.querySelector('#connPicker')
+  if (addBtnEl && pickerEl) {
+    addBtnEl.onclick = () => {
+      const open = pickerEl.hasAttribute('hidden')
+      if (open) pickerEl.removeAttribute('hidden')
+      else pickerEl.setAttribute('hidden', '')
+      addBtnEl.classList.toggle('is-open', open)
+    }
+  }
+  root.querySelectorAll('[data-add]').forEach(btn => {
+    btn.onclick = () => {
+      editSocialState[btn.dataset.add] = ''
+      renderConnectionsEditor(root)
+      const inp = root.querySelector(`input[data-social="${btn.dataset.add}"]`)
+      if (inp) inp.focus()
+    }
+  })
 }
 
 function collectSocialsFromForm() {
   const out = {}
-  SOCIAL_PLATFORMS.forEach(p => {
-    const el = document.getElementById('social_' + p.id)
-    if (!el) return
-    const v = (el.value || '').trim()
-    if (v) out[p.id] = v
+  // Prefer live inputs if present
+  document.querySelectorAll('#connEditorRoot input[data-social]').forEach(inp => {
+    const v = (inp.value || '').trim()
+    if (v) out[inp.dataset.social] = v
+  })
+  // Also merge state keys that might be empty (skip empties)
+  Object.keys(editSocialState || {}).forEach(k => {
+    if (out[k]) return
+    const v = String(editSocialState[k] || '').trim()
+    if (v) out[k] = v
   })
   return out
 }
+
+function openEditProfileModal(p, username) {
+  editSocialState = {}
+  const existing = (p.socials && typeof p.socials === 'object') ? p.socials : {}
+  SOCIAL_PLATFORMS.forEach(plat => {
+    if (existing[plat.id]) editSocialState[plat.id] = existing[plat.id]
+  })
+
+  openModal(`
+    <div class="modal-head">
+      <div class="modal-head-title">${t('editProfile')}</div>
+      <button type="button" class="modal-close-btn" id="editProfileCloseBtn" aria-label="Close">${closeIconSvg()}</button>
+    </div>
+    <div class="modal-body profile-edit-modal">
+      <div class="pe-section">
+        <div class="pe-section-title">Basic</div>
+        <div class="field"><label>${t('nickname')}</label><input id="nicknameInput" value="${escapeHtml(p.nickname || '')}" maxlength="32"></div>
+        <div class="field">
+          <label>${t('username')}</label>
+          <input id="usernameInput" value="${escapeHtml(p.username)}" maxlength="20">
+          <div class="field-hint">${usernameCooldownHint(p.usernameChangedAt)}</div>
+        </div>
+        <div class="field"><label>${t('bio')}</label><textarea id="bioInput" class="textarea-autogrow" style="min-height:72px">${escapeHtml(p.bio || '')}</textarea></div>
+      </div>
+      <div class="pe-section">
+        <div class="pe-section-title">About</div>
+        <div class="field">
+          <label>${t('location')} <span class="label-opt">(${t('optional')})</span></label>
+          <input id="locationInput" type="text" maxlength="64" placeholder="${t('locationPlaceholder')}" value="${escapeHtml(p.location || '')}">
+        </div>
+        <div class="field">
+          <label>${t('website')} <span class="label-opt">(${t('optional')})</span></label>
+          <input id="websiteInput" type="text" inputmode="url" placeholder="${t('websitePlaceholder')}" value="${escapeHtml(p.website || '')}" maxlength="300">
+        </div>
+      </div>
+      <div class="pe-section">
+        <div class="pe-section-title">${t('connections')}</div>
+        <div class="field-hint" style="margin-bottom:10px">${t('connectionsHint')}</div>
+        <div id="connEditorRoot"></div>
+      </div>
+      <div class="pe-section">
+        <div class="pe-section-title">Extras</div>
+        <div class="field">
+          <label>${t('musicUrl')} <span class="label-opt">(${t('optional')})</span></label>
+          <input id="musicInput" type="url" placeholder="https://…/audio.mp3" value="${escapeHtml(p.profileMusic || '')}">
+        </div>
+        <label class="checkbox-row">
+          <input type="checkbox" id="hideBadgesInput" ${p.hideBadges ? 'checked' : ''}>
+          ${t('hideBadges')}
+        </label>
+      </div>
+    </div>
+    <div class="profile-edit-footer">
+      <button type="button" class="btn btn-white" id="editProfileCancelBtn">Cancel</button>
+      <button type="button" class="btn btn-primary" id="saveBioBtn">${t('save')}</button>
+    </div>
+  `)
+
+  const box = document.getElementById('modalBox')
+  if (box) box.classList.add('modal-box-profile-edit')
+
+  const connRoot = document.getElementById('connEditorRoot')
+  renderConnectionsEditor(connRoot)
+
+  const closeEdit = () => {
+    if (box) box.classList.remove('modal-box-profile-edit')
+    closeModal(true)
+  }
+  document.getElementById('editProfileCloseBtn')?.addEventListener('click', closeEdit)
+  document.getElementById('editProfileCancelBtn')?.addEventListener('click', closeEdit)
+
+  const saveBioBtn = document.getElementById('saveBioBtn')
+  if (saveBioBtn) saveBioBtn.onclick = async () => {
+    await withBtnLoading(saveBioBtn, async () => {
+      try {
+        const body = {
+          bio: document.getElementById('bioInput')?.value || '',
+          nickname: document.getElementById('nicknameInput')?.value || '',
+          profileMusic: (document.getElementById('musicInput')?.value || '').trim(),
+          website: (document.getElementById('websiteInput')?.value || '').trim(),
+          location: (document.getElementById('locationInput')?.value || '').trim(),
+          socials: collectSocialsFromForm(),
+          hideBadges: !!document.getElementById('hideBadgesInput')?.checked
+        }
+        const newUsername = (document.getElementById('usernameInput')?.value || '').trim()
+        if (newUsername && newUsername !== username) body.username = newUsername
+
+        const r = await api('/users/me', { method: 'PATCH', body: JSON.stringify(body) })
+        toast('Profile updated')
+        closeEdit()
+        if (r.username !== username) window.location.href = profileUrl(r.username)
+        else renderProfile()
+      } catch (e) { toast(e.message) }
+    })
+  }
+}
+
 
 
 
@@ -173,40 +324,6 @@ async function renderProfile() {
           ? `<div class="btn-row profile-actions">
                <button class="btn btn-white" id="editProfileBtn">${t('editProfile')}</button>
                <button class="btn btn-white" id="signOutBtn">${t('signOut')}</button>
-             </div>
-             <div id="editProfileForm" style="display:none;margin-top:14px">
-               <div class="field"><label>${t('nickname')}</label><input id="nicknameInput" value="${escapeHtml(p.nickname || '')}" maxlength="32"></div>
-               <div class="field">
-                 <label>${t('username')}</label>
-                 <input id="usernameInput" value="${escapeHtml(p.username)}" maxlength="20">
-                 <div class="field-hint">${usernameCooldownHint(p.usernameChangedAt)}</div>
-               </div>
-               <div class="field"><label>${t('bio')}</label><textarea id="bioInput" style="min-height:80px">${escapeHtml(p.bio || '')}</textarea></div>
-               <div class="field">
-                 <label>${t('website')} <span class="label-opt">(${t('optional')})</span></label>
-                 <input id="websiteInput" type="text" inputmode="url" autocomplete="url" placeholder="${t('websitePlaceholder')}" value="${escapeHtml(p.website || '')}" maxlength="300">
-                 <div class="field-hint">${t('websiteHint')}</div>
-               </div>
-               <div class="field">
-                 <label>${t('location')} <span class="label-opt">(${t('optional')})</span></label>
-                 <input id="locationInput" type="text" maxlength="64" placeholder="${t('locationPlaceholder')}" value="${escapeHtml(p.location || '')}" autocomplete="address-level2">
-                 <div class="field-hint">${t('locationHint')}</div>
-               </div>
-               <div class="field social-edit-block">
-                 <label>${t('connections')} <span class="label-opt">(${t('optional')})</span></label>
-                 <div class="field-hint" style="margin-bottom:10px">${t('connectionsHint')}</div>
-                 ${socialsEditFieldsHtml(p.socials)}
-               </div>
-               <div class="field">
-                 <label>${t('musicUrl')} <span class="label-opt">(${t('optional')})</span></label>
-                 <input id="musicInput" type="url" placeholder="https://…/audio.mp3" value="${escapeHtml(p.profileMusic || '')}">
-                 <div class="field-hint">${t('musicHint')}</div>
-               </div>
-               <label class="checkbox-row">
-                 <input type="checkbox" id="hideBadgesInput" ${p.hideBadges ? 'checked' : ''}>
-                 ${t('hideBadges')}
-               </label>
-               <button class="btn btn-primary btn-block" id="saveBioBtn">${t('save')}</button>
              </div>`
           : `<button class="btn ${p.isFollowing ? 'btn-white' : 'btn-primary'} btn-block profile-actions" id="followBtn">${p.isFollowing ? t('following') : t('follow')}</button>`}
       </div>
@@ -321,33 +438,7 @@ async function renderProfile() {
     }
 
     const editBtn = document.getElementById('editProfileBtn')
-    if (editBtn) editBtn.onclick = () => {
-      const form = document.getElementById('editProfileForm')
-      form.style.display = form.style.display === 'none' ? 'block' : 'none'
-    }
-    const saveBioBtn = document.getElementById('saveBioBtn')
-    if (saveBioBtn) saveBioBtn.onclick = async () => {
-      await withBtnLoading(saveBioBtn, async () => {
-        try {
-          const body = {
-            bio: document.getElementById('bioInput').value,
-            nickname: document.getElementById('nicknameInput').value,
-            profileMusic: (document.getElementById('musicInput')?.value || '').trim(),
-            website: (document.getElementById('websiteInput')?.value || '').trim(),
-            location: (document.getElementById('locationInput')?.value || '').trim(),
-            socials: collectSocialsFromForm(),
-            hideBadges: document.getElementById('hideBadgesInput').checked
-          }
-          const newUsername = document.getElementById('usernameInput').value.trim()
-          if (newUsername && newUsername !== username) body.username = newUsername
-
-          const r = await api('/users/me', { method: 'PATCH', body: JSON.stringify(body) })
-          toast('Profil diperbarui!')
-          if (r.username !== username) window.location.href = profileUrl(r.username)
-          else renderProfile()
-        } catch (e) { toast(e.message) }
-      })
-    }
+    if (editBtn) editBtn.onclick = () => openEditProfileModal(p, username)
 
     // Penting: tombol kamera (avatar & banner) TIDAK PERNAH dipindah posisinya.
     // Selama upload berlangsung, tombolnya cuma dikasih class "is-uploading"

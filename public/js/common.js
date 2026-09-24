@@ -40,7 +40,7 @@ const I18N = {
   locationPlaceholder: 'City, Country',
   locationHint: 'Where you are based. Shown under your bio.',
   connections: 'Connections',
-  connectionsHint: 'Add Instagram, WhatsApp, GitHub, and more. Shown as icons on your profile.',
+  connectionsHint: 'Tap + to add Instagram, WhatsApp, GitHub, and more.',
 
   joined: 'Joined',
   hideBadges: 'Hide badges (including Developer tag)',
@@ -1333,6 +1333,7 @@ function openModal(innerHtml) {
   const box = document.getElementById('modalBox')
   if (box) {
     box.classList.remove('modal-box-confirm')
+    box.classList.remove('modal-box-profile-edit')
     box.innerHTML = innerHtml
   }
   overlay.style.display = 'flex'

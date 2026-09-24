@@ -1985,59 +1985,60 @@ a.profile-meta-link:hover .profile-meta-text {
   transform: translateY(0);
 }
 
-/* Edit form — social fields */
-.social-edit-block {
-  margin-top: 4px;
-}
+/* Edit form — social fields (compact) */
+.social-edit-block { margin-top: 2px; }
 .social-edit-grid {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 8px;
+}
+@media (max-width: 420px) {
+  .social-edit-grid { grid-template-columns: 1fr; }
 }
 .social-edit-row {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+  min-width: 0;
 }
 .social-edit-icon {
-  width: 36px;
-  height: 36px;
+  width: 34px;
+  height: 34px;
   flex-shrink: 0;
-  border-radius: 10px;
+  border-radius: 9px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: var(--bg-muted);
   border: 1px solid var(--border);
   color: var(--social-color, var(--text-muted));
-  font-size: 15px;
+  font-size: 14px;
 }
-.social-edit-field {
+.social-edit-row input {
   flex: 1;
   min-width: 0;
-}
-.social-edit-field label {
-  display: block;
-  font-size: 11.5px;
-  font-weight: 600;
-  color: var(--text-muted);
-  margin-bottom: 3px;
-}
-.social-edit-field input {
-  width: 100%;
-  padding: 9px 12px;
+  padding: 8px 10px;
   border-radius: 9px;
   border: 1px solid var(--border);
   background: var(--bg-muted);
   color: var(--text);
   font-family: inherit;
-  font-size: 13.5px;
+  font-size: 13px;
 }
-.social-edit-field input:focus {
+.social-edit-row input:focus {
   outline: none;
   border-color: var(--accent);
   box-shadow: 0 0 0 3px rgba(var(--accent-rgb), .15);
   background: var(--bg-card);
+}
+.profile-socials {
+  gap: 6px;
+  margin-top: 10px;
+}
+.profile-social-btn {
+  width: 34px;
+  height: 34px;
+  font-size: 14px;
 }
 
 
@@ -5137,3 +5138,169 @@ html:not(.light) .api-method.m-del { background: rgba(239,68,68,.15); color: #f8
   font-family: 'JetBrains Mono', monospace; font-size: 12.5px; line-height: 1.5;
   white-space: pre;
 }
+
+
+/* —— Edit profile modal —— */
+.modal-box.modal-box-profile-edit {
+  max-width: 420px;
+  max-height: 88vh;
+}
+.profile-edit-modal {
+  padding-top: 4px !important;
+}
+.pe-section {
+  margin-bottom: 18px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+}
+.pe-section:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+.pe-section-title {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+.profile-edit-footer {
+  display: flex;
+  gap: 10px;
+  padding: 12px 16px 16px;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+  background: var(--bg-card);
+}
+.profile-edit-footer .btn {
+  flex: 1;
+  min-height: 44px;
+  justify-content: center;
+}
+
+/* Connections editor: only added items + Add button */
+.conn-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.conn-empty {
+  font-size: 13px;
+  color: var(--text-muted);
+  padding: 6px 0 2px;
+}
+.conn-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.conn-icon {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-muted);
+  border: 1px solid var(--border);
+  color: var(--social-color, var(--text-muted));
+  font-size: 14px;
+}
+.conn-row input {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 10px;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: var(--bg-muted);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 13px;
+}
+.conn-row input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), .15);
+  background: var(--bg-card);
+}
+.conn-remove {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+}
+.conn-remove:hover {
+  background: rgba(220, 38, 38, 0.1);
+  color: #dc2626;
+}
+.conn-actions {
+  margin-top: 10px;
+}
+.conn-add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px dashed var(--border-strong);
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .12s ease, border-color .12s ease, color .12s ease;
+}
+.conn-add-btn:hover,
+.conn-add-btn.is-open {
+  background: var(--bg-muted);
+  border-style: solid;
+  color: var(--text);
+}
+.conn-add-btn i { font-size: 11px; }
+.conn-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+  padding: 8px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--bg-muted);
+}
+.conn-picker[hidden] { display: none !important; }
+.conn-picker-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 12px 7px 7px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.conn-picker-item:hover {
+  border-color: var(--border-strong);
+}
+.conn-picker-item .conn-icon {
+  width: 28px;
+  height: 28px;
+  font-size: 12px;
+  border-radius: 50%;
+}
+
