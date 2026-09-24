@@ -21,15 +21,14 @@ async function renderCodeDetail(authReady) {
 }
 
 function codeBreadcrumbHtml(s, currentLabel) {
-  const owner = s?.ownerUsername || ''
-  const label = currentLabel || s?.title || s?.filename || 'Code'
-  const parts = [
-    `<a class="cd-bc-link" href="/">${t('feed')}</a>`,
-    owner
-      ? `<a class="cd-bc-link" href="${profileUrl(owner)}">@${escapeHtml(owner)}</a>`
-      : null,
-    `<span class="cd-bc-current" title="${escapeHtml(label)}">${escapeHtml(label)}</span>`
-  ].filter(Boolean)
+  const owner = (s && s.ownerUsername) ? String(s.ownerUsername) : ''
+  const label = String(currentLabel || (s && (s.title || s.filename)) || 'Code').trim() || 'Code'
+  const parts = []
+  parts.push(`<a class="cd-bc-link" href="/">${escapeHtml(t('feed'))}</a>`)
+  if (owner) {
+    parts.push(`<a class="cd-bc-link cd-bc-user" href="${profileUrl(owner)}" title="@${escapeHtml(owner)}">@${escapeHtml(owner)}</a>`)
+  }
+  parts.push(`<span class="cd-bc-current" title="${escapeHtml(label)}">${escapeHtml(label)}</span>`)
   return `<nav class="cd-breadcrumb" aria-label="Breadcrumb">${parts.join('<span class="cd-bc-sep" aria-hidden="true">/</span>')}</nav>`
 }
 

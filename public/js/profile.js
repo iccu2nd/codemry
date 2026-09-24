@@ -36,11 +36,15 @@ async function renderProfile() {
         </div>
         <div class="profile-below-stats">
           <div class="profile-bio" id="bioText">${p.bio ? formatWaText(p.bio) : `<span class="profile-bio-empty">${t('noBio')}</span>`}</div>
-          ${(p.createdAt || p.website) ? `
-          <div class="profile-meta-row">
-            ${p.createdAt ? `<span class="profile-meta-chip" title="${escapeHtml(formatJoinedFull(p.createdAt))}">${calendarIconSvg()}<span>${t('joined')} ${escapeHtml(formatJoined(p.createdAt))}</span></span>` : ''}
-            ${p.website ? `<a class="profile-meta-chip profile-meta-link" href="${escapeHtml(p.website)}" target="_blank" rel="noopener noreferrer" title="${escapeHtml(p.website)}">${linkIconSvg()}<span>${escapeHtml(websiteDisplayHost(p.website))}</span>${externalIconSvg()}</a>` : ''}
-          </div>` : ''}
+          ${(() => {
+            const joined = formatJoined(p.createdAt)
+            const site = (p.website || '').trim()
+            if (!joined && !site) return ''
+            return `<div class="profile-meta-row">
+              ${joined ? `<span class="profile-meta-chip" title="${escapeHtml(formatJoinedFull(p.createdAt))}">${calendarIconSvg()}<span>${t('joined')} ${escapeHtml(joined)}</span></span>` : ''}
+              ${site ? `<a class="profile-meta-chip profile-meta-link" href="${escapeHtml(site)}" target="_blank" rel="noopener noreferrer" title="${escapeHtml(site)}">${linkIconSvg()}<span>${escapeHtml(websiteDisplayHost(site))}</span>${externalIconSvg()}</a>` : ''}
+            </div>`
+          })()}
           ${p.profileMusic ? `
           <div class="profile-music" id="profileMusicBar">
             <div class="pm-circle-wrap">
@@ -74,7 +78,7 @@ async function renderProfile() {
                <div class="field"><label>${t('bio')}</label><textarea id="bioInput" style="min-height:80px">${escapeHtml(p.bio || '')}</textarea></div>
                <div class="field">
                  <label>${t('website')} <span class="label-opt">(${t('optional')})</span></label>
-                 <input id="websiteInput" type="url" placeholder="${t('websitePlaceholder')}" value="${escapeHtml(p.website || '')}" maxlength="300">
+                 <input id="websiteInput" type="text" inputmode="url" autocomplete="url" placeholder="${t('websitePlaceholder')}" value="${escapeHtml(p.website || '')}" maxlength="300">
                  <div class="field-hint">${t('websiteHint')}</div>
                </div>
                <div class="field">
@@ -328,38 +332,42 @@ function cameraIconSvg() {
 }
 
 function calendarIconSvg() {
-  return `<svg class="pm-ico" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2.5"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>`
+  return `<svg class="meta-ico" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2.5"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>`
 }
 
 function linkIconSvg() {
-  return `<svg class="pm-ico" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`
+  return `<svg class="meta-ico" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`
 }
 
 function externalIconSvg() {
-  return `<svg class="pm-ext" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>`
+  return `<svg class="meta-ext" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>`
 }
 
 function formatJoined(ts) {
   if (!ts) return ''
-  try {
-    return new Date(ts).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
-  } catch { return '' }
+  const d = new Date(ts)
+  if (isNaN(d.getTime())) return ''
+  return d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
 }
 
 function formatJoinedFull(ts) {
   if (!ts) return ''
-  try {
-    return new Date(ts).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
-  } catch { return '' }
+  const d = new Date(ts)
+  if (isNaN(d.getTime())) return ''
+  return d.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
 }
 
 function websiteDisplayHost(url) {
   if (!url) return ''
   try {
     const u = new URL(url)
-    return u.host + (u.pathname !== '/' ? u.pathname.replace(/\/$/, '') : '')
+    let host = u.host + (u.pathname !== '/' ? u.pathname.replace(/\/$/, '') : '')
+    if (host.length > 42) host = host.slice(0, 39) + '…'
+    return host
   } catch {
-    return url.replace(/^https?:\/\//i, '').replace(/\/$/, '')
+    let s = String(url).replace(/^https?:\/\//i, '').replace(/\/$/, '')
+    if (s.length > 42) s = s.slice(0, 39) + '…'
+    return s
   }
 }
 
