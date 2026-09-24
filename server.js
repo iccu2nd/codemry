@@ -429,6 +429,7 @@ const likedHtmlTemplate = versionAssets(fs.readFileSync(path.join(__dirname, 'pu
 const bookmarksHtmlTemplate = versionAssets(fs.readFileSync(path.join(__dirname, 'public', 'bookmarks.html'), 'utf-8'))
 const notificationsHtmlTemplate = versionAssets(fs.readFileSync(path.join(__dirname, 'public', 'notifications.html'), 'utf-8'))
 const apiDocsHtmlTemplate = versionAssets(fs.readFileSync(path.join(__dirname, 'public', 'api-docs.html'), 'utf-8'))
+const notFoundHtmlTemplate = versionAssets(fs.readFileSync(path.join(__dirname, 'public', '404.html'), 'utf-8'))
 const pagesHtmlTemplates = {}
 for (const file of Object.values(PAGES)) {
     pagesHtmlTemplates[file] = versionAssets(fs.readFileSync(path.join(__dirname, 'public', file), 'utf-8'))
@@ -509,7 +510,10 @@ app.use(express.static(path.join(__dirname, 'public'), {
     }
 }))
 
-app.use((req, res) => { res.status(404); sendHtml(res, indexHtmlTemplate) })
+app.use((req, res) => {
+    res.status(404)
+    sendHtml(res, notFoundHtmlTemplate)
+})
 
 const PORT = process.env.PORT || 3000
 

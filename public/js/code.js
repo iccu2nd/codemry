@@ -123,20 +123,21 @@ function renderUnlockedDetail(app, shortId, s) {
           <button class="cd-btn" type="button" onclick="window.open('/raw/${s.shortId}','_blank')">${rawIconSvg()}<span>Raw</span></button>
           <button class="cd-btn" id="downloadBtn" type="button">${downloadIconSvg()}<span>Download</span></button>
           <div class="cd-more-wrap">
-            <button type="button" class="cd-btn cd-more-btn" id="cdMoreBtn" aria-label="More" aria-expanded="false">${moreDotsSvg()}</button>
-            <div class="cd-more-menu" id="cdMoreMenu" hidden>
-              <button type="button" class="cd-more-item" id="shareBtn">${shareIconSvg()}<span>Share link</span></button>
-              <button type="button" class="cd-more-item" id="copyMdBtn">${markdownIconSvg()}<span>Copy as Markdown</span></button>
-              <button type="button" class="cd-more-item" id="embedBtn">${embedIconSvg()}<span>Embed</span></button>
-              <button type="button" class="cd-more-item" id="qrBtn">${qrIconSvg()}<span>QR code</span></button>
-              <button type="button" class="cd-more-item" id="historyBtn">${historyIconSvg()}<span>Version history</span></button>
-              ${!me || me.username !== s.ownerUsername ? `<button type="button" class="cd-more-item" id="forkBtn">${forkIconSvg()}<span>Fork</span></button>` : ''}
-              ${me && me.username === s.ownerUsername ? `<button type="button" class="cd-more-item" id="pinBtn">${pinIconSvg()}<span id="pinBtnLabel">Pin to profile</span></button>` : ''}
-              ${me && me.username === s.ownerUsername ? `<button type="button" class="cd-more-item" id="duplicateBtn">${copyIconSvg()}<span>Duplicate</span></button>` : ''}
-              <a class="cd-more-item" href="${profileUrl(s.ownerUsername)}">${userIconSvg()}<span>Profile</span></a>
-              ${!me || me.username !== s.ownerUsername ? `<button type="button" class="cd-more-item cd-more-danger" id="reportBtn">${flagIconSvg()}<span>Report</span></button>` : ''}
-              ${me && me.username === s.ownerUsername ? `<button type="button" class="cd-more-item" id="editBtn">${editIconSvg()}<span>Edit</span></button>` : ''}
-              ${me && me.username === s.ownerUsername ? `<button type="button" class="cd-more-item cd-more-danger" id="delBtn">${trashIconSvg()}<span>Delete</span></button>` : ''}
+            <button type="button" class="cd-btn cd-more-btn" id="cdMoreBtn" aria-label="More" aria-expanded="false" aria-haspopup="menu">${moreDotsSvg()}</button>
+            <div class="cd-more-menu" id="cdMoreMenu" role="menu" hidden>
+              <button type="button" class="cd-more-item" role="menuitem" id="shareBtn">${shareIconSvg()}<span>Share link</span></button>
+              <button type="button" class="cd-more-item" role="menuitem" id="copyMdBtn">${markdownIconSvg()}<span>Copy as Markdown</span></button>
+              <button type="button" class="cd-more-item" role="menuitem" id="embedBtn">${embedIconSvg()}<span>Embed</span></button>
+              <button type="button" class="cd-more-item" role="menuitem" id="qrBtn">${qrIconSvg()}<span>QR code</span></button>
+              <button type="button" class="cd-more-item" role="menuitem" id="historyBtn">${historyIconSvg()}<span>Version history</span></button>
+              ${!me || me.username !== s.ownerUsername ? `<button type="button" class="cd-more-item" role="menuitem" id="forkBtn">${forkIconSvg()}<span>Fork</span></button>` : ''}
+              ${me && me.username === s.ownerUsername ? `<button type="button" class="cd-more-item" role="menuitem" id="pinBtn">${pinIconSvg()}<span id="pinBtnLabel">Pin to profile</span></button>` : ''}
+              ${me && me.username === s.ownerUsername ? `<button type="button" class="cd-more-item" role="menuitem" id="duplicateBtn">${copyIconSvg()}<span>Duplicate</span></button>` : ''}
+              <a class="cd-more-item" role="menuitem" href="${profileUrl(s.ownerUsername)}">${userIconSvg()}<span>Profile</span></a>
+              ${me && me.username === s.ownerUsername ? `<button type="button" class="cd-more-item" role="menuitem" id="editBtn">${editIconSvg()}<span>Edit</span></button>` : ''}
+              <div class="cd-more-divider" role="separator"></div>
+              ${!me || me.username !== s.ownerUsername ? `<button type="button" class="cd-more-item cd-more-danger" role="menuitem" id="reportBtn">${flagIconSvg()}<span>Report</span></button>` : ''}
+              ${me && me.username === s.ownerUsername ? `<button type="button" class="cd-more-item cd-more-danger" role="menuitem" id="delBtn">${trashIconSvg()}<span>Delete</span></button>` : ''}
             </div>
           </div>
         </div>
@@ -252,18 +253,50 @@ function renderUnlockedDetail(app, shortId, s) {
     const moreBtn = document.getElementById('cdMoreBtn')
     const moreMenu = document.getElementById('cdMoreMenu')
     if (moreBtn && moreMenu) {
+      let moreBackdrop = document.getElementById('cdMoreBackdrop')
+      if (!moreBackdrop) {
+        moreBackdrop = document.createElement('div')
+        moreBackdrop.id = 'cdMoreBackdrop'
+        moreBackdrop.className = 'cd-more-backdrop'
+        document.body.appendChild(moreBackdrop)
+      }
+      let closeTimer = null
+      const openMoreMenu = () => {
+        clearTimeout(closeTimer)
+        moreMenu.removeAttribute('hidden')
+        moreBtn.setAttribute('aria-expanded', 'true')
+        moreBackdrop.classList.add('is-open')
+        requestAnimationFrame(() => requestAnimationFrame(() => moreMenu.classList.add('is-open')))
+      }
+      const closeMoreMenu = () => {
+        moreMenu.classList.remove('is-open')
+        moreBtn.setAttribute('aria-expanded', 'false')
+        moreBackdrop.classList.remove('is-open')
+        closeTimer = setTimeout(() => moreMenu.setAttribute('hidden', ''), 160)
+      }
+      // Expose for delete handler
+      window.__closeCdMoreMenu = closeMoreMenu
+
       moreBtn.onclick = (e) => {
         e.stopPropagation()
-        const open = moreMenu.hasAttribute('hidden')
-        if (open) moreMenu.removeAttribute('hidden')
-        else moreMenu.setAttribute('hidden', '')
-        moreBtn.setAttribute('aria-expanded', open ? 'true' : 'false')
+        if (moreMenu.classList.contains('is-open')) closeMoreMenu()
+        else openMoreMenu()
       }
+      moreBackdrop.onclick = () => closeMoreMenu()
       document.addEventListener('click', (e) => {
-        if (!moreMenu.hasAttribute('hidden') && !moreMenu.contains(e.target) && e.target !== moreBtn) {
-          moreMenu.setAttribute('hidden', '')
-          moreBtn.setAttribute('aria-expanded', 'false')
-        }
+        if (!moreMenu.classList.contains('is-open')) return
+        if (moreMenu.contains(e.target) || moreBtn.contains(e.target)) return
+        closeMoreMenu()
+      })
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && moreMenu.classList.contains('is-open')) closeMoreMenu()
+      })
+      // Tutup menu saat item diklik (kecuali navigasi yang meninggalkan halaman)
+      moreMenu.querySelectorAll('.cd-more-item').forEach(item => {
+        item.addEventListener('click', () => {
+          // Delay sedikit supaya handler item jalan dulu
+          setTimeout(() => closeMoreMenu(), 0)
+        })
       })
     }
 
@@ -869,10 +902,7 @@ function renderUnlockedDetail(app, shortId, s) {
     const delBtn = document.getElementById('delBtn')
     if (delBtn) delBtn.onclick = async () => {
       // Tutup dropdown ⋯ dulu biar tidak mengganggu dialog
-      const moreMenu = document.getElementById('cdMoreMenu')
-      const moreBtn = document.getElementById('cdMoreBtn')
-      if (moreMenu) moreMenu.setAttribute('hidden', '')
-      if (moreBtn) moreBtn.setAttribute('aria-expanded', 'false')
+      if (typeof window.__closeCdMoreMenu === 'function') window.__closeCdMoreMenu()
 
       await confirmAction({
         title: 'Delete this code?',
