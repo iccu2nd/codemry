@@ -3,8 +3,13 @@ async function renderCodeDetail(authReady) {
   const app = document.getElementById('app')
   const shortId = qs('id')
   if (!shortId) { app.innerHTML = `<div class="card">${emptyStateHtml({ title: 'Code not found' })}</div>`; return }
+  // Batalkan listener halaman code sebelumnya (cegah leak saat re-render)
+  if (window.__codePageAbort) {
+    try { window.__codePageAbort.abort() } catch {}
+  }
+  window.__codePageAbort = new AbortController()
   try {
-    const [s] = await Promise.all([api(`/codes/${shortId}`), authReady])
+    const [s] = await Promise.all([api(`/codes/${shortId}`), authReady || Promise.resolve()])
     const isOwner = !!(me && me.username === s.ownerUsername)
     if (s.expired && s.content == null && !isOwner) {
       renderExpiredCard(app, s)
@@ -135,9 +140,11 @@ function renderUnlockedDetail(app, shortId, s) {
               ${me && me.username === s.ownerUsername ? `<button type="button" class="cd-more-item" role="menuitem" id="duplicateBtn">${copyIconSvg()}<span>Duplicate</span></button>` : ''}
               <a class="cd-more-item" role="menuitem" href="${profileUrl(s.ownerUsername)}">${userIconSvg()}<span>Profile</span></a>
               ${me && me.username === s.ownerUsername ? `<button type="button" class="cd-more-item" role="menuitem" id="editBtn">${editIconSvg()}<span>Edit</span></button>` : ''}
+              ${(!me || me.username !== s.ownerUsername) || (me && me.username === s.ownerUsername) ? `
               <div class="cd-more-divider" role="separator"></div>
               ${!me || me.username !== s.ownerUsername ? `<button type="button" class="cd-more-item cd-more-danger" role="menuitem" id="reportBtn">${flagIconSvg()}<span>Report</span></button>` : ''}
               ${me && me.username === s.ownerUsername ? `<button type="button" class="cd-more-item cd-more-danger" role="menuitem" id="delBtn">${trashIconSvg()}<span>Delete</span></button>` : ''}
+              ` : ''}
             </div>
           </div>
         </div>
@@ -252,6 +259,7 @@ function renderUnlockedDetail(app, shortId, s) {
 
     const moreBtn = document.getElementById('cdMoreBtn')
     const moreMenu = document.getElementById('cdMoreMenu')
+    const pageSignal = window.__codePageAbort ? window.__codePageAbort.signal : undefined
     if (moreBtn && moreMenu) {
       let moreBackdrop = document.getElementById('cdMoreBackdrop')
       if (!moreBackdrop) {
@@ -260,6 +268,8 @@ function renderUnlockedDetail(app, shortId, s) {
         moreBackdrop.className = 'cd-more-backdrop'
         document.body.appendChild(moreBackdrop)
       }
+      // Pastikan backdrop tertutup saat re-render
+      moreBackdrop.classList.remove('is-open')
       let closeTimer = null
       const openMoreMenu = () => {
         clearTimeout(closeTimer)
@@ -272,9 +282,10 @@ function renderUnlockedDetail(app, shortId, s) {
         moreMenu.classList.remove('is-open')
         moreBtn.setAttribute('aria-expanded', 'false')
         moreBackdrop.classList.remove('is-open')
-        closeTimer = setTimeout(() => moreMenu.setAttribute('hidden', ''), 160)
+        closeTimer = setTimeout(() => {
+          if (!moreMenu.classList.contains('is-open')) moreMenu.setAttribute('hidden', '')
+        }, 160)
       }
-      // Expose for delete handler
       window.__closeCdMoreMenu = closeMoreMenu
 
       moreBtn.onclick = (e) => {
@@ -287,16 +298,14 @@ function renderUnlockedDetail(app, shortId, s) {
         if (!moreMenu.classList.contains('is-open')) return
         if (moreMenu.contains(e.target) || moreBtn.contains(e.target)) return
         closeMoreMenu()
-      })
+      }, { signal: pageSignal })
       document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' && moreMenu.classList.contains('is-open')) closeMoreMenu()
-      })
-      // Tutup menu saat item diklik (kecuali navigasi yang meninggalkan halaman)
+      }, { signal: pageSignal })
       moreMenu.querySelectorAll('.cd-more-item').forEach(item => {
         item.addEventListener('click', () => {
-          // Delay sedikit supaya handler item jalan dulu
           setTimeout(() => closeMoreMenu(), 0)
-        })
+        }, { signal: pageSignal })
       })
     }
 
@@ -861,9 +870,10 @@ function renderUnlockedDetail(app, shortId, s) {
       fullscreenBtn.title = isOpen ? 'Exit fullscreen' : 'Fullscreen'
       if (isOpen) { zoom = FULLSCREEN_ZOOM; applyZoom() } else resetZoom()
     }
+    const _pageSig = window.__codePageAbort ? window.__codePageAbort.signal : undefined
     document.addEventListener('keydown', function escClose(e) {
       if (e.key === 'Escape' && codeWindow.classList.contains('fullscreen')) fullscreenBtn.click()
-    })
+    }, { signal: _pageSig })
 
     // Keyboard shortcuts (ignore when typing in inputs)
     document.addEventListener('keydown', function codeShortcuts(e) {
@@ -897,7 +907,7 @@ function renderUnlockedDetail(app, shortId, s) {
         e.preventDefault()
         document.getElementById('copyBtn')?.click()
       }
-    })
+    }, { signal: _pageSig })
 
     const delBtn = document.getElementById('delBtn')
     if (delBtn) delBtn.onclick = async () => {

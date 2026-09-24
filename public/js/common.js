@@ -1160,7 +1160,10 @@ function ensureModalOverlay() {
   overlay.id = 'modalOverlay'
   overlay.className = 'modal-overlay'
   overlay.innerHTML = `<div class="modal-box" id="modalBox" onclick="event.stopPropagation()"></div>`
-  overlay.onclick = closeModal
+  overlay.onclick = () => {
+    if (overlay._confirmBusy) return
+    closeModal()
+  }
   document.body.appendChild(overlay)
   return overlay
 }
@@ -1179,8 +1182,12 @@ function openModal(innerHtml) {
 function closeModal() {
   const overlay = document.getElementById('modalOverlay')
   if (!overlay) return
+  // Jangan tutup saat aksi konfirmasi sedang loading
+  if (overlay._confirmBusy) return
   overlay.classList.remove('open')
-  setTimeout(() => { overlay.style.display = 'none' }, 180)
+  setTimeout(() => {
+    if (!overlay.classList.contains('open')) overlay.style.display = 'none'
+  }, 180)
   if (typeof overlay._confirmResolve === 'function') {
     const resolve = overlay._confirmResolve
     overlay._confirmResolve = null
@@ -1241,7 +1248,10 @@ function confirmAction(opts = {}) {
 
     const finish = (ok) => {
       const o = document.getElementById('modalOverlay')
-      if (o) o._confirmResolve = null
+      if (o) {
+        o._confirmResolve = null
+        o._confirmBusy = false
+      }
       if (box) box.classList.remove('modal-box-confirm')
       closeModal()
       resolve(ok)
@@ -1258,18 +1268,28 @@ function confirmAction(opts = {}) {
         return
       }
       // Spinner hanya di tombol konfirmasi di dalam dialog
+      const oBusy = document.getElementById('modalOverlay')
+      if (oBusy) oBusy._confirmBusy = true
+      if (cancelBtn) cancelBtn.disabled = true
       await withBtnLoading(okBtn, async () => {
         try {
           await onConfirm()
-          // Sukses: tutup modal tanpa restore button (navigasi mungkin terjadi)
+          // Sukses: tutup modal (boleh force close walau busy)
           const o = document.getElementById('modalOverlay')
-          if (o) o._confirmResolve = null
+          if (o) {
+            o._confirmResolve = null
+            o._confirmBusy = false
+          }
           if (box) box.classList.remove('modal-box-confirm')
-          closeModal()
+          if (o) {
+            o.classList.remove('open')
+            setTimeout(() => { if (o && !o.classList.contains('open')) o.style.display = 'none' }, 180)
+          }
           resolve(true)
         } catch (e) {
           toast(e.message || 'Something went wrong')
-          // Biarkan dialog terbuka, spinner hilang lewat withBtnLoading
+          if (oBusy) oBusy._confirmBusy = false
+          if (cancelBtn) cancelBtn.disabled = false
         }
       })
     }
