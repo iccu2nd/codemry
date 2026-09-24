@@ -16,7 +16,7 @@ router.patch('/me', async (req, res) => {
     if (!req.username) return res.status(401).json({ error: 'Please sign in' })
     const user = await Users.find(req.username)
     if (!user) return res.status(401).json({ error: 'Please sign in' })
-    const { bio, nickname, username, hideBadges, profileMusic } = req.body
+    const { bio, nickname, username, hideBadges, profileMusic, website } = req.body
 
     try {
         if (typeof bio === 'string') await Users.update(req.username, { bio })
@@ -33,6 +33,25 @@ router.patch('/me', async (req, res) => {
                 return res.status(400).json({ error: 'Music URL is too long' })
             }
             await Users.update(req.username, { profileMusic: url || null })
+        }
+        if (typeof website === 'string') {
+            let url = website.trim()
+            if (url) {
+                if (!/^https?:\/\//i.test(url)) url = 'https://' + url
+                try {
+                    const parsed = new URL(url)
+                    if (!['http:', 'https:'].includes(parsed.protocol)) {
+                        return res.status(400).json({ error: 'Website must be an http or https URL' })
+                    }
+                    url = parsed.href
+                } catch {
+                    return res.status(400).json({ error: 'Invalid website URL' })
+                }
+                if (url.length > 300) {
+                    return res.status(400).json({ error: 'Website URL is too long' })
+                }
+            }
+            await Users.update(req.username, { website: url || null })
         }
 
         let finalUsername = req.username
@@ -60,6 +79,7 @@ router.patch('/me', async (req, res) => {
             bio: updated.bio,
             nickname: finalNickname,
             profileMusic: updated.profileMusic || null,
+            website: updated.website || null,
             avatar: avatarUrl(updated),
             hideBadges: !!updated.hideBadges,
             usernameChangedAt: updated.usernameChangedAt || null
@@ -308,6 +328,7 @@ router.get('/:username', async (req, res) => {
         hideBadges: isMe ? !!user.hideBadges : undefined,
         bio: user.bio || '',
         profileMusic: user.profileMusic || null,
+        website: user.website || null,
         avatar: avatarUrl(user),
         banner: bannerUrl(user),
         createdAt: user.createdAt,

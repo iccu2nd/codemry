@@ -36,6 +36,10 @@ async function renderProfile() {
         </div>
         <div class="profile-below-stats">
           <div class="profile-bio" id="bioText">${p.bio ? formatWaText(p.bio) : t('noBio')}</div>
+          <div class="profile-meta-row">
+            ${p.createdAt ? `<span class="profile-meta-item" title="${escapeHtml(formatJoinedFull(p.createdAt))}">${calendarIconSvg()} ${t('joined')} ${escapeHtml(formatJoined(p.createdAt))}</span>` : ''}
+            ${p.website ? `<a class="profile-meta-item profile-website-link" href="${escapeHtml(p.website)}" target="_blank" rel="noopener noreferrer">${linkIconSvg()} ${escapeHtml(websiteDisplayHost(p.website))}</a>` : ''}
+          </div>
           ${p.profileMusic ? `
           <div class="profile-music" id="profileMusicBar">
             <div class="pm-circle-wrap">
@@ -67,6 +71,11 @@ async function renderProfile() {
                  <div class="field-hint">${usernameCooldownHint(p.usernameChangedAt)}</div>
                </div>
                <div class="field"><label>${t('bio')}</label><textarea id="bioInput" style="min-height:80px">${escapeHtml(p.bio || '')}</textarea></div>
+               <div class="field">
+                 <label>${t('website')} <span class="label-opt">(${t('optional')})</span></label>
+                 <input id="websiteInput" type="url" placeholder="${t('websitePlaceholder')}" value="${escapeHtml(p.website || '')}" maxlength="300">
+                 <div class="field-hint">${t('websiteHint')}</div>
+               </div>
                <div class="field">
                  <label>${t('musicUrl')} <span class="label-opt">(${t('optional')})</span></label>
                  <input id="musicInput" type="url" placeholder="https://…/audio.mp3" value="${escapeHtml(p.profileMusic || '')}">
@@ -201,6 +210,7 @@ async function renderProfile() {
           bio: document.getElementById('bioInput').value,
           nickname: document.getElementById('nicknameInput').value,
           profileMusic: (document.getElementById('musicInput')?.value || '').trim(),
+          website: (document.getElementById('websiteInput')?.value || '').trim(),
           hideBadges: document.getElementById('hideBadgesInput').checked
         }
         const newUsername = document.getElementById('usernameInput').value.trim()
@@ -314,6 +324,38 @@ async function renderProfile() {
 
 function cameraIconSvg() {
   return `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2Z"/><circle cx="12" cy="13" r="4"/></svg>`
+}
+
+function calendarIconSvg() {
+  return `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>`
+}
+
+function linkIconSvg() {
+  return `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`
+}
+
+function formatJoined(ts) {
+  if (!ts) return ''
+  try {
+    return new Date(ts).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+  } catch { return '' }
+}
+
+function formatJoinedFull(ts) {
+  if (!ts) return ''
+  try {
+    return new Date(ts).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+  } catch { return '' }
+}
+
+function websiteDisplayHost(url) {
+  if (!url) return ''
+  try {
+    const u = new URL(url)
+    return u.host + (u.pathname !== '/' ? u.pathname.replace(/\/$/, '') : '')
+  } catch {
+    return url.replace(/^https?:\/\//i, '').replace(/\/$/, '')
+  }
 }
 
 function usernameCooldownHint(changedAt) {
