@@ -35,11 +35,12 @@ async function renderProfile() {
           <a class="stat" href="${followUrl(p.username, 'following')}"><b>${p.followingCount}</b><span>${t('followingStat')}</span></a>
         </div>
         <div class="profile-below-stats">
-          <div class="profile-bio" id="bioText">${p.bio ? formatWaText(p.bio) : t('noBio')}</div>
+          <div class="profile-bio" id="bioText">${p.bio ? formatWaText(p.bio) : `<span class="profile-bio-empty">${t('noBio')}</span>`}</div>
+          ${(p.createdAt || p.website) ? `
           <div class="profile-meta-row">
-            ${p.createdAt ? `<span class="profile-meta-item" title="${escapeHtml(formatJoinedFull(p.createdAt))}">${calendarIconSvg()} ${t('joined')} ${escapeHtml(formatJoined(p.createdAt))}</span>` : ''}
-            ${p.website ? `<a class="profile-meta-item profile-website-link" href="${escapeHtml(p.website)}" target="_blank" rel="noopener noreferrer">${linkIconSvg()} ${escapeHtml(websiteDisplayHost(p.website))}</a>` : ''}
-          </div>
+            ${p.createdAt ? `<span class="profile-meta-chip" title="${escapeHtml(formatJoinedFull(p.createdAt))}">${calendarIconSvg()}<span>${t('joined')} ${escapeHtml(formatJoined(p.createdAt))}</span></span>` : ''}
+            ${p.website ? `<a class="profile-meta-chip profile-meta-link" href="${escapeHtml(p.website)}" target="_blank" rel="noopener noreferrer" title="${escapeHtml(p.website)}">${linkIconSvg()}<span>${escapeHtml(websiteDisplayHost(p.website))}</span>${externalIconSvg()}</a>` : ''}
+          </div>` : ''}
           ${p.profileMusic ? `
           <div class="profile-music" id="profileMusicBar">
             <div class="pm-circle-wrap">
@@ -327,11 +328,15 @@ function cameraIconSvg() {
 }
 
 function calendarIconSvg() {
-  return `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>`
+  return `<svg class="pm-ico" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2.5"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>`
 }
 
 function linkIconSvg() {
-  return `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`
+  return `<svg class="pm-ico" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`
+}
+
+function externalIconSvg() {
+  return `<svg class="pm-ext" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>`
 }
 
 function formatJoined(ts) {
