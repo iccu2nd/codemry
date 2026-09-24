@@ -3195,6 +3195,49 @@ html.light .skeleton {
 
 
 /* ========== Code detail page ========== */
+
+/* Breadcrumb: Feed / @user / Title */
+.cd-breadcrumb {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 12px;
+  padding: 0 2px;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.35;
+  color: var(--text-muted);
+  overflow: hidden;
+  min-width: 0;
+}
+.cd-bc-link {
+  color: var(--text-muted);
+  text-decoration: none;
+  flex-shrink: 0;
+  transition: color .12s ease;
+}
+.cd-bc-link:hover {
+  color: var(--text);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.cd-bc-sep {
+  color: var(--text-muted);
+  opacity: 0.45;
+  flex-shrink: 0;
+  font-weight: 400;
+  user-select: none;
+}
+.cd-bc-current {
+  color: var(--text);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
 .cd-head {
   display: flex; align-items: center; gap: 12px;
   margin-bottom: 16px;

@@ -20,12 +20,26 @@ async function renderCodeDetail(authReady) {
   }
 }
 
+function codeBreadcrumbHtml(s, currentLabel) {
+  const owner = s?.ownerUsername || ''
+  const label = currentLabel || s?.title || s?.filename || 'Code'
+  const parts = [
+    `<a class="cd-bc-link" href="/">${t('feed')}</a>`,
+    owner
+      ? `<a class="cd-bc-link" href="${profileUrl(owner)}">@${escapeHtml(owner)}</a>`
+      : null,
+    `<span class="cd-bc-current" title="${escapeHtml(label)}">${escapeHtml(label)}</span>`
+  ].filter(Boolean)
+  return `<nav class="cd-breadcrumb" aria-label="Breadcrumb">${parts.join('<span class="cd-bc-sep" aria-hidden="true">/</span>')}</nav>`
+}
+
 function renderExpiredCard(app, s) {
   const ownerName = escapeHtml(s.ownerNickname || s.ownerUsername || 'Unknown')
   const ownerUser = escapeHtml(s.ownerUsername || '')
   const expiredWhen = s.expiresAt ? formatExpiryFull(s.expiresAt) : ''
   const title = escapeHtml(s.title || s.filename || 'Untitled')
   app.innerHTML = `
+    ${codeBreadcrumbHtml(s, s.title || s.filename || 'Code')}
     <div class="card expired-card">
       <div class="expired-screen">
         <div class="expired-icon-wrap">${expiredIconSvg()}</div>
@@ -50,6 +64,7 @@ function renderExpiredCard(app, s) {
 
 function renderLockedCard(app, shortId, s) {
   app.innerHTML = `
+    ${codeBreadcrumbHtml(s, s.title || s.filename || 'Locked code')}
     <div class="card">
       <div class="lock-screen">
         ${lockIconSvg()}
@@ -77,6 +92,7 @@ function renderLockedCard(app, shortId, s) {
 
 function renderUnlockedDetail(app, shortId, s) {
     app.innerHTML = `
+      ${codeBreadcrumbHtml(s)}
       <div class="card">
         <div id="detailInfo">
         <header class="cd-head">
