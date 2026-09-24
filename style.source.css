@@ -5308,19 +5308,26 @@ html:not(.light) .api-method.m-del { background: rgba(239,68,68,.15); color: #f8
 
 /* —— Edit profile full screen (TikTok-style list) —— */
 .ep-screen {
-  max-width: 480px;
+  max-width: 520px;
   margin: 0 auto;
-  padding-bottom: 32px;
+  padding: 0 4px 40px;
 }
 .ep-topbar {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 4px 12px;
+  padding: 10px 12px;
   position: sticky;
   top: 0;
-  z-index: 5;
-  background: var(--bg);
+  z-index: 30;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 0 0 16px 16px;
+  margin: 0 -4px 12px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+}
+body.edit-profile-open .ep-topbar {
+  /* tetap di atas saat scroll */
 }
 .ep-back {
   width: 40px;
@@ -5424,10 +5431,10 @@ html:not(.light) .api-method.m-del { background: rgba(239,68,68,.15); color: #f8
 .ep-row {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 14px 14px;
+  gap: 14px;
+  padding: 13px 16px;
   border-bottom: 1px solid var(--border);
-  min-height: 52px;
+  min-height: 54px;
 }
 .ep-row:last-child { border-bottom: none; }
 .ep-row-tall {
@@ -5437,7 +5444,7 @@ html:not(.light) .api-method.m-del { background: rgba(239,68,68,.15); color: #f8
 }
 .ep-row-tall .ep-label { padding-top: 2px; }
 .ep-label {
-  flex: 0 0 108px;
+  flex: 0 0 96px;
   font-size: 14.5px;
   font-weight: 500;
   color: var(--text);
@@ -5446,16 +5453,26 @@ html:not(.light) .api-method.m-del { background: rgba(239,68,68,.15); color: #f8
 .ep-input {
   flex: 1;
   min-width: 0;
-  border: none;
-  background: transparent;
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
   color: var(--text-secondary);
   font-family: inherit;
   font-size: 14.5px;
   text-align: right;
-  padding: 0;
+  padding: 4px 0;
   outline: none;
+  -webkit-appearance: none;
+  appearance: none;
 }
 .ep-input::placeholder { color: var(--text-muted); }
+.ep-input:-webkit-autofill,
+.ep-input:-webkit-autofill:hover,
+.ep-input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--text-secondary);
+  -webkit-box-shadow: 0 0 0 1000px var(--bg-card) inset !important;
+  transition: background-color 9999s ease-out;
+}
 .ep-textarea {
   text-align: right;
   resize: none;
@@ -5512,63 +5529,92 @@ body.edit-profile-open #topnav {
 /* Cover / banner on edit profile */
 .ep-cover-block {
   position: relative;
-  margin: 0 -4px 0;
+  margin: 0 -16px;
 }
 .ep-cover {
-  height: 120px;
-  border-radius: 16px;
+  display: block;
+  width: 100%;
+  height: 168px;
+  border: none;
+  border-radius: 0;
   background: var(--bg-muted) center/cover no-repeat;
-  border: 1px solid var(--border);
   position: relative;
   overflow: hidden;
+  cursor: pointer;
+  padding: 0;
+  font-family: inherit;
 }
 .ep-cover.is-empty {
-  background: linear-gradient(135deg, var(--bg-muted) 0%, var(--border) 100%);
+  background: linear-gradient(135deg, #2a2a32 0%, #1a1a22 50%, #2e2a38 100%);
 }
 .ep-cover-btn {
   position: absolute;
-  right: 10px;
-  bottom: 10px;
+  right: 12px;
+  bottom: 12px;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 7px 12px;
+  padding: 8px 14px;
   border-radius: 999px;
   border: none;
-  background: rgba(0,0,0,0.55);
+  background: rgba(0,0,0,0.6);
   color: #fff;
-  font-family: inherit;
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 600;
-  cursor: pointer;
+  pointer-events: none;
   backdrop-filter: blur(6px);
 }
 .ep-cover-btn i { font-size: 12px; }
 .ep-avatar-overlap {
   display: flex;
   justify-content: center;
-  margin-top: -40px;
+  margin-top: -48px;
   position: relative;
-  z-index: 2;
+  z-index: 3;
+  pointer-events: none;
 }
 .ep-avatar-actions {
   text-align: center;
-  margin: 8px 0 18px;
+  margin: 10px 0 20px;
 }
 .ep-avatar-wrap {
-  width: 88px;
-  height: 88px;
+  width: 96px;
+  height: 96px;
+  border: none;
+  background: transparent;
+  padding: 0;
+  border-radius: 50%;
+  position: relative;
+  cursor: pointer;
+  pointer-events: auto;
+  display: block;
 }
 .ep-avatar {
-  width: 88px;
-  height: 88px;
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  object-fit: cover;
   border: 3px solid var(--bg);
   box-shadow: 0 0 0 1px var(--border);
+  display: block;
+  pointer-events: none;
 }
 .ep-avatar-cam {
-  width: 32px;
-  height: 32px;
-  font-size: 13px;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.55);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  pointer-events: none;
+  backdrop-filter: blur(4px);
 }
 
 /* Toggle switch */

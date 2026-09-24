@@ -190,20 +190,20 @@ function openEditProfileScreen(p, username) {
       </header>
 
       <div class="ep-cover-block">
-        <div class="ep-cover ${bannerSrc ? '' : 'is-empty'}" id="epCover" style="${bannerSrc ? `background-image:url('${escapeHtml(bannerSrc)}')` : ''}">
-          <button type="button" class="ep-cover-btn" id="epBannerBtn">
+        <button type="button" class="ep-cover ${bannerSrc ? '' : 'is-empty'}" id="epCover" style="${bannerSrc ? `background-image:url('${escapeHtml(bannerSrc)}')` : ''}" aria-label="${bannerSrc ? t('changeBanner') : t('addBanner')}">
+          <span class="ep-cover-btn">
             <i class="fa-solid fa-camera" aria-hidden="true"></i>
             <span>${bannerSrc ? t('changeBanner') : t('addBanner')}</span>
-          </button>
-        </div>
+          </span>
+        </button>
         <input type="file" id="epBannerInput" accept="image/*" hidden>
         <div class="ep-avatar-overlap">
-          <div class="ep-avatar-wrap">
+          <button type="button" class="ep-avatar-wrap" id="epAvatarBtn" aria-label="Change photo">
             <img class="ep-avatar" id="epAvatarImg" src="${escapeHtml(avatarSrc)}" alt="">
-            <button type="button" class="ep-avatar-cam" id="epAvatarBtn" aria-label="Change photo">
-              <i class="fa-solid fa-camera" aria-hidden="true"></i>
-            </button>
-          </div>
+            <span class="ep-avatar-cam" aria-hidden="true">
+              <i class="fa-solid fa-camera"></i>
+            </span>
+          </button>
         </div>
       </div>
       <div class="ep-avatar-actions">
@@ -294,7 +294,7 @@ function openEditProfileScreen(p, username) {
 
   // Banner
   const bannerInput = document.getElementById('epBannerInput')
-  document.getElementById('epBannerBtn').onclick = () => bannerInput.click()
+  document.getElementById('epCover').onclick = () => bannerInput.click()
   bannerInput.onchange = async () => {
     const file = bannerInput.files[0]
     if (!file) return
@@ -305,8 +305,9 @@ function openEditProfileScreen(p, username) {
       if (cover) {
         cover.style.backgroundImage = `url('${previewUrl}')`
         cover.classList.remove('is-empty')
-        const btn = cover.querySelector('.ep-cover-btn span')
-        if (btn) btn.textContent = t('changeBanner')
+        const label = cover.querySelector('.ep-cover-btn span:last-child')
+        if (label) label.textContent = t('changeBanner')
+        cover.setAttribute('aria-label', t('changeBanner'))
       }
       toast('Uploading banner…')
       await api('/users/me/banner', { method: 'POST', body: JSON.stringify({ imageBase64: base64, ext }) })
