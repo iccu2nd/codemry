@@ -1,11 +1,18 @@
 
 /** Platform koneksi sosial — value bisa handle, nomor, atau URL penuh */
 const SOCIAL_PLATFORMS = [
-  { id: 'instagram', label: 'Instagram', icon: 'fa-brands fa-instagram', placeholder: 'Instagram', color: '#E4405F' },
-  { id: 'whatsapp', label: 'WhatsApp', icon: 'fa-brands fa-whatsapp', placeholder: 'WhatsApp (62812…)', color: '#25D366' },
-  { id: 'github', label: 'GitHub', icon: 'fa-brands fa-github', placeholder: 'GitHub', color: '#333' },
-  { id: 'telegram', label: 'Telegram', icon: 'fa-brands fa-telegram', placeholder: 'Telegram', color: '#26A5E4' },
-  { id: 'twitter', label: 'X', icon: 'fa-brands fa-x-twitter', placeholder: 'X / Twitter', color: '#111' }
+  { id: 'instagram', label: 'Instagram', icon: 'fa-brands fa-instagram', placeholder: 'username', color: '#E4405F' },
+  { id: 'whatsapp', label: 'WhatsApp', icon: 'fa-brands fa-whatsapp', placeholder: '62812…', color: '#25D366' },
+  { id: 'telegram', label: 'Telegram', icon: 'fa-brands fa-telegram', placeholder: 'username', color: '#26A5E4' },
+  { id: 'discord', label: 'Discord', icon: 'fa-brands fa-discord', placeholder: 'username', color: '#5865F2' },
+  { id: 'twitter', label: 'X', icon: 'fa-brands fa-x-twitter', placeholder: 'username', color: '#111' },
+  { id: 'tiktok', label: 'TikTok', icon: 'fa-brands fa-tiktok', placeholder: 'username', color: '#010101' },
+  { id: 'youtube', label: 'YouTube', icon: 'fa-brands fa-youtube', placeholder: '@channel', color: '#FF0000' },
+  { id: 'github', label: 'GitHub', icon: 'fa-brands fa-github', placeholder: 'username', color: '#333' },
+  { id: 'linkedin', label: 'LinkedIn', icon: 'fa-brands fa-linkedin-in', placeholder: 'username', color: '#0A66C2' },
+  { id: 'facebook', label: 'Facebook', icon: 'fa-brands fa-facebook-f', placeholder: 'username', color: '#1877F2' },
+  { id: 'threads', label: 'Threads', icon: 'fa-brands fa-threads', placeholder: 'username', color: '#000' },
+  { id: 'spotify', label: 'Spotify', icon: 'fa-brands fa-spotify', placeholder: 'user or URL', color: '#1DB954' }
 ]
 
 function socialToUrl(id, value) {
@@ -31,6 +38,11 @@ function socialToUrl(id, value) {
       if (handle.includes('/')) return 'https://linkedin.com/' + handle.replace(/^\//, '')
       return 'https://linkedin.com/in/' + encodeURIComponent(handle)
     case 'discord': return 'https://discord.com/users/' + encodeURIComponent(handle)
+    case 'facebook': return 'https://facebook.com/' + encodeURIComponent(handle)
+    case 'threads': return 'https://threads.net/@' + encodeURIComponent(handle)
+    case 'spotify':
+      if (handle.includes('/')) return 'https://open.spotify.com/' + handle.replace(/^\/?/, '')
+      return 'https://open.spotify.com/user/' + encodeURIComponent(handle)
     default: return v
   }
 }

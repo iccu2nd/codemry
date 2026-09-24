@@ -5444,7 +5444,7 @@ body.edit-profile-open .ep-topbar {
 }
 .ep-row-tall .ep-label { padding-top: 2px; }
 .ep-label {
-  flex: 0 0 96px;
+  flex: 0 0 100px;
   font-size: 14.5px;
   font-weight: 500;
   color: var(--text);
@@ -5459,13 +5459,16 @@ body.edit-profile-open .ep-topbar {
   color: var(--text-secondary);
   font-family: inherit;
   font-size: 14.5px;
-  text-align: right;
-  padding: 4px 0;
+  text-align: center;
+  padding: 4px 8px;
   outline: none;
   -webkit-appearance: none;
   appearance: none;
 }
-.ep-input::placeholder { color: var(--text-muted); }
+.ep-input::placeholder { color: var(--text-muted); text-align: center; }
+.ep-textarea {
+  text-align: center;
+}
 .ep-input:-webkit-autofill,
 .ep-input:-webkit-autofill:hover,
 .ep-input:-webkit-autofill:focus {
@@ -5474,7 +5477,7 @@ body.edit-profile-open .ep-topbar {
   transition: background-color 9999s ease-out;
 }
 .ep-textarea {
-  text-align: right;
+  text-align: center;
   resize: none;
   line-height: 1.4;
   min-height: 40px;

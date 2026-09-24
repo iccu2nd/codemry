@@ -12,7 +12,7 @@ function genApiKey() {
     return `cdy_${crypto.randomBytes(24).toString('hex')}`
 }
 
-const SOCIAL_KEYS = ['instagram', 'whatsapp', 'github', 'telegram', 'twitter']
+const SOCIAL_KEYS = ['instagram', 'whatsapp', 'telegram', 'discord', 'twitter', 'tiktok', 'youtube', 'github', 'linkedin', 'facebook', 'threads', 'spotify']
 
 function normalizeHttpUrl(raw, maxLen = 300) {
     let url = String(raw || '').trim()
@@ -39,7 +39,7 @@ function sanitizeSocials(input) {
         if (!v) continue
         if (v.length > 120) v = v.slice(0, 120)
         // strip leading @ for handle-like platforms
-        if (['instagram', 'twitter', 'telegram', 'github'].includes(key)) {
+        if (['instagram', 'twitter', 'telegram', 'github', 'tiktok', 'threads', 'facebook', 'youtube', 'linkedin', 'discord', 'spotify'].includes(key)) {
             v = v.replace(/^@+/, '')
         }
         // whatsapp: keep digits and +
