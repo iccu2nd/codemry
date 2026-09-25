@@ -6081,3 +6081,202 @@ body.edit-profile-open #topnav {
 
 .notif-icon-message { background: #0ea5e9; }
 .notif-icon-mention { background: #8b5cf6; }
+
+
+/* ===== TikTok-style Inbox ===== */
+.inbox-page {
+  margin: 0 -2px;
+}
+.inbox-stories {
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+  padding: 8px 4px 14px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.inbox-stories::-webkit-scrollbar { display: none; }
+.inbox-story {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+  color: var(--text);
+  flex: 0 0 auto;
+  width: 68px;
+}
+.inbox-story-ring {
+  position: relative;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  padding: 2px;
+  background: linear-gradient(135deg, var(--accent), #64748b);
+}
+.inbox-story-ring.is-create {
+  background: var(--border-strong);
+}
+.inbox-story-ring.has-unread {
+  background: linear-gradient(135deg, #f43f5e, var(--accent));
+}
+.inbox-story-avatar,
+.inbox-story-ring .avatar-circle-md,
+.inbox-story-ring img,
+.inbox-story-ring .avatar-circle-sm {
+  width: 54px !important;
+  height: 54px !important;
+  border-radius: 50%;
+  border: 2px solid var(--bg-card);
+  object-fit: cover;
+  display: block;
+}
+.inbox-story-create {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: var(--bg-muted);
+  border: 2px solid var(--bg-card);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text);
+  font-size: 18px;
+}
+.inbox-story-dot {
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #22c55e;
+  border: 2px solid var(--bg-card);
+}
+.inbox-story-name {
+  font-size: 11px;
+  font-weight: 600;
+  max-width: 68px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.inbox-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 4px 6px;
+}
+.inbox-toolbar-title {
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.inbox-list {
+  display: flex;
+  flex-direction: column;
+}
+.inbox-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 6px;
+  text-decoration: none;
+  color: inherit;
+  border-radius: 10px;
+  transition: background .12s ease;
+}
+.inbox-row:active,
+.inbox-row:hover {
+  background: var(--bg-muted);
+}
+.inbox-row.is-unread .inbox-name {
+  font-weight: 800;
+}
+.inbox-row.is-unread .inbox-line2 {
+  color: var(--text);
+  font-weight: 600;
+}
+.inbox-avatar-wrap {
+  position: relative;
+  flex-shrink: 0;
+  width: 52px;
+  height: 52px;
+}
+.inbox-avatar-wrap .avatar-circle-md {
+  width: 52px !important;
+  height: 52px !important;
+}
+.inbox-type-icon {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--bg-card);
+  color: #fff;
+}
+.inbox-type-icon svg { width: 10px; height: 10px; }
+.inbox-body {
+  flex: 1;
+  min-width: 0;
+}
+.inbox-name {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--text);
+}
+.inbox-line2 {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-top: 2px;
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.inbox-time {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+.inbox-right {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  min-width: 28px;
+}
+.inbox-badge {
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: #fe2c55;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.inbox-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #fe2c55;
+}
+.inbox-cam {
+  color: var(--text-muted);
+  font-size: 16px;
+}
