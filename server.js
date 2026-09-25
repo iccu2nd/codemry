@@ -14,6 +14,8 @@ import notificationRoutes from './src/routes/notifications.js'
 import tenorRoutes from './src/routes/tenor.js'
 import publicApiRoutes from './src/routes/public-api.js'
 import donateRoutes from './src/routes/donate.js'
+import chatRoutes from './src/routes/chat.js'
+import collectionsRoutes from './src/routes/collections.js'
 import { initGithub, getAssetContent } from './src/github.js'
 import { Snippets, Users, Views, Likes, Follows, ensureSessionSecret, isDeveloperUsername, isModeratorUser, ensureNickname, readBadges, badgeDisplay, Settings } from './src/db.js'
 import { verifyToken, parseCookies, COOKIE_NAME, MAX_AGE, createToken, setSecret } from './src/token.js'
@@ -98,6 +100,8 @@ app.use('/api/dev', devRoutes)
 app.use('/api/notifications', notificationRoutes)
 app.use('/api/tenor', tenorRoutes)
 app.use('/api/donate', donateRoutes)
+app.use('/api/chat', chatRoutes)
+app.use('/api/collections', collectionsRoutes)
 app.use('/api/public', publicApiRoutes)
 
 
@@ -422,6 +426,8 @@ const PAGES = {
     '/auth': 'auth.html',
     '/leaderboard': 'leaderboard.html',
     '/search': 'search.html',
+    '/chat': 'chat.html',
+    '/explore': 'explore.html',
     '/panduan': 'panduan.html',
     '/contributors': 'contributors.html'
 }
@@ -430,6 +436,8 @@ const uploadHtmlTemplate = versionAssets(fs.readFileSync(path.join(__dirname, 'p
 const likedHtmlTemplate = versionAssets(fs.readFileSync(path.join(__dirname, 'public', 'liked.html'), 'utf-8'))
 const bookmarksHtmlTemplate = versionAssets(fs.readFileSync(path.join(__dirname, 'public', 'bookmarks.html'), 'utf-8'))
 const notificationsHtmlTemplate = versionAssets(fs.readFileSync(path.join(__dirname, 'public', 'notifications.html'), 'utf-8'))
+const chatHtmlTemplate = versionAssets(fs.readFileSync(path.join(__dirname, 'public', 'chat.html'), 'utf-8'))
+const exploreHtmlTemplate = versionAssets(fs.readFileSync(path.join(__dirname, 'public', 'explore.html'), 'utf-8'))
 const apiDocsHtmlTemplate = versionAssets(fs.readFileSync(path.join(__dirname, 'public', 'api-docs.html'), 'utf-8'))
 const notFoundHtmlTemplate = versionAssets(fs.readFileSync(path.join(__dirname, 'public', '404.html'), 'utf-8'))
 const pagesHtmlTemplates = {}
@@ -460,6 +468,12 @@ app.get('/upload', (req, res) => {
 app.get('/liked', (req, res) => {
     if (!req.username) return res.redirect('/auth')
     sendHtml(res, likedHtmlTemplate)
+})
+app.get('/chat', (req, res) => {
+    sendHtml(res, chatHtmlTemplate)
+})
+app.get('/explore', (req, res) => {
+    sendHtml(res, exploreHtmlTemplate)
 })
 app.get('/bookmarks', (req, res) => {
     if (!req.username) return res.redirect('/auth')

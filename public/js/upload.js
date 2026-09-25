@@ -1,5 +1,90 @@
 const UPLOAD_DRAFT_KEY = 'codery-upload-draft'
 
+const UPLOAD_TEMPLATES = [
+  { id: 'blank', label: 'Blank', language: 'text', filename: 'code.txt', content: '' },
+  { id: 'html', label: 'HTML starter', language: 'html', filename: 'index.html', content: `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+  <h1>Hello</h1>
+</body>
+</html>
+` },
+  { id: 'js', label: 'JavaScript', language: 'javascript', filename: 'script.js', content: `function main() {
+  console.log("Hello, Codery!")
+}
+
+main()
+` },
+  { id: 'py', label: 'Python', language: 'python', filename: 'main.py', content: `def main():
+    print("Hello, Codery!")
+
+if __name__ == "__main__":
+    main()
+` },
+  { id: 'css', label: 'CSS', language: 'css', filename: 'styles.css', content: `:root {
+  --bg: #0c0c0c;
+  --text: #f5f5f5;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, sans-serif;
+}
+` },
+  { id: 'json', label: 'JSON', language: 'json', filename: 'data.json', content: `{
+  "name": "example",
+  "version": 1,
+  "items": []
+}
+` },
+  { id: 'md', label: 'Markdown', language: 'markdown', filename: 'README.md', content: `# Title
+
+Write something useful.
+
+\`\`\`js
+console.log("code block")
+\`\`\`
+` },
+  { id: 'express', label: 'Express route', language: 'javascript', filename: 'route.js', content: `import { Router } from "express"
+
+const router = Router()
+
+router.get("/", (req, res) => {
+  res.json({ ok: true })
+})
+
+export default router
+` }
+]
+
+function applyUploadTemplate(id) {
+  const tpl = UPLOAD_TEMPLATES.find(t => t.id === id)
+  if (!tpl) return
+  const setVal = (sels, val) => {
+    for (const sel of sels) {
+      const el = document.querySelector(sel)
+      if (!el) continue
+      el.value = val
+      el.dispatchEvent(new Event('input', { bubbles: true }))
+      el.dispatchEvent(new Event('change', { bubbles: true }))
+      break
+    }
+  }
+  setVal(['#language', '[name="language"]'], tpl.language)
+  setVal(['#filename', '[name="filename"]'], tpl.filename)
+  setVal(['#content', '[name="content"]', 'textarea[name="content"]'], tpl.content)
+  toast('Template: ' + tpl.label)
+}
+
+
+
 function loadDraft() {
   try { return JSON.parse(localStorage.getItem(UPLOAD_DRAFT_KEY) || 'null') } catch { return null }
 }
@@ -116,6 +201,12 @@ async function init() {
           <div class="upload-panel-title">${t('yourCode')}</div>
           <div class="upload-panel-sub">${t('yourCodeSub')}</div>
           ${draft && draft.content ? `<div class="upload-draft-note">Draft restored from this device. <button type="button" class="link-btn-inline" id="clearDraftBtn">Discard draft</button></div>` : ''}
+          <div class="upload-templates">
+            <span class="upload-templates-label">${typeof t==='function'?t('templates'):'Templates'}</span>
+            <div class="upload-templates-row">
+              ${UPLOAD_TEMPLATES.map(t => `<button type="button" class="upload-tpl-btn" data-tpl="${t.id}">${t.label}</button>`).join('')}
+            </div>
+          </div>
           <div class="upload-source-row">
             <button type="button" class="btn btn-white btn-block" id="pickFileBtn">${uploadIconSvg()} ${t('chooseFile')}</button>
             <input type="file" id="fileInput" style="display:none" accept=".js,.jsx,.ts,.tsx,.py,.html,.htm,.css,.json,.java,.php,.sh,.md,.txt,.c,.cpp,.go,.rb,.rs,.kt,.swift,.xml,.yml,.yaml,.sql,.env">
@@ -349,7 +440,10 @@ async function init() {
     document.getElementById('back2')?.addEventListener('click', () => { step = 1; render() })
     document.getElementById('back3')?.addEventListener('click', () => { step = 2; render() })
 
-    document.getElementById('clearDraftBtn')?.addEventListener('click', () => {
+    document.querySelectorAll('.upload-tpl-btn').forEach(btn => {
+    btn.onclick = () => applyUploadTemplate(btn.dataset.tpl)
+  })
+  document.getElementById('clearDraftBtn')?.addEventListener('click', () => {
       clearDraft()
       toast('Draft discarded')
       location.reload()

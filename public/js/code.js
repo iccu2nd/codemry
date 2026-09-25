@@ -107,7 +107,7 @@ function renderUnlockedDetail(app, shortId, s) {
             <div class="cd-name">${escapeHtml(s.ownerNickname || s.ownerUsername)}${badgesHtml(s.ownerBadges)}${devBadgeHtml(s.ownerIsDeveloper)}${roleBadgeHtml(s.ownerRole)}</div>
             <div class="cd-handle">@${escapeHtml(s.ownerUsername)}</div>
           </div>
-          <div class="cd-lang">${langIconHtml(s.language)}${s.expired ? expiredBadgeHtml() : (s.expiresAt ? expiryBadgeHtml(s.expiresAt) : '')}${s.locked ? `<span class="lock-badge" title="Password locked">${lockIconSvg()}</span>` : ''}</div>
+          <div class="cd-lang">${langIconHtml(s.language)}${s.expired ? expiredBadgeHtml() : (s.expiresAt ? expiryBadgeHtml(s.expiresAt) : '')}${s.locked ? `<span class="lock-badge" title="Password locked">${lockIconSvg()}</span>` : ''}${s.isPublic === false ? `<span class="private-badge">Private</span>` : ''}</div>
         </header>
 
         <h1 class="cd-title">${escapeHtml(s.title)}</h1>

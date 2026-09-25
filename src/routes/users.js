@@ -1,6 +1,6 @@
 import crypto from 'crypto'
 import { Router } from 'express'
-import { Users, Follows, Snippets, Views, Likes, Bookmarks, avatarUrl, bannerUrl, ensureNickname, renameUsername, ensureBadges, readBadges, badgeDisplay, stripSnippetSecrets, lockedSnippetStub, isSnippetExpired, expiredSnippetStub, Notifications, MAX_PINS, normalizePins } from '../db.js'
+import { Users, Follows, Blocks, Snippets, UserReports, USER_REPORT_REASONS, getNotifPrefs, DEFAULT_NOTIF_PREFS, Views, Likes, Bookmarks, avatarUrl, bannerUrl, ensureNickname, renameUsername, ensureBadges, readBadges, badgeDisplay, stripSnippetSecrets, lockedSnippetStub, isSnippetExpired, expiredSnippetStub, Notifications, MAX_PINS, normalizePins } from '../db.js'
 import { normalizeSociabuzzUsername } from '../sociabuzz.js'
 import { upsertAsset } from '../github.js'
 
@@ -58,7 +58,7 @@ router.patch('/me', async (req, res) => {
     if (!req.username) return res.status(401).json({ error: 'Please sign in' })
     const user = await Users.find(req.username)
     if (!user) return res.status(401).json({ error: 'Please sign in' })
-    const { bio, nickname, username, hideBadges, profileMusic, website, location, socials, sociabuzz } = req.body
+    const { bio, nickname, username, hideBadges, profileMusic, website, location, socials, sociabuzz, notifPrefs } = req.body
 
     try {
         if (typeof bio === 'string') await Users.update(req.username, { bio })
@@ -108,6 +108,15 @@ router.patch('/me', async (req, res) => {
                 return res.status(400).json({ error: 'Username Sociabuzz tidak valid' })
             }
             await Users.update(req.username, { sociabuzz: sb || null })
+        }
+        if (notifPrefs && typeof notifPrefs === 'object') {
+            const next = { ...DEFAULT_NOTIF_PREFS }
+            const cur = getNotifPrefs(await Users.find(req.username))
+            Object.assign(next, cur)
+            for (const k of Object.keys(DEFAULT_NOTIF_PREFS)) {
+                if (typeof notifPrefs[k] === 'boolean') next[k] = notifPrefs[k]
+            }
+            await Users.update(req.username, { notifPrefs: next })
         }
 
         let finalUsername = req.username
@@ -351,6 +360,18 @@ router.delete('/me/pins/:shortId', async (req, res) => {
     }
 })
 
+
+router.get('/me/blocked', async (req, res) => {
+    if (!req.username) return res.status(401).json({ error: 'Please sign in' })
+    const list = await Blocks.blockedBy(req.username)
+    const users = await Users.all()
+    const byUsername = new Map(users.map(x => [x.username.toLowerCase(), x]))
+    res.json(list.map(name => {
+        const u = byUsername.get(String(name).toLowerCase())
+        return { username: u?.username || name, avatar: u ? avatarUrl(u) : null }
+    }))
+})
+
 router.get('/:username', async (req, res) => {
     const user = await Users.find(req.params.username)
     if (!user) return res.status(404).json({ error: 'User not found' })
@@ -360,6 +381,7 @@ router.get('/:username', async (req, res) => {
         Snippets.byUserLive(user.username)
     ])
     const isFollowing = req.username ? await Follows.isFollowing(req.username, user.username) : false
+    const isBlocked = req.username ? await Blocks.isBlocked(req.username, user.username) : false
     const nickname = await ensureNickname(user)
     const badges = await ensureBadges(user)
     const isMe = req.username === user.username
@@ -435,8 +457,10 @@ router.get('/:username', async (req, res) => {
         })(),
         pinnedShortIds: normalizePins(user.pinnedShortIds),
         isFollowing,
+        isBlocked,
         isMe,
-        usernameChangedAt: isMe ? (user.usernameChangedAt || null) : undefined
+        usernameChangedAt: isMe ? (user.usernameChangedAt || null) : undefined,
+        notifPrefs: isMe ? getNotifPrefs(user) : undefined
     })
 })
 
@@ -454,12 +478,46 @@ router.post('/:username/follow', async (req, res) => {
     if (req.username === req.params.username) return res.status(400).json({ error: 'tidak bisa follow diri sendiri' })
     const target = await Users.find(req.params.username)
     if (!target) return res.status(404).json({ error: 'User not found' })
+    // cegah follow kalau nge-block atau di-block
+    if (await Blocks.isBlocked(req.username, target.username) || await Blocks.isBlocked(target.username, req.username)) {
+        return res.status(400).json({ error: 'Tidak bisa follow user yang diblokir' })
+    }
     await Follows.toggle(req.username, target.username)
     const following = await Follows.isFollowing(req.username, target.username)
     if (following) {
         Notifications.create({ username: target.username, fromUsername: req.username, type: 'follow' }).catch(() => {})
     }
     res.json({ following })
+})
+
+router.post('/:username/block', async (req, res) => {
+    if (!req.username) return res.status(401).json({ error: 'Please sign in' })
+    if (req.username.toLowerCase() === String(req.params.username).toLowerCase()) {
+        return res.status(400).json({ error: 'Tidak bisa memblokir diri sendiri' })
+    }
+    const target = await Users.find(req.params.username)
+    if (!target) return res.status(404).json({ error: 'User not found' })
+    const result = await Blocks.toggle(req.username, target.username)
+    res.json(result)
+})
+
+router.post('/:username/report', async (req, res) => {
+    if (!req.username) return res.status(401).json({ error: 'Please sign in' })
+    if (req.username.toLowerCase() === String(req.params.username).toLowerCase()) {
+        return res.status(400).json({ error: 'Cannot report yourself' })
+    }
+    const target = await Users.find(req.params.username)
+    if (!target) return res.status(404).json({ error: 'User not found' })
+    const reason = String(req.body?.reason || 'other')
+    if (!USER_REPORT_REASONS.includes(reason)) return res.status(400).json({ error: 'Invalid reason' })
+    const detail = String(req.body?.detail || '').slice(0, 500)
+    await UserReports.create({
+        targetUsername: target.username,
+        fromUsername: req.username,
+        reason,
+        detail
+    })
+    res.json({ ok: true })
 })
 
 export default router

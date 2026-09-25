@@ -4,6 +4,8 @@ function notifIconSvg(type) {
   if (type === 'follow') return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>`
   if (type === 'fork') return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="12" cy="18" r="2.5"/><path d="M6 8.5V12a4 4 0 0 0 4 4M18 8.5V12a4 4 0 0 0-4 4"/></svg>`
   if (type === 'report') return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>`
+  if (type === 'message') return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`
+  if (type === 'mention') return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-3.92 7.94"/></svg>`
   if (type === 'donate') return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/></svg>`
   if (type === 'upload') return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>`
   return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg>`
@@ -20,6 +22,12 @@ function notifTargetUrl(n) {
     if (extra.length) url += (url.includes('?') ? '&' : '?') + extra.join('&')
     return url
   }
+  if (n.type === 'message') return '/chat?u=' + encodeURIComponent(n.fromUsername || '')
+  if (n.type === 'mention' && n.shortId) {
+    let url = codeUrl(n.shortId)
+    if (n.commentId) url += (url.includes('?') ? '&' : '?') + 'comment=' + encodeURIComponent(n.commentId)
+    return url
+  }
   if (n.type === 'donate') return '/notifications'
   if (n.type === 'follow') return profileUrl(n.fromUsername)
   return '#'
@@ -31,6 +39,8 @@ function notifActionText(n) {
     comment: 'commented on your code',
     reply: 'replied to your comment',
     follow: 'started following you',
+    message: 'sent you a message',
+    mention: 'mentioned you',
     donate: n.amount
       ? ('donated Rp ' + Number(n.amount).toLocaleString('id-ID') + (n.message ? ' — ' + String(n.message).slice(0, 60) : ''))
       : 'sent you a donation',

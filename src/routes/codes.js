@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import crypto from 'crypto'
-import { Snippets, Users, Views, Likes, Comments, Bookmarks, Notifications, Reports, Follows, REPORT_REASONS, DEV_USERNAME, avatarUrl, readBadges, badgeDisplay, hashPin, verifyPin, stripSnippetSecrets, lockedSnippetStub, isDeveloperUsername, isSnippetExpired, expiredSnippetStub } from '../db.js'
+import { Snippets, Users, Views, Likes, Comments, Bookmarks, Notifications, Reports, REPORT_REASONS, DEV_USERNAME, avatarUrl, readBadges, badgeDisplay, hashPin, verifyPin, stripSnippetSecrets, lockedSnippetStub, isDeveloperUsername, isSnippetExpired, expiredSnippetStub, Blocks} from '../db.js'
 import { createGist, getGist, editGist, deleteGist, listGists, getGistCommits, getGistAtRevision } from '../github.js'
 import { createRateLimiter } from '../rate-limit.js'
 
@@ -8,6 +8,32 @@ const router = Router()
 const PIN_RE = /^[a-zA-Z0-9]{4,8}$/
 const tooManyAttempts = createRateLimiter(8)
 const tooManyReports = createRateLimiter(5)
+
+function extractMentions(text) {
+    const set = new Set()
+    const re = /@([a-zA-Z0-9_]{2,20})/g
+    let m
+    while ((m = re.exec(String(text || '')))) set.add(m[1].toLowerCase())
+    return [...set]
+}
+
+async function notifyMentions({ text, fromUsername, shortId, commentId, exclude = [] }) {
+    const mentions = extractMentions(text)
+    const excludeSet = new Set([fromUsername, ...exclude].map(x => String(x || '').toLowerCase()))
+    for (const name of mentions) {
+        if (excludeSet.has(name)) continue
+        const u = await Users.find(name)
+        if (!u) continue
+        Notifications.create({
+            username: u.username,
+            fromUsername,
+            type: 'mention',
+            shortId,
+            commentId
+        }).catch(() => {})
+    }
+}
+
 
 function requireAuth(req, res, next) {
     if (!req.username) return res.status(401).json({ error: 'Please sign in' })
@@ -193,6 +219,38 @@ router.post('/', requireAuth, async (req, res) => {
     }
 })
 
+
+router.get('/explore/trending', async (req, res) => {
+    try {
+        const live = await Snippets.allLive()
+        let publicSnippets = live.filter(s => s.isPublic && !isSnippetExpired(s))
+        if (req.username) {
+            try {
+                const blockedSet = await Blocks.relatedSet(req.username)
+                if (blockedSet.size) {
+                    publicSnippets = publicSnippets.filter(s => !blockedSet.has(String(s.ownerUsername || '').toLowerCase()))
+                }
+            } catch {}
+        }
+        const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000
+        const recent = publicSnippets.filter(s => (s.createdAt || 0) >= weekAgo)
+        const pool = recent.length >= 5 ? recent : publicSnippets
+        const [viewCounts, likeCounts] = await Promise.all([
+            Views.countMany(pool.map(s => s.shortId)),
+            Likes.countMany(pool.map(s => s.shortId))
+        ])
+        const scored = pool.map(s => ({
+            ...stripSnippetSecrets(s),
+            views: viewCounts[s.shortId] || 0,
+            likes: likeCounts[s.shortId] || 0,
+            score: (likeCounts[s.shortId] || 0) * 3 + (viewCounts[s.shortId] || 0)
+        })).sort((a, b) => b.score - a.score).slice(0, 30)
+        res.json({ period: '7d', items: scored })
+    } catch (e) {
+        res.status(500).json({ error: e.message })
+    }
+})
+
 router.get('/', async (req, res) => {
     try {
         const [live, users] = await Promise.all([Snippets.allPublic(), Users.all()])
@@ -203,7 +261,15 @@ router.get('/', async (req, res) => {
         // siapa pun (termasuk pemiliknya sendiri) -- feed cuma nampilin kode
         // yang masih "hidup". Pemilik masih bisa lihat & kelola kode expired
         // miliknya lewat profil/halaman kode langsung.
-        const publicSnippets = live.filter(s => s.isPublic && !isSnippetExpired(s))
+        let publicSnippets = live.filter(s => s.isPublic && !isSnippetExpired(s))
+        if (req.username) {
+            try {
+                const blockedSet = await Blocks.relatedSet(req.username)
+                if (blockedSet.size) {
+                    publicSnippets = publicSnippets.filter(s => !blockedSet.has(String(s.ownerUsername || '').toLowerCase()))
+                }
+            } catch {}
+        }
         const [viewCounts, likeCounts, likedByMe, savedByMeSet] = await Promise.all([
             Views.countMany(publicSnippets.map(s => s.shortId)),
             Likes.countMany(publicSnippets.map(s => s.shortId)),
@@ -700,12 +766,21 @@ router.post('/:shortId/comments', requireAuth, async (req, res) => {
         replies: []
     }
     await Comments.add(comment)
-    Notifications.create({
-        username: snippet.ownerUsername,
+    if (snippet.ownerUsername !== req.username) {
+        Notifications.create({
+            username: snippet.ownerUsername,
+            fromUsername: req.username,
+            type: 'comment',
+            shortId: snippet.shortId,
+            commentId: comment.id
+        }).catch(() => {})
+    }
+    notifyMentions({
+        text,
         fromUsername: req.username,
-        type: 'comment',
         shortId: snippet.shortId,
-        commentId: comment.id
+        commentId: comment.id,
+        exclude: [snippet.ownerUsername]
     }).catch(() => {})
     const user = await Users.find(req.username)
     res.json({
@@ -772,13 +847,22 @@ router.post('/:shortId/comments/:commentId/reply', requireAuth, async (req, res)
 
     // Notif ke orang yang benar-benar dibalas (bukan selalu penulis komentar
     // utama), biar semua peserta thread ikut ke-notif giliran mereka dibalas.
-    Notifications.create({
-        username: replyToUsername,
+    if (replyToUsername && replyToUsername !== req.username) {
+        Notifications.create({
+            username: replyToUsername,
+            fromUsername: req.username,
+            type: 'reply',
+            shortId: snippet.shortId,
+            commentId: req.params.commentId,
+            replyId: reply.id
+        }).catch(() => {})
+    }
+    notifyMentions({
+        text,
         fromUsername: req.username,
-        type: 'reply',
         shortId: snippet.shortId,
         commentId: req.params.commentId,
-        replyId: reply.id
+        exclude: [replyToUsername, snippet.ownerUsername]
     }).catch(() => {})
 
     const users = await Users.all()

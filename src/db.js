@@ -199,6 +199,59 @@ export const Follows = {
     async isFollowing(follower, following) { const d = await this.all(); return !!d.find(f => f.follower === follower && f.following === following) }
 }
 
+/** blocker blocked someone — blocker does not want to see blocked's content */
+export const Blocks = {
+    async all() { return (await readDbFile('blocks.json')).data },
+    async toggle(blocker, blocked) {
+        const a = String(blocker || '').toLowerCase()
+        const b = String(blocked || '').toLowerCase()
+        if (!a || !b || a === b) return { blocked: false }
+        let nowBlocked = false
+        await update('blocks.json', d => {
+            const exists = d.find(x => x.blocker === a && x.blocked === b)
+            if (exists) {
+                nowBlocked = false
+                return d.filter(x => !(x.blocker === a && x.blocked === b))
+            }
+            nowBlocked = true
+            return [...d, { blocker: a, blocked: b, at: Date.now() }]
+        }, `toggle block ${a}->${b}`)
+        // unfollow both ways when blocking
+        if (nowBlocked) {
+            try {
+                const following = await Follows.isFollowing(blocker, blocked)
+                if (following) await Follows.toggle(blocker, blocked)
+                const reverse = await Follows.isFollowing(blocked, blocker)
+                if (reverse) await Follows.toggle(blocked, blocker)
+            } catch {}
+        }
+        return { blocked: nowBlocked }
+    },
+    async isBlocked(blocker, blocked) {
+        const a = String(blocker || '').toLowerCase()
+        const b = String(blocked || '').toLowerCase()
+        const d = await this.all()
+        return !!d.find(x => x.blocker === a && x.blocked === b)
+    },
+    async blockedBy(username) {
+        const u = String(username || '').toLowerCase()
+        const d = await this.all()
+        return d.filter(x => x.blocker === u).map(x => x.blocked)
+    },
+    /** usernames this user has blocked OR who blocked them (mutual hide in feed) */
+    async relatedSet(username) {
+        const u = String(username || '').toLowerCase()
+        if (!u) return new Set()
+        const d = await this.all()
+        const set = new Set()
+        for (const x of d) {
+            if (x.blocker === u) set.add(x.blocked)
+            if (x.blocked === u) set.add(x.blocker)
+        }
+        return set
+    }
+}
+
 export const Views = {
     async all() { return (await readDbFile('views.json')).data },
     hashIp(ip) { return crypto.createHash('sha256').update(String(ip || 'unknown')).digest('hex') },
@@ -386,7 +439,31 @@ export function normalizePins(pins) {
     if (!Array.isArray(pins)) return []
     return [...new Set(pins.map(String).filter(Boolean))].slice(0, MAX_PINS)
 }
-export const NOTIF_TYPES = ['like', 'comment', 'reply', 'follow', 'fork', 'report', 'upload']
+export const NOTIF_TYPES = ['like', 'comment', 'reply', 'follow', 'fork', 'report', 'upload', 'donate', 'mention', 'message']
+
+export const DEFAULT_NOTIF_PREFS = {
+    like: true, comment: true, reply: true, follow: true, fork: true,
+    upload: true, donate: true, mention: true, message: true, report: true
+}
+
+export function getNotifPrefs(user) {
+    const base = { ...DEFAULT_NOTIF_PREFS }
+    if (user && user.notifPrefs && typeof user.notifPrefs === 'object') {
+        for (const k of Object.keys(base)) {
+            if (typeof user.notifPrefs[k] === 'boolean') base[k] = user.notifPrefs[k]
+        }
+    }
+    return base
+}
+
+export async function shouldNotify(username, type) {
+    try {
+        const u = await Users.find(username)
+        const prefs = getNotifPrefs(u)
+        if (type && prefs[type] === false) return false
+        return true
+    } catch { return true }
+}
 
 export const Notifications = {
     async all() { return (await readDbFile('notifications.json')).data },
@@ -535,6 +612,187 @@ function normalizeSettings(raw) {
         }
     }
 }
+
+
+export const Messages = {
+    async all() { return (await readDbFile('messages.json')).data },
+    async between(a, b, limit = 100) {
+        const x = String(a || '').toLowerCase()
+        const y = String(b || '').toLowerCase()
+        const d = await this.all()
+        return d
+            .filter(m => {
+                const f = String(m.from || '').toLowerCase()
+                const t = String(m.to || '').toLowerCase()
+                return (f === x && t === y) || (f === y && t === x)
+            })
+            .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0))
+            .slice(-limit)
+    },
+    async send(from, to, text) {
+        const entry = {
+            id: crypto.randomUUID(),
+            from,
+            to,
+            text: String(text || '').trim().slice(0, 2000),
+            createdAt: Date.now(),
+            read: false
+        }
+        if (!entry.text) throw new Error('Empty message')
+        await update('messages.json', d => {
+            const next = [...d, entry]
+            return next.length > 5000 ? next.slice(-5000) : next
+        }, `msg ${from}->${to}`)
+        return entry
+    },
+    async conversations(username) {
+        const u = String(username || '').toLowerCase()
+        const d = await this.all()
+        const map = new Map()
+        for (const m of d) {
+            const f = String(m.from || '').toLowerCase()
+            const t = String(m.to || '').toLowerCase()
+            if (f !== u && t !== u) continue
+            const other = f === u ? m.to : m.from
+            const key = String(other || '').toLowerCase()
+            const prev = map.get(key)
+            if (!prev || (m.createdAt || 0) > (prev.createdAt || 0)) {
+                map.set(key, { ...m, otherUsername: other })
+            }
+        }
+        return [...map.values()].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
+    },
+    async markRead(reader, other) {
+        const r = String(reader || '').toLowerCase()
+        const o = String(other || '').toLowerCase()
+        await update('messages.json', d => d.map(m => {
+            if (String(m.to || '').toLowerCase() === r && String(m.from || '').toLowerCase() === o && !m.read) {
+                return { ...m, read: true }
+            }
+            return m
+        }), `read msgs ${o}->${r}`)
+    },
+    async unreadCount(username) {
+        const u = String(username || '').toLowerCase()
+        const d = await this.all()
+        return d.filter(m => String(m.to || '').toLowerCase() === u && !m.read).length
+    }
+}
+
+export const Collections = {
+    async all() { return (await readDbFile('collections.json')).data },
+    async byUser(username) {
+        const u = String(username || '').toLowerCase()
+        const d = await this.all()
+        return d.filter(c => String(c.owner || '').toLowerCase() === u)
+            .sort((a, b) => (b.updatedAt || b.createdAt || 0) - (a.updatedAt || a.createdAt || 0))
+    },
+    async find(id) {
+        const d = await this.all()
+        return d.find(c => c.id === id) || null
+    },
+    async create(owner, name) {
+        const entry = {
+            id: crypto.randomUUID().slice(0, 8),
+            owner,
+            name: String(name || 'Collection').trim().slice(0, 48) || 'Collection',
+            shortIds: [],
+            createdAt: Date.now(),
+            updatedAt: Date.now()
+        }
+        await update('collections.json', d => [...d, entry], `col create ${owner}`)
+        return entry
+    },
+    async rename(id, owner, name) {
+        let out = null
+        await update('collections.json', d => d.map(c => {
+            if (c.id !== id || c.owner !== owner) return c
+            out = { ...c, name: String(name || c.name).trim().slice(0, 48), updatedAt: Date.now() }
+            return out
+        }), `col rename ${id}`)
+        return out
+    },
+    async remove(id, owner) {
+        await update('collections.json', d => d.filter(c => !(c.id === id && c.owner === owner)), `col del ${id}`)
+    },
+    async toggleCode(id, owner, shortId) {
+        let out = null
+        await update('collections.json', d => d.map(c => {
+            if (c.id !== id || c.owner !== owner) return c
+            const set = new Set(c.shortIds || [])
+            if (set.has(shortId)) set.delete(shortId)
+            else set.add(shortId)
+            out = { ...c, shortIds: [...set].slice(0, 100), updatedAt: Date.now() }
+            return out
+        }), `col toggle ${id} ${shortId}`)
+        return out
+    }
+}
+
+export const Series = {
+    async all() { return (await readDbFile('series.json')).data },
+    async byUser(username) {
+        const u = String(username || '').toLowerCase()
+        return (await this.all()).filter(s => String(s.owner || '').toLowerCase() === u)
+            .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0))
+    },
+    async find(id) {
+        return (await this.all()).find(s => s.id === id) || null
+    },
+    async create(owner, title, shortIds = []) {
+        const entry = {
+            id: crypto.randomUUID().slice(0, 8),
+            owner,
+            title: String(title || 'Series').trim().slice(0, 80) || 'Series',
+            shortIds: (shortIds || []).slice(0, 30),
+            createdAt: Date.now(),
+            updatedAt: Date.now()
+        }
+        await update('series.json', d => [...d, entry], `series create ${owner}`)
+        return entry
+    },
+    async update(id, owner, patch) {
+        let out = null
+        await update('series.json', d => d.map(s => {
+            if (s.id !== id || s.owner !== owner) return s
+            out = {
+                ...s,
+                title: patch.title != null ? String(patch.title).trim().slice(0, 80) : s.title,
+                shortIds: Array.isArray(patch.shortIds) ? patch.shortIds.slice(0, 30) : s.shortIds,
+                updatedAt: Date.now()
+            }
+            return out
+        }), `series update ${id}`)
+        return out
+    },
+    async remove(id, owner) {
+        await update('series.json', d => d.filter(s => !(s.id === id && s.owner === owner)), `series del ${id}`)
+    }
+}
+
+export const USER_REPORT_REASONS = ['spam', 'harassment', 'impersonation', 'other']
+export const USER_REPORT_LABELS = {
+    spam: 'Spam',
+    harassment: 'Harassment',
+    impersonation: 'Impersonation',
+    other: 'Other'
+}
+
+export const UserReports = {
+    async all() { return (await readDbFile('user-reports.json')).data },
+    async create(report) {
+        const entry = { id: crypto.randomUUID(), status: 'pending', createdAt: Date.now(), ...report }
+        await update('user-reports.json', d => [...d, entry], `user report ${report.targetUsername}`)
+        return entry
+    },
+    async pending() {
+        return (await this.all()).filter(r => r.status === 'pending').sort((a, b) => b.createdAt - a.createdAt)
+    },
+    async setStatus(id, status) {
+        await update('user-reports.json', d => d.map(r => r.id === id ? { ...r, status } : r), `user report ${id} ${status}`)
+    }
+}
+
 
 export const Settings = {
     async get() {

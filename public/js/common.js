@@ -47,6 +47,26 @@ const I18N = {
   basicInfo: 'Basic info',
   other: 'Other',
   donate: 'Donate',
+  shareProfile: 'Share',
+  message: 'Message',
+  reportUser: 'Report',
+  reportSent: 'Report sent',
+  submitReport: 'Submit report',
+  notifPrefs: 'Notification settings',
+  messages: 'Messages',
+  explore: 'Explore',
+  privateLabel: 'Private',
+  templates: 'Templates',
+  saveToCollection: 'Save to collection',
+
+  block: 'Block',
+  unblock: 'Unblock',
+  blockUser: 'Block this user?',
+  blockUserMsg: 'Their posts will be hidden from your feed. You will unfollow each other.',
+  userBlocked: 'User blocked',
+  userUnblocked: 'User unblocked',
+  linkCopied: 'Link copied',
+
   sociabuzz: 'Sociabuzz',
   amount: 'Amount',
   yourName: 'Your name',
@@ -755,6 +775,30 @@ function initHamburger() {
 
 // Bottom Navigation Bar: dipasang otomatis di semua halaman kecuali yang punya
 // atribut data-no-bottom-nav di <body> (mis. halaman login).
+
+function initExtraNavLinks() {
+  const topnav = document.getElementById('topnav')
+  if (!topnav) return
+  if (!document.getElementById('exploreMenuLink')) {
+    const a = document.createElement('a')
+    a.id = 'exploreMenuLink'
+    a.className = 'link-btn'
+    a.href = '/explore'
+    a.textContent = typeof t === 'function' ? t('explore') : 'Explore'
+    topnav.insertBefore(a, topnav.firstChild)
+  }
+  if (!document.getElementById('chatMenuLink')) {
+    const a = document.createElement('a')
+    a.id = 'chatMenuLink'
+    a.className = 'link-btn'
+    a.href = '/chat'
+    a.textContent = typeof t === 'function' ? t('messages') : 'Messages'
+    const auth = document.getElementById('authArea')
+    if (auth) topnav.insertBefore(a, auth)
+    else topnav.appendChild(a)
+  }
+}
+
 function initBottomNav() {
   if (document.body.hasAttribute('data-no-bottom-nav')) return
   if (document.getElementById('bottomNav')) return
@@ -888,7 +932,7 @@ function snippetCard(s) {
       </div>
       <div class="sc-badges">
         ${s.expired ? expiredBadgeHtml() : (s.expiresAt ? expiryBadgeHtml(s.expiresAt) : '')}
-        ${s.isLocked ? `<span class="lock-badge" title="${t('passwordLocked')}">${lockIconSvg()}</span>` : ''}
+        ${s.isLocked ? `<span class="lock-badge" title="${t('passwordLocked')}">${lockIconSvg()}</span>` : ''}${s.isPublic === false ? `<span class="private-badge" title="Private">${t('privateLabel')||'Private'}</span>` : ''}
       </div>
     </header>
 
@@ -1701,6 +1745,7 @@ try { document.documentElement.lang = 'en' } catch {}
 document.addEventListener('DOMContentLoaded', initInfoBanner)
 document.addEventListener('DOMContentLoaded', initHamburger)
 document.addEventListener('DOMContentLoaded', initBottomNav)
+document.addEventListener('DOMContentLoaded', initExtraNavLinks)
 document.addEventListener('DOMContentLoaded', initBackButton)
 document.addEventListener('DOMContentLoaded', initScrollTop)
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal() })

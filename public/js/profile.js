@@ -406,6 +406,31 @@ function renderDonatePayStep(trx, closeFn) {
 }
 
 
+const NOTIF_PREF_KEYS = [
+  ['like', 'Likes'], ['comment', 'Comments'], ['reply', 'Replies'],
+  ['follow', 'Follows'], ['mention', 'Mentions'], ['message', 'Messages'],
+  ['donate', 'Donations'], ['fork', 'Forks'], ['upload', 'Uploads from following']
+]
+function renderNotifPrefsEditor(root, prefs) {
+  if (!root) return
+  prefs = prefs || {}
+  root.innerHTML = NOTIF_PREF_KEYS.map(([k, label]) => `
+    <div class="ep-row ep-row-toggle">
+      <div class="ep-toggle-text"><span class="ep-label-block">${label}</span></div>
+      <label class="ep-switch">
+        <input type="checkbox" data-notif-pref="${k}" ${prefs[k] !== false ? 'checked' : ''}>
+        <span class="ep-switch-track" aria-hidden="true"><span class="ep-switch-thumb"></span></span>
+      </label>
+    </div>`).join('')
+}
+function collectNotifPrefs() {
+  const out = {}
+  document.querySelectorAll('[data-notif-pref]').forEach(el => {
+    out[el.getAttribute('data-notif-pref')] = !!el.checked
+  })
+  return out
+}
+
 function openEditProfileScreen(p, username) {
   editSocialState = {}
   const existing = (p.socials && typeof p.socials === 'object') ? p.socials : {}
@@ -501,11 +526,15 @@ function openEditProfileScreen(p, username) {
           </label>
         </div>
       </div>
+
+      <div class="ep-section-label">${t('notifPrefs')||'Notifications'}</div>
+      <div class="ep-group" id="notifPrefsEditor"></div>
     </div>
   `
 
   const connRoot = document.getElementById('connEditorRoot')
   renderConnectionsEditor(connRoot)
+  renderNotifPrefsEditor(document.getElementById('notifPrefsEditor'), p.notifPrefs || {})
 
   document.getElementById('epBackBtn').onclick = () => leaveEditProfile()
 
@@ -571,6 +600,7 @@ function openEditProfileScreen(p, username) {
           website: (document.getElementById('websiteInput')?.value || '').trim(),
           location: (document.getElementById('locationInput')?.value || '').trim(),
           sociabuzz: (document.getElementById('sociabuzzInput')?.value || '').trim(),
+          notifPrefs: collectNotifPrefs(),
           socials: collectSocialsFromForm(),
           hideBadges: !!document.getElementById('hideBadgesInput')?.checked
         }
@@ -666,10 +696,21 @@ async function renderProfile() {
                <button class="btn btn-white" id="editProfileBtn">${t('editProfile')}</button>
                <button class="btn btn-white" id="signOutBtn">${t('signOut')}</button>
              </div>
+             <div class="profile-actions-row profile-actions-me">
+               <button type="button" class="btn btn-white btn-sm" id="shareProfileBtn"><i class="fa-solid fa-link" aria-hidden="true"></i> ${t('shareProfile')}</button>
+             </div>
              ${p.sociabuzz ? `<button type="button" class="btn btn-donate btn-block" id="donateBtn"><i class="fa-solid fa-heart" aria-hidden="true"></i><span>${t('donate')}</span></button>` : ''}`
           : `<div class="profile-actions-stack">
                <button class="btn ${p.isFollowing ? 'btn-white' : 'btn-primary'} btn-block" id="followBtn">${p.isFollowing ? t('following') : t('follow')}</button>
                ${p.sociabuzz ? `<button type="button" class="btn btn-donate btn-block" id="donateBtn"><i class="fa-solid fa-heart" aria-hidden="true"></i><span>${t('donate')}</span></button>` : ''}
+               <div class="profile-actions-row">
+                 <button type="button" class="btn btn-white btn-sm" id="messageUserBtn"><i class="fa-regular fa-comment" aria-hidden="true"></i> ${t('message')}</button>
+                 <button type="button" class="btn btn-white btn-sm" id="shareProfileBtn"><i class="fa-solid fa-link" aria-hidden="true"></i> ${t('shareProfile')}</button>
+               </div>
+               <div class="profile-actions-row">
+                 <button type="button" class="btn btn-white btn-sm ${p.isBlocked ? 'is-blocked' : ''}" id="blockUserBtn">${p.isBlocked ? t('unblock') : t('block')}</button>
+                 <button type="button" class="btn btn-white btn-sm" id="reportUserBtn">${t('reportUser')}</button>
+               </div>
              </div>`}
       </div>
       <div class="section-label">${t('sharedCode')}</div>
@@ -781,6 +822,93 @@ async function renderProfile() {
         catch (e) { toast(e.message) }
       })
     }
+
+    const messageUserBtn = document.getElementById('messageUserBtn')
+    if (messageUserBtn) messageUserBtn.onclick = () => {
+      if (!me) { window.location.href = '/auth'; return }
+      window.location.href = '/chat?u=' + encodeURIComponent(username)
+    }
+
+    const reportUserBtn = document.getElementById('reportUserBtn')
+    if (reportUserBtn) reportUserBtn.onclick = async () => {
+      if (!me) { window.location.href = '/auth'; return }
+      openModal(`
+        <div class="modal-head"><div class="modal-head-title">${t('reportUser')}</div>
+        <button type="button" class="modal-close-btn" onclick="closeModal(true)">${typeof closeIconSvg==='function'?closeIconSvg():'×'}</button></div>
+        <div class="modal-body">
+          <div class="field"><label>Reason</label>
+            <select id="reportUserReason" class="cselect-native-fallback">
+              <option value="spam">Spam</option>
+              <option value="harassment">Harassment</option>
+              <option value="impersonation">Impersonation</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="field"><label>Detail</label>
+            <textarea id="reportUserDetail" rows="3" maxlength="500" placeholder="Optional details"></textarea>
+          </div>
+          <button type="button" class="btn btn-danger btn-block" id="reportUserSubmit">${t('submitReport')||'Submit report'}</button>
+        </div>`)
+      document.getElementById('reportUserSubmit').onclick = async () => {
+        const btn = document.getElementById('reportUserSubmit')
+        await withBtnLoading(btn, async () => {
+          try {
+            await api('/users/' + encodeURIComponent(username) + '/report', {
+              method: 'POST',
+              body: JSON.stringify({
+                reason: document.getElementById('reportUserReason')?.value || 'other',
+                detail: document.getElementById('reportUserDetail')?.value || ''
+              })
+            })
+            closeModal(true)
+            toast(t('reportSent') || 'Report sent')
+          } catch (e) { toast(e.message) }
+        })
+      }
+    }
+
+    const shareProfileBtn = document.getElementById('shareProfileBtn')
+    if (shareProfileBtn) shareProfileBtn.onclick = async () => {
+      const url = location.origin + profileUrl(username)
+      try {
+        if (navigator.share) {
+          await navigator.share({ title: '@' + username + ' on Codery', url })
+        } else {
+          await navigator.clipboard.writeText(url)
+          toast(t('linkCopied') || 'Link copied')
+        }
+      } catch (e) {
+        if (e && e.name === 'AbortError') return
+        try {
+          await navigator.clipboard.writeText(url)
+          toast(t('linkCopied') || 'Link copied')
+        } catch { toast(url) }
+      }
+    }
+
+    const blockUserBtn = document.getElementById('blockUserBtn')
+    if (blockUserBtn) blockUserBtn.onclick = async () => {
+      if (!me) { window.location.href = '/auth'; return }
+      const blocking = !p.isBlocked
+      if (blocking) {
+        const ok = await confirmAction({
+          title: t('blockUser') || 'Block user?',
+          message: t('blockUserMsg') || 'They will be removed from your feed and unfollowed. You can unblock later.',
+          confirmLabel: t('block') || 'Block',
+          cancelLabel: t('cancel') || 'Cancel',
+          danger: true
+        })
+        if (!ok) return
+      }
+      await withBtnLoading(blockUserBtn, async () => {
+        try {
+          const r = await api(`/users/${encodeURIComponent(username)}/block`, { method: 'POST' })
+          toast(r.blocked ? (t('userBlocked') || 'User blocked') : (t('userUnblocked') || 'User unblocked'))
+          renderProfile()
+        } catch (e) { toast(e.message) }
+      })
+    }
+
 
     const editBtn = document.getElementById('editProfileBtn')
     if (editBtn) editBtn.onclick = () => openEditProfileScreen(p, username)
