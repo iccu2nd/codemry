@@ -257,77 +257,49 @@ function renderUnlockedDetail(app, shortId, s) {
 
     document.getElementById('copyBtn').onclick = () => { navigator.clipboard.writeText(s.content); toast('Copied!') }
 
+    // ===== MORE MENU (⋯) — rebuild sederhana, TANPA backdrop =====
+    document.querySelectorAll('#cdMoreBackdrop, .cd-more-backdrop').forEach(el => el.remove())
+
     const moreBtn = document.getElementById('cdMoreBtn')
     const moreMenu = document.getElementById('cdMoreMenu')
-    const moreWrap = moreBtn ? moreBtn.closest('.cd-more-wrap') : null
     const pageSignal = window.__codePageAbort ? window.__codePageAbort.signal : undefined
     if (moreBtn && moreMenu) {
-      // Selalu bersihkan backdrop sisa (biar gak blokir klik)
-      document.querySelectorAll('#cdMoreBackdrop, .cd-more-backdrop').forEach(el => el.remove())
-
-      const moreBackdrop = document.createElement('div')
-      moreBackdrop.id = 'cdMoreBackdrop'
-      moreBackdrop.className = 'cd-more-backdrop'
-      document.body.appendChild(moreBackdrop)
-
-      // Jangan pakai atribut hidden — bentrok dengan CSS !important
-      moreMenu.removeAttribute('hidden')
-      moreMenu.hidden = false
       moreMenu.classList.remove('is-open')
+      moreMenu.style.display = 'none'
       moreBtn.setAttribute('aria-expanded', 'false')
-      if (moreWrap) moreWrap.classList.remove('is-open')
 
-      let isOpen = false
-      let ignoreUntil = 0
-
-      const openMoreMenu = () => {
-        isOpen = true
-        ignoreUntil = Date.now() + 350
+      const openMenu = () => {
+        moreMenu.style.display = 'flex'
         moreMenu.classList.add('is-open')
         moreBtn.setAttribute('aria-expanded', 'true')
-        if (moreWrap) moreWrap.classList.add('is-open')
-        moreBackdrop.classList.add('is-open')
       }
-      const closeMoreMenu = () => {
-        isOpen = false
+      const closeMenu = () => {
+        moreMenu.style.display = 'none'
         moreMenu.classList.remove('is-open')
         moreBtn.setAttribute('aria-expanded', 'false')
-        if (moreWrap) moreWrap.classList.remove('is-open')
-        moreBackdrop.classList.remove('is-open')
       }
-      window.__closeCdMoreMenu = closeMoreMenu
+      window.__closeCdMoreMenu = closeMenu
 
-      moreBtn.addEventListener('click', (e) => {
-        e.preventDefault()
-        e.stopImmediatePropagation()
-        if (isOpen) closeMoreMenu()
-        else openMoreMenu()
-      }, { signal: pageSignal, capture: true })
-
-      moreBackdrop.addEventListener('click', (e) => {
+      moreBtn.onclick = function (e) {
         e.preventDefault()
         e.stopPropagation()
-        if (Date.now() < ignoreUntil) return
-        closeMoreMenu()
-      }, { signal: pageSignal })
+        if (moreMenu.classList.contains('is-open')) closeMenu()
+        else openMenu()
+      }
 
-      document.addEventListener('click', (e) => {
-        if (!isOpen) return
-        if (Date.now() < ignoreUntil) return
+      // Tutup klik di luar — pakai signal biar gak numpuk listener saat re-render
+      document.addEventListener('click', function (e) {
+        if (!moreMenu.classList.contains('is-open')) return
         if (moreBtn.contains(e.target) || moreMenu.contains(e.target)) return
-        closeMoreMenu()
+        closeMenu()
       }, { signal: pageSignal })
 
-      document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && isOpen) closeMoreMenu()
-      }, { signal: pageSignal })
-
-      moreMenu.addEventListener('click', (e) => {
+      moreMenu.onclick = function (e) {
         const item = e.target.closest('.cd-more-item')
         if (!item) return
-        if (item.id === 'delBtn' || item.dataset.action === 'delete-code') return
-        setTimeout(() => closeMoreMenu(), 0)
-      }, { signal: pageSignal })
+        if (item.id === 'delBtn' || item.getAttribute('data-action') === 'delete-code') return
+        setTimeout(closeMenu, 0)
+      }
     }
 
     document.getElementById('shareBtn').onclick = () => { navigator.clipboard.writeText(location.href); toast('Link copied!') }
