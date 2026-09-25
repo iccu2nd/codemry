@@ -82,11 +82,12 @@ router.post('/with/:username', async (req, res) => {
   try {
     const text = String(req.body?.text || '').trim()
     let stickerUrl = req.body?.stickerUrl ? String(req.body.stickerUrl).trim() : null
+    const replyToId = req.body?.replyToId ? String(req.body.replyToId) : null
     if (stickerUrl && !isValidStickerUrl(stickerUrl)) {
       return res.status(400).json({ error: 'Invalid sticker' })
     }
     if (!text && !stickerUrl) return res.status(400).json({ error: 'Empty message' })
-    const msg = await Messages.send(req.username, other.username, { text, stickerUrl })
+    const msg = await Messages.send(req.username, other.username, { text, stickerUrl, replyToId })
     Notifications.create({
       username: other.username,
       fromUsername: req.username,

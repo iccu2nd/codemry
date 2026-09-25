@@ -629,16 +629,37 @@ export const Messages = {
             .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0))
             .slice(-limit)
     },
-    async send(from, to, { text = '', stickerUrl = null } = {}) {
+    async send(from, to, { text = '', stickerUrl = null, replyToId = null } = {}) {
         const cleanText = String(text || '').trim().slice(0, 2000)
         const sticker = stickerUrl ? String(stickerUrl).trim().slice(0, 500) : null
         if (!cleanText && !sticker) throw new Error('Empty message')
+        let replyTo = null
+        if (replyToId) {
+            const all = await this.all()
+            const target = all.find(m => m.id === replyToId)
+            if (target) {
+                const tf = String(target.from || '').toLowerCase()
+                const tt = String(target.to || '').toLowerCase()
+                const a = String(from || '').toLowerCase()
+                const b = String(to || '').toLowerCase()
+                const sameThread = (tf === a && tt === b) || (tf === b && tt === a)
+                if (sameThread) {
+                    replyTo = {
+                        id: target.id,
+                        from: target.from,
+                        text: String(target.text || '').slice(0, 120),
+                        stickerUrl: target.stickerUrl || null
+                    }
+                }
+            }
+        }
         const entry = {
             id: crypto.randomUUID(),
             from,
             to,
             text: cleanText || '',
             stickerUrl: sticker || null,
+            replyTo,
             createdAt: Date.now(),
             read: false
         }
