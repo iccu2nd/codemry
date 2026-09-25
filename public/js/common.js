@@ -2032,3 +2032,67 @@ function toggleDarkMode() {
   applyTheme(!isDarkMode())
 }
 applyTheme(isDarkMode())
+
+
+/* ===== PWA: service worker + install prompt ===== */
+let deferredInstallPrompt = null
+
+function registerCoderySW() {
+  if (!('serviceWorker' in navigator)) return
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(() => {})
+  })
+}
+
+function initPwaInstall() {
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault()
+    deferredInstallPrompt = e
+    showInstallBanner()
+  })
+  window.addEventListener('appinstalled', () => {
+    deferredInstallPrompt = null
+    hideInstallBanner()
+  })
+}
+
+function showInstallBanner() {
+  if (document.getElementById('pwaInstallBar')) return
+  try {
+    if (localStorage.getItem('codery-pwa-dismiss') === '1') return
+  } catch {}
+  // already standalone?
+  if (window.matchMedia('(display-mode: standalone)').matches) return
+  if (window.navigator.standalone) return
+
+  const bar = document.createElement('div')
+  bar.id = 'pwaInstallBar'
+  bar.className = 'pwa-install-bar'
+  bar.innerHTML = `
+    <div class="pwa-install-text">
+      <strong>Install Codery</strong>
+      <span>Buka seperti aplikasi di HP kamu</span>
+    </div>
+    <button type="button" class="btn btn-primary btn-sm" id="pwaInstallBtn">Install</button>
+    <button type="button" class="pwa-install-close" id="pwaInstallClose" aria-label="Tutup">×</button>`
+  document.body.appendChild(bar)
+  document.getElementById('pwaInstallBtn').onclick = async () => {
+    if (!deferredInstallPrompt) return
+    deferredInstallPrompt.prompt()
+    try { await deferredInstallPrompt.userChoice } catch {}
+    deferredInstallPrompt = null
+    hideInstallBanner()
+  }
+  document.getElementById('pwaInstallClose').onclick = () => {
+    try { localStorage.setItem('codery-pwa-dismiss', '1') } catch {}
+    hideInstallBanner()
+  }
+}
+
+function hideInstallBanner() {
+  const bar = document.getElementById('pwaInstallBar')
+  if (bar) bar.remove()
+}
+
+registerCoderySW()
+document.addEventListener('DOMContentLoaded', initPwaInstall)

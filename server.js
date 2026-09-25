@@ -526,6 +526,16 @@ app.use(express.static(path.join(__dirname, 'public'), {
     }
 }))
 
+app.get('/sw.js', (req, res) => {
+    res.set('Content-Type', 'application/javascript; charset=utf-8')
+    res.set('Cache-Control', 'no-cache, no-store, must-revalidate')
+    res.set('Service-Worker-Allowed', '/')
+    res.sendFile(path.join(__dirname, 'public', 'sw.js'))
+})
+app.get('/offline', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'offline.html'))
+})
+
 app.use((req, res) => {
     res.status(404)
     sendHtml(res, notFoundHtmlTemplate)

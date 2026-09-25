@@ -1,12 +1,18 @@
 {
+  "id": "/",
   "name": "Codery",
   "short_name": "Codery",
-  "description": "Upload, bagikan, dan temukan potongan kode dari developer lain.",
-  "start_url": "/",
+  "description": "Bagikan & temukan potongan kode. Chat, donate, explore.",
+  "start_url": "/?source=pwa",
+  "scope": "/",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "portrait-primary",
   "background_color": "#0c0c0c",
   "theme_color": "#0c0c0c",
-  "lang": "en",
+  "lang": "id",
+  "dir": "ltr",
+  "categories": ["developer", "productivity", "social"],
   "icons": [
     {
       "src": "/icon-192.png",
@@ -25,6 +31,32 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Upload code",
+      "short_name": "Upload",
+      "url": "/upload",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Inbox",
+      "short_name": "Inbox",
+      "url": "/notifications",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Explore",
+      "short_name": "Explore",
+      "url": "/explore",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
     }
   ]
 }
