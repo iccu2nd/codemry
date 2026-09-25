@@ -3924,10 +3924,10 @@ html.light .toast {
 .cd-more-wrap {
   position: relative;
   flex: 0 0 auto;
-  z-index: 50;
+  z-index: 80;
 }
 .cd-more-wrap.is-open {
-  z-index: 70;
+  z-index: 90;
 }
 .cd-more-btn {
   width: 44px !important;
@@ -3936,7 +3936,7 @@ html.light .toast {
   padding: 0 !important;
   flex: none !important;
   position: relative;
-  z-index: 2;
+  z-index: 91;
   pointer-events: auto !important;
   cursor: pointer;
   touch-action: manipulation;
@@ -3947,22 +3947,22 @@ html.light .toast {
   border-color: var(--border-strong) !important;
 }
 
-/* Custom dropdown panel — not native select/menu */
+/* Backdrop di BAWAH tombol ⋯ supaya tombol tetap bisa diklik */
 .cd-more-backdrop {
   display: none;
   position: fixed;
   inset: 0;
-  z-index: 65;
+  z-index: 70;
   background: rgba(0, 0, 0, 0.28);
-  pointer-events: auto;
-  touch-action: manipulation;
 }
-.cd-more-backdrop.is-open { display: block; }
+.cd-more-backdrop.is-open {
+  display: block;
+}
 .cd-more-menu {
   position: absolute;
   right: 0;
   top: calc(100% + 6px);
-  z-index: 71;
+  z-index: 92;
   min-width: 220px;
   max-width: min(280px, calc(100vw - 24px));
   background: var(--bg-card);
@@ -3976,9 +3976,8 @@ html.light .toast {
   pointer-events: auto;
 }
 .cd-more-menu.is-open {
-  display: flex;
+  display: flex !important;
 }
-.cd-more-menu[hidden] { display: none !important; }
 .cd-more-divider {
   height: 1px;
   margin: 4px 8px;

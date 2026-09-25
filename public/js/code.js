@@ -129,7 +129,7 @@ function renderUnlockedDetail(app, shortId, s) {
           <button class="cd-btn" id="downloadBtn" type="button">${downloadIconSvg()}<span>Download</span></button>
           <div class="cd-more-wrap">
             <button type="button" class="cd-btn cd-more-btn" id="cdMoreBtn" aria-label="More" aria-expanded="false" aria-haspopup="menu">${moreDotsSvg()}</button>
-            <div class="cd-more-menu" id="cdMoreMenu" role="menu" hidden>
+            <div class="cd-more-menu" id="cdMoreMenu" role="menu">
               <button type="button" class="cd-more-item" role="menuitem" id="shareBtn">${shareIconSvg()}<span>Share link</span></button>
               <button type="button" class="cd-more-item" role="menuitem" id="copyMdBtn">${markdownIconSvg()}<span>Copy as Markdown</span></button>
               <button type="button" class="cd-more-item" role="menuitem" id="embedBtn">${embedIconSvg()}<span>Embed</span></button>
@@ -262,34 +262,35 @@ function renderUnlockedDetail(app, shortId, s) {
     const moreWrap = moreBtn ? moreBtn.closest('.cd-more-wrap') : null
     const pageSignal = window.__codePageAbort ? window.__codePageAbort.signal : undefined
     if (moreBtn && moreMenu) {
-      // Hapus backdrop sisa yang bisa blokir klik
+      // Selalu bersihkan backdrop sisa (biar gak blokir klik)
       document.querySelectorAll('#cdMoreBackdrop, .cd-more-backdrop').forEach(el => el.remove())
+
       const moreBackdrop = document.createElement('div')
       moreBackdrop.id = 'cdMoreBackdrop'
       moreBackdrop.className = 'cd-more-backdrop'
-      moreBackdrop.setAttribute('aria-hidden', 'true')
       document.body.appendChild(moreBackdrop)
 
+      // Jangan pakai atribut hidden — bentrok dengan CSS !important
+      moreMenu.removeAttribute('hidden')
+      moreMenu.hidden = false
+      moreMenu.classList.remove('is-open')
+      moreBtn.setAttribute('aria-expanded', 'false')
+      if (moreWrap) moreWrap.classList.remove('is-open')
+
       let isOpen = false
-      let ignoreCloseUntil = 0
+      let ignoreUntil = 0
 
       const openMoreMenu = () => {
         isOpen = true
-        // Abaikan klik/pointer yang sama yang membuka menu (biar gak langsung tutup)
-        ignoreCloseUntil = Date.now() + 400
-        moreMenu.hidden = false
-        moreMenu.removeAttribute('hidden')
+        ignoreUntil = Date.now() + 350
         moreMenu.classList.add('is-open')
         moreBtn.setAttribute('aria-expanded', 'true')
         if (moreWrap) moreWrap.classList.add('is-open')
         moreBackdrop.classList.add('is-open')
       }
       const closeMoreMenu = () => {
-        if (!isOpen) return
         isOpen = false
         moreMenu.classList.remove('is-open')
-        moreMenu.hidden = true
-        moreMenu.setAttribute('hidden', '')
         moreBtn.setAttribute('aria-expanded', 'false')
         if (moreWrap) moreWrap.classList.remove('is-open')
         moreBackdrop.classList.remove('is-open')
@@ -298,22 +299,22 @@ function renderUnlockedDetail(app, shortId, s) {
 
       moreBtn.addEventListener('click', (e) => {
         e.preventDefault()
-        e.stopPropagation()
+        e.stopImmediatePropagation()
         if (isOpen) closeMoreMenu()
         else openMoreMenu()
-      }, { signal: pageSignal })
+      }, { signal: pageSignal, capture: true })
 
       moreBackdrop.addEventListener('click', (e) => {
         e.preventDefault()
         e.stopPropagation()
-        if (Date.now() < ignoreCloseUntil) return
+        if (Date.now() < ignoreUntil) return
         closeMoreMenu()
       }, { signal: pageSignal })
 
       document.addEventListener('click', (e) => {
         if (!isOpen) return
-        if (Date.now() < ignoreCloseUntil) return
-        if (moreMenu.contains(e.target) || moreBtn.contains(e.target)) return
+        if (Date.now() < ignoreUntil) return
+        if (moreBtn.contains(e.target) || moreMenu.contains(e.target)) return
         closeMoreMenu()
       }, { signal: pageSignal })
 
@@ -323,9 +324,9 @@ function renderUnlockedDetail(app, shortId, s) {
 
       moreMenu.addEventListener('click', (e) => {
         const item = e.target.closest('.cd-more-item')
-        if (!item || item.dataset.action === 'delete-code' || item.id === 'delBtn') return
-        // tutup setelah aksi biasa (bukan delete yang buka dialog)
-        setTimeout(() => closeMoreMenu(), 10)
+        if (!item) return
+        if (item.id === 'delBtn' || item.dataset.action === 'delete-code') return
+        setTimeout(() => closeMoreMenu(), 0)
       }, { signal: pageSignal })
     }
 
