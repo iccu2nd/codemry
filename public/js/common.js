@@ -46,6 +46,27 @@ const I18N = {
   addBanner: 'Add banner',
   basicInfo: 'Basic info',
   other: 'Other',
+  donate: 'Donate',
+  sociabuzz: 'Sociabuzz',
+  amount: 'Amount',
+  yourName: 'Your name',
+  donateMessagePh: 'Say something nice…',
+  paymentMethod: 'Payment method',
+  phoneNumber: 'Phone number',
+  continuePayment: 'Continue',
+  scanQris: 'Scan this QRIS with your banking / e-wallet app',
+  copyQris: 'Copy QRIS code',
+  copyAccount: 'Copy account number',
+  openPayment: 'Open payment page',
+  completeOnProvider: 'Complete payment in the provider app, then come back here.',
+  paymentCreated: 'Payment created. Follow the instructions from Sociabuzz.',
+  waitingPayment: 'Waiting for payment…',
+  checkStatus: 'Check status',
+  close: 'Close',
+  donateSuccess: 'Thank you! Donation received.',
+  donateExpired: 'Payment expired',
+  donateFailed: 'Payment failed',
+
 
   joined: 'Joined',
   hideBadges: 'Hide badges (including Developer tag)',
@@ -1339,6 +1360,7 @@ function openModal(innerHtml) {
   if (box) {
     box.classList.remove('modal-box-confirm')
     box.classList.remove('modal-box-profile-edit')
+    box.classList.remove('modal-box-donate')
     box.innerHTML = innerHtml
   }
   overlay.style.display = 'flex'

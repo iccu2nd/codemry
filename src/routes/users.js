@@ -1,6 +1,7 @@
 import crypto from 'crypto'
 import { Router } from 'express'
 import { Users, Follows, Snippets, Views, Likes, Bookmarks, avatarUrl, bannerUrl, ensureNickname, renameUsername, ensureBadges, readBadges, badgeDisplay, stripSnippetSecrets, lockedSnippetStub, isSnippetExpired, expiredSnippetStub, Notifications, MAX_PINS, normalizePins } from '../db.js'
+import { normalizeSociabuzzUsername } from '../sociabuzz.js'
 import { upsertAsset } from '../github.js'
 
 const router = Router()
@@ -57,7 +58,7 @@ router.patch('/me', async (req, res) => {
     if (!req.username) return res.status(401).json({ error: 'Please sign in' })
     const user = await Users.find(req.username)
     if (!user) return res.status(401).json({ error: 'Please sign in' })
-    const { bio, nickname, username, hideBadges, profileMusic, website, location, socials } = req.body
+    const { bio, nickname, username, hideBadges, profileMusic, website, location, socials, sociabuzz } = req.body
 
     try {
         if (typeof bio === 'string') await Users.update(req.username, { bio })
@@ -101,6 +102,13 @@ router.patch('/me', async (req, res) => {
         if (socials !== undefined) {
             await Users.update(req.username, { socials: sanitizeSocials(socials) })
         }
+        if (typeof sociabuzz === 'string') {
+            const sb = normalizeSociabuzzUsername(sociabuzz)
+            if (sociabuzz.trim() && !sb) {
+                return res.status(400).json({ error: 'Username Sociabuzz tidak valid' })
+            }
+            await Users.update(req.username, { sociabuzz: sb || null })
+        }
 
         let finalUsername = req.username
         if (typeof username === 'string' && username.trim() && username.trim().toLowerCase() !== req.username.toLowerCase()) {
@@ -130,6 +138,7 @@ router.patch('/me', async (req, res) => {
             website: updated.website || null,
             location: updated.location || null,
             socials: updated.socials || {},
+            sociabuzz: updated.sociabuzz || null,
             avatar: avatarUrl(updated),
             hideBadges: !!updated.hideBadges,
             usernameChangedAt: updated.usernameChangedAt || null
@@ -381,6 +390,7 @@ router.get('/:username', async (req, res) => {
         website: user.website || null,
         location: user.location || null,
         socials: user.socials && typeof user.socials === 'object' ? user.socials : {},
+        sociabuzz: user.sociabuzz || null,
         avatar: avatarUrl(user),
         banner: bannerUrl(user),
         createdAt: user.createdAt,

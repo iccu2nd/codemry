@@ -5663,3 +5663,141 @@ body.edit-profile-open #topnav {
   transform: translateX(18px);
 }
 
+
+
+/* Donate */
+.btn-donate {
+  background: linear-gradient(135deg, #f43f5e, #e11d48);
+  color: #fff !important;
+  border: none;
+  font-weight: 700;
+  gap: 8px;
+}
+.btn-donate:hover {
+  filter: brightness(1.05);
+}
+.btn-donate i { font-size: 14px; }
+.profile-actions-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.modal-box.modal-box-donate {
+  max-width: 420px;
+  max-height: 90vh;
+}
+.dn-body { padding-bottom: 8px; }
+.dn-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.dn-preset {
+  border: 1px solid var(--border);
+  background: var(--bg-muted);
+  color: var(--text);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 12.5px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+}
+.dn-preset.is-active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-bg);
+}
+.dn-methods {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+.dn-method {
+  border: 1px solid var(--border);
+  background: var(--bg-muted);
+  color: var(--text);
+  border-radius: 10px;
+  padding: 10px 6px;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  text-align: center;
+}
+.dn-method.is-active {
+  border-color: var(--accent);
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+.dn-via {
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 12px 0 0;
+}
+.dn-pay-head {
+  text-align: center;
+  margin-bottom: 14px;
+}
+.dn-pay-amount {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--text);
+}
+.dn-pay-meta {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+.dn-qr-wrap {
+  display: flex;
+  justify-content: center;
+  margin: 8px 0;
+}
+.dn-qr {
+  width: 220px;
+  height: 220px;
+  border-radius: 12px;
+  background: #fff;
+  padding: 10px;
+}
+.dn-hint {
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 10px 0;
+  line-height: 1.4;
+}
+.dn-account-box {
+  text-align: center;
+  padding: 16px;
+  border-radius: 12px;
+  background: var(--bg-muted);
+  border: 1px solid var(--border);
+  margin-bottom: 10px;
+}
+.dn-account-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+.dn-account-num {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--text);
+  word-break: break-all;
+}
+.dn-status {
+  text-align: center;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin: 14px 0 10px;
+}
+.dn-status.is-success { color: #16a34a; }
+.dn-status.is-error { color: #dc2626; }

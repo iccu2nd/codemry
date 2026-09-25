@@ -13,6 +13,7 @@ import devRoutes from './src/routes/dev.js'
 import notificationRoutes from './src/routes/notifications.js'
 import tenorRoutes from './src/routes/tenor.js'
 import publicApiRoutes from './src/routes/public-api.js'
+import donateRoutes from './src/routes/donate.js'
 import { initGithub, getAssetContent } from './src/github.js'
 import { Snippets, Users, Views, Likes, Follows, ensureSessionSecret, isDeveloperUsername, isModeratorUser, ensureNickname, readBadges, badgeDisplay, Settings } from './src/db.js'
 import { verifyToken, parseCookies, COOKIE_NAME, MAX_AGE, createToken, setSecret } from './src/token.js'
@@ -96,6 +97,7 @@ app.use('/api/users', userRoutes)
 app.use('/api/dev', devRoutes)
 app.use('/api/notifications', notificationRoutes)
 app.use('/api/tenor', tenorRoutes)
+app.use('/api/donate', donateRoutes)
 app.use('/api/public', publicApiRoutes)
 
 

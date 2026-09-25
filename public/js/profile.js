@@ -180,6 +180,200 @@ function leaveEditProfile() {
   renderProfile()
 }
 
+
+function formatRp(n) {
+  return 'Rp ' + Number(n || 0).toLocaleString('id-ID')
+}
+
+function openDonateModal(p) {
+  const presets = [5000, 10000, 25000, 50000, 100000]
+  const methodsHtml = `
+    <div class="dn-methods" id="dnMethods">
+      <button type="button" class="dn-method is-active" data-method="qris" data-min="1000">QRIS</button>
+      <button type="button" class="dn-method" data-method="gopay" data-min="1000">GoPay</button>
+      <button type="button" class="dn-method" data-method="dana" data-min="1000">DANA</button>
+      <button type="button" class="dn-method" data-method="ovo" data-min="1000" data-phone="1">OVO</button>
+      <button type="button" class="dn-method" data-method="linkaja" data-min="1000">LinkAja</button>
+      <button type="button" class="dn-method" data-method="shopeepay_idr" data-min="1000">ShopeePay</button>
+      <button type="button" class="dn-method" data-method="bca" data-min="10000">BCA</button>
+      <button type="button" class="dn-method" data-method="mandiri" data-min="10000">Mandiri</button>
+      <button type="button" class="dn-method" data-method="bri" data-min="10000">BRI</button>
+      <button type="button" class="dn-method" data-method="bni" data-min="10000">BNI</button>
+      <button type="button" class="dn-method" data-method="alfamart" data-min="10000">Alfamart</button>
+      <button type="button" class="dn-method" data-method="indomaret" data-min="10000">Indomaret</button>
+    </div>`
+
+  openModal(`
+    <div class="modal-head">
+      <div class="modal-head-title">${t('donate')} · ${escapeHtml(p.nickname || p.username)}</div>
+      <button type="button" class="modal-close-btn" id="dnCloseBtn" aria-label="Close">${closeIconSvg()}</button>
+    </div>
+    <div class="modal-body dn-body" id="dnBody">
+      <div class="dn-step" id="dnStepForm">
+        <div class="field">
+          <label>${t('amount')}</label>
+          <div class="dn-presets">
+            ${presets.map(a => `<button type="button" class="dn-preset" data-amount="${a}">${formatRp(a)}</button>`).join('')}
+          </div>
+          <input id="dnAmount" type="number" inputmode="numeric" min="1000" step="1000" placeholder="5000" value="10000">
+        </div>
+        <div class="field">
+          <label>${t('yourName')}</label>
+          <input id="dnName" type="text" maxlength="64" placeholder="${escapeHtml((me && (me.nickname || me.username)) || 'Donatur')}" value="${escapeHtml((me && (me.nickname || me.username)) || '')}">
+        </div>
+        <div class="field">
+          <label>${t('message')} <span class="label-opt">(${t('optional')})</span></label>
+          <input id="dnMessage" type="text" maxlength="200" placeholder="${t('donateMessagePh')}">
+        </div>
+        <div class="field">
+          <label>${t('paymentMethod')}</label>
+          ${methodsHtml}
+        </div>
+        <div class="field" id="dnPhoneWrap" style="display:none">
+          <label>${t('phoneNumber')}</label>
+          <input id="dnPhone" type="tel" inputmode="tel" placeholder="08…" maxlength="20">
+        </div>
+        <button type="button" class="btn btn-primary btn-block" id="dnPayBtn">${t('continuePayment')}</button>
+        <p class="dn-via">via Sociabuzz · @${escapeHtml(p.sociabuzz)}</p>
+      </div>
+      <div class="dn-step" id="dnStepPay" style="display:none"></div>
+    </div>
+  `)
+
+  const box = document.getElementById('modalBox')
+  if (box) box.classList.add('modal-box-donate')
+
+  const close = () => {
+    if (window.__dnPoll) { clearInterval(window.__dnPoll); window.__dnPoll = null }
+    if (box) box.classList.remove('modal-box-donate')
+    closeModal(true)
+  }
+  document.getElementById('dnCloseBtn')?.addEventListener('click', close)
+
+  let method = 'qris'
+  document.querySelectorAll('.dn-method').forEach(btn => {
+    btn.onclick = () => {
+      document.querySelectorAll('.dn-method').forEach(b => b.classList.remove('is-active'))
+      btn.classList.add('is-active')
+      method = btn.dataset.method
+      const needPhone = btn.dataset.phone === '1'
+      const phoneWrap = document.getElementById('dnPhoneWrap')
+      if (phoneWrap) phoneWrap.style.display = needPhone ? 'block' : 'none'
+    }
+  })
+  document.querySelectorAll('.dn-preset').forEach(btn => {
+    btn.onclick = () => {
+      const inp = document.getElementById('dnAmount')
+      if (inp) inp.value = btn.dataset.amount
+      document.querySelectorAll('.dn-preset').forEach(b => b.classList.remove('is-active'))
+      btn.classList.add('is-active')
+    }
+  })
+
+  const payBtn = document.getElementById('dnPayBtn')
+  payBtn.onclick = async () => {
+    await withBtnLoading(payBtn, async () => {
+      const amount = Number(document.getElementById('dnAmount')?.value || 0)
+      const name = (document.getElementById('dnName')?.value || '').trim() || 'Donatur'
+      const message = (document.getElementById('dnMessage')?.value || '').trim()
+      const phone = (document.getElementById('dnPhone')?.value || '').trim()
+      try {
+        const trx = await api('/donate/' + encodeURIComponent(p.username), {
+          method: 'POST',
+          body: JSON.stringify({ amount, method, name, message, phone })
+        })
+        renderDonatePayStep(trx, close)
+      } catch (e) {
+        toast(e.message || 'Gagal membuat donasi')
+      }
+    })
+  }
+}
+
+function renderDonatePayStep(trx, closeFn) {
+  const form = document.getElementById('dnStepForm')
+  const pay = document.getElementById('dnStepPay')
+  if (form) form.style.display = 'none'
+  if (!pay) return
+  pay.style.display = 'block'
+
+  const info = trx.payment_info || {}
+  const qr = info.qr_string
+  const account = info.account_number
+  const redirect = info.redirect_url || info.payment_link
+  const pending = info.pending_url
+
+  let main = ''
+  if (qr) {
+    // QR as text instruction + copy; image via external QR API optional
+    const qrImg = 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=' + encodeURIComponent(qr)
+    main = `
+      <div class="dn-qr-wrap">
+        <img class="dn-qr" src="${qrImg}" alt="QRIS" width="220" height="220">
+      </div>
+      <p class="dn-hint">${t('scanQris')}</p>
+      <button type="button" class="btn btn-white btn-block" id="dnCopyQr">${t('copyQris')}</button>`
+  } else if (account) {
+    main = `
+      <div class="dn-account-box">
+        <div class="dn-account-label">${escapeHtml(info.bank_name || info.bank || info.label || 'Transfer')}</div>
+        <div class="dn-account-num" id="dnAccountNum">${escapeHtml(account)}</div>
+      </div>
+      <button type="button" class="btn btn-white btn-block" id="dnCopyAcc">${t('copyAccount')}</button>`
+  } else if (redirect) {
+    main = `
+      <a class="btn btn-primary btn-block" href="${escapeHtml(redirect)}" target="_blank" rel="noopener">${t('openPayment')}</a>
+      <p class="dn-hint">${t('completeOnProvider')}</p>`
+  } else {
+    main = `<p class="dn-hint">${t('paymentCreated')}</p>`
+  }
+
+  pay.innerHTML = `
+    <div class="dn-pay-head">
+      <div class="dn-pay-amount">${formatRp(trx.total_amount || trx.amount)}</div>
+      <div class="dn-pay-meta">${escapeHtml(info.label || info.method || '')} · ${trx.status}</div>
+    </div>
+    ${main}
+    <div class="dn-status" id="dnStatus">${t('waitingPayment')}</div>
+    <button type="button" class="btn btn-white btn-block" id="dnCheckBtn">${t('checkStatus')}</button>
+    <button type="button" class="btn btn-block" id="dnDoneBtn" style="margin-top:8px">${t('close')}</button>
+  `
+
+  document.getElementById('dnCopyQr')?.addEventListener('click', () => {
+    navigator.clipboard.writeText(qr).then(() => toast('QRIS disalin')).catch(() => {})
+  })
+  document.getElementById('dnCopyAcc')?.addEventListener('click', () => {
+    navigator.clipboard.writeText(account).then(() => toast('Nomor rekening disalin')).catch(() => {})
+  })
+  document.getElementById('dnDoneBtn')?.addEventListener('click', () => closeFn())
+
+  const updateStatus = async () => {
+    try {
+      const st = await api('/donate/trx/' + encodeURIComponent(trx.id))
+      const el = document.getElementById('dnStatus')
+      if (!el) return
+      if (st.status === 'paid') {
+        el.textContent = window.t ? window.t('donateSuccess') : 'Thank you! Payment received.'
+        el.classList.add('is-success')
+        if (window.__dnPoll) { clearInterval(window.__dnPoll); window.__dnPoll = null }
+        toast(window.t ? window.t('donateSuccess') : 'Payment received')
+      } else if (st.status === 'expired' || st.status === 'failed') {
+        el.textContent = st.status === 'expired'
+          ? (window.t ? window.t('donateExpired') : 'Expired')
+          : (window.t ? window.t('donateFailed') : 'Failed')
+        el.classList.add('is-error')
+        if (window.__dnPoll) { clearInterval(window.__dnPoll); window.__dnPoll = null }
+      } else {
+        el.textContent = window.t ? window.t('waitingPayment') : 'Waiting for payment…'
+      }
+    } catch {}
+  }
+  document.getElementById('dnCheckBtn')?.addEventListener('click', updateStatus)
+  if (window.__dnPoll) clearInterval(window.__dnPoll)
+  window.__dnPoll = setInterval(updateStatus, 8000)
+}
+
+
 function openEditProfileScreen(p, username) {
   editSocialState = {}
   const existing = (p.socials && typeof p.socials === 'object') ? p.socials : {}
@@ -257,6 +451,10 @@ function openEditProfileScreen(p, username) {
 
       <div class="ep-section-label">${t('other')}</div>
       <div class="ep-group">
+        <div class="ep-row">
+          <span class="ep-label">${t('sociabuzz')}</span>
+          <input class="ep-input" id="sociabuzzInput" type="text" maxlength="40" value="${escapeHtml(p.sociabuzz || '')}" placeholder="username or link" autocomplete="off">
+        </div>
         <div class="ep-row">
           <span class="ep-label">${t('musicUrl')}</span>
           <input class="ep-input" id="musicInput" type="url" value="${escapeHtml(p.profileMusic || '')}" placeholder="https://…/audio.mp3">
@@ -340,6 +538,7 @@ function openEditProfileScreen(p, username) {
           profileMusic: (document.getElementById('musicInput')?.value || '').trim(),
           website: (document.getElementById('websiteInput')?.value || '').trim(),
           location: (document.getElementById('locationInput')?.value || '').trim(),
+          sociabuzz: (document.getElementById('sociabuzzInput')?.value || '').trim(),
           socials: collectSocialsFromForm(),
           hideBadges: !!document.getElementById('hideBadgesInput')?.checked
         }
@@ -434,8 +633,12 @@ async function renderProfile() {
           ? `<div class="btn-row profile-actions">
                <button class="btn btn-white" id="editProfileBtn">${t('editProfile')}</button>
                <button class="btn btn-white" id="signOutBtn">${t('signOut')}</button>
-             </div>`
-          : `<button class="btn ${p.isFollowing ? 'btn-white' : 'btn-primary'} btn-block profile-actions" id="followBtn">${p.isFollowing ? t('following') : t('follow')}</button>`}
+             </div>
+             ${p.sociabuzz ? `<button type="button" class="btn btn-donate btn-block" id="donateBtn" style="margin-top:10px"><i class="fa-solid fa-heart" aria-hidden="true"></i> ${t('donate')}</button>` : ''}`
+          : `<div class="profile-actions-stack">
+               <button class="btn ${p.isFollowing ? 'btn-white' : 'btn-primary'} btn-block" id="followBtn">${p.isFollowing ? t('following') : t('follow')}</button>
+               ${p.sociabuzz ? `<button type="button" class="btn btn-donate btn-block" id="donateBtn"><i class="fa-solid fa-heart" aria-hidden="true"></i> ${t('donate')}</button>` : ''}
+             </div>`}
       </div>
       <div class="section-label">${t('sharedCode')}</div>
       <div id="profileSnippets"></div>
@@ -549,6 +752,9 @@ async function renderProfile() {
 
     const editBtn = document.getElementById('editProfileBtn')
     if (editBtn) editBtn.onclick = () => openEditProfileScreen(p, username)
+
+    const donateBtn = document.getElementById('donateBtn')
+    if (donateBtn) donateBtn.onclick = () => openDonateModal(p)
 
     // Penting: tombol kamera (avatar & banner) TIDAK PERNAH dipindah posisinya.
     // Selama upload berlangsung, tombolnya cuma dikasih class "is-uploading"
