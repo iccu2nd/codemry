@@ -3,7 +3,7 @@ let chatPoll = null
 let lastMsgId = null
 let chatOtherMeta = null
 let chatMsgsById = {}
-let replyTarget = null // { id, from, text, stickerUrl }
+let replyTarget = null
 
 async function ensureAuth() {
   if (typeof refreshAuth === 'function') await refreshAuth()
@@ -61,10 +61,11 @@ async function renderInbox() {
 }
 
 function chatTicksSvg(read) {
+  const paths = `<path d="M11.1 1.1 5.4 7.3 2.9 4.8 1.8 5.9l3.6 3.6 6.8-7.3z" fill="currentColor"/><path d="M14.2 1.1 8.5 7.3 7.6 6.4 6.5 7.5l2 2 6.8-7.3z" fill="currentColor"/>`
   if (read) {
-    return `<span class="chat-ticks is-read" title="Read" aria-label="Read"><svg viewBox="0 0 16 11" fill="none" aria-hidden="true"><path d="M11.1 1.1 5.4 7.3 2.9 4.8 1.8 5.9l3.6 3.6 6.8-7.3z" fill="currentColor"/><path d="M14.2 1.1 8.5 7.3 7.6 6.4 6.5 7.5l2 2 6.8-7.3z" fill="currentColor"/></svg></span>`
+    return `<span class="chat-ticks is-read" title="Read"><svg viewBox="0 0 16 11" fill="none">${paths}</svg></span>`
   }
-  return `<span class="chat-ticks is-sent" title="Sent" aria-label="Sent"><svg viewBox="0 0 16 11" fill="none" aria-hidden="true"><path d="M11.1 1.1 5.4 7.3 2.9 4.8 1.8 5.9l3.6 3.6 6.8-7.3z" fill="currentColor"/><path d="M14.2 1.1 8.5 7.3 7.6 6.4 6.5 7.5l2 2 6.8-7.3z" fill="currentColor"/></svg></span>`
+  return `<span class="chat-ticks is-sent" title="Sent"><svg viewBox="0 0 16 11" fill="none">${paths}</svg></span>`
 }
 
 function replyAuthorLabel(from) {
@@ -74,13 +75,13 @@ function replyAuthorLabel(from) {
   return from
 }
 
-function replyQuoteHtml(reply, compact) {
+function replyQuoteHtml(reply) {
   if (!reply) return ''
   const who = escapeHtml(replyAuthorLabel(reply.from))
   const body = reply.stickerUrl && !reply.text
     ? 'Sticker'
     : escapeHtml(String(reply.text || '').slice(0, 80) || 'Message')
-  return `<div class="chat-reply-quote ${compact ? 'is-compact' : ''}" data-reply-id="${escapeHtml(reply.id || '')}">
+  return `<div class="chat-reply-quote" data-reply-id="${escapeHtml(reply.id || '')}">
     <div class="chat-reply-accent"></div>
     <div class="chat-reply-body">
       <div class="chat-reply-author">${who}</div>
@@ -98,13 +99,16 @@ function bubbleHtml(m) {
     ? `<div class="chat-bubble-text">${escapeHtml(m.text)}</div>`
     : ''
   const ticks = mine ? chatTicksSvg(!!m.read) : ''
-  const quote = m.replyTo ? replyQuoteHtml(m.replyTo, true) : ''
-  return `<div class="chat-bubble ${mine ? 'mine' : 'theirs'}${sticker && !m.text ? ' is-sticker' : ''}" data-msg-id="${escapeHtml(m.id)}">
-    ${quote}
-    ${sticker}${text}
-    <div class="chat-bubble-meta">
-      <span class="chat-bubble-time">${timeAgo(m.createdAt)}</span>
-      ${ticks}
+  const quote = m.replyTo ? replyQuoteHtml(m.replyTo) : ''
+  return `<div class="chat-row ${mine ? 'is-mine' : 'is-theirs'}" data-msg-id="${escapeHtml(m.id)}">
+    <div class="chat-swipe-hint" aria-hidden="true"><i class="fa-solid fa-reply"></i></div>
+    <div class="chat-bubble ${mine ? 'mine' : 'theirs'}${sticker && !m.text ? ' is-sticker' : ''}">
+      ${quote}
+      ${sticker}${text}
+      <div class="chat-bubble-meta">
+        <span class="chat-bubble-time">${timeAgo(m.createdAt)}</span>
+        ${ticks}
+      </div>
     </div>
   </div>`
 }
@@ -136,45 +140,85 @@ function renderReplyBar() {
   }
   bar.hidden = false
   bar.innerHTML = `
-    ${replyQuoteHtml(replyTarget, false)}
+    ${replyQuoteHtml(replyTarget)}
     <button type="button" class="chat-reply-cancel" id="chatReplyCancel" aria-label="Cancel reply">×</button>`
   document.getElementById('chatReplyCancel').onclick = () => setReplyTarget(null)
 }
 
 function wireBubbleActions(container) {
   if (!container) return
-  container.querySelectorAll('.chat-bubble[data-msg-id]').forEach(el => {
-    el.addEventListener('click', (e) => {
-      // click quote → scroll to original
-      const q = e.target.closest('.chat-reply-quote[data-reply-id]')
-      if (q) {
-        const id = q.getAttribute('data-reply-id')
-        const target = container.querySelector(`.chat-bubble[data-msg-id="${CSS.escape(id)}"]`)
-        if (target) {
-          target.scrollIntoView({ behavior: 'smooth', block: 'center' })
-          target.classList.add('chat-bubble-flash')
-          setTimeout(() => target.classList.remove('chat-bubble-flash'), 900)
-        }
-        return
+
+  container.querySelectorAll('.chat-reply-quote[data-reply-id]').forEach(q => {
+    q.addEventListener('click', (e) => {
+      e.stopPropagation()
+      const id = q.getAttribute('data-reply-id')
+      const target = container.querySelector(`.chat-row[data-msg-id="${CSS.escape(id)}"]`)
+      if (target) {
+        target.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        target.classList.add('chat-row-flash')
+        setTimeout(() => target.classList.remove('chat-row-flash'), 900)
       }
     })
-    // double-tap / long-press style: use context menu + double click for reply
-    el.addEventListener('dblclick', (e) => {
-      e.preventDefault()
-      const id = el.getAttribute('data-msg-id')
+  })
+
+  container.querySelectorAll('.chat-row[data-msg-id]').forEach(row => {
+    let startX = 0
+    let startY = 0
+    let dragging = false
+    const bubble = row.querySelector('.chat-bubble')
+    const hint = row.querySelector('.chat-swipe-hint')
+
+    const reset = () => {
+      dragging = false
+      if (bubble) bubble.style.transform = ''
+      if (hint) hint.style.opacity = '0'
+      row.classList.remove('is-swiping')
+    }
+
+    row.addEventListener('touchstart', (e) => {
+      const t = e.touches[0]
+      startX = t.clientX
+      startY = t.clientY
+      dragging = true
+    }, { passive: true })
+
+    row.addEventListener('touchmove', (e) => {
+      if (!dragging) return
+      const t = e.touches[0]
+      const dx = t.clientX - startX
+      const dy = t.clientY - startY
+      if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 12) {
+        reset()
+        return
+      }
+      // swipe right to reply
+      if (dx > 0) {
+        const shift = Math.min(dx, 72)
+        if (bubble) bubble.style.transform = `translateX(${shift}px)`
+        if (hint) hint.style.opacity = String(Math.min(shift / 56, 1))
+        row.classList.add('is-swiping')
+      }
+    }, { passive: true })
+
+    row.addEventListener('touchend', (e) => {
+      if (!dragging) return
+      const t = e.changedTouches[0]
+      const dx = t.clientX - startX
+      const dy = t.clientY - startY
+      reset()
+      if (dx > 56 && Math.abs(dy) < 40) {
+        const id = row.getAttribute('data-msg-id')
+        const msg = chatMsgsById[id]
+        if (msg) setReplyTarget(msg)
+      }
+    })
+
+    // desktop: double-click
+    row.addEventListener('dblclick', () => {
+      const id = row.getAttribute('data-msg-id')
       const msg = chatMsgsById[id]
       if (msg) setReplyTarget(msg)
     })
-    let pressTimer = null
-    el.addEventListener('touchstart', () => {
-      pressTimer = setTimeout(() => {
-        const id = el.getAttribute('data-msg-id')
-        const msg = chatMsgsById[id]
-        if (msg) setReplyTarget(msg)
-      }, 450)
-    }, { passive: true })
-    el.addEventListener('touchend', () => { if (pressTimer) clearTimeout(pressTimer) })
-    el.addEventListener('touchmove', () => { if (pressTimer) clearTimeout(pressTimer) })
   })
 }
 
@@ -183,9 +227,6 @@ async function openThread(username) {
   chatOther = username
   replyTarget = null
   document.body.classList.add('chat-thread-mode')
-
-  const brand = document.querySelector('.topbar .brand')
-  if (brand) brand.textContent = '@' + username
 
   app.innerHTML = `
     <div class="chat-wa" id="chatWa">
@@ -202,7 +243,7 @@ async function openThread(username) {
       </div>
       <div class="chat-reply-bar" id="chatReplyBar" hidden></div>
       <form class="chat-compose" id="chatForm">
-        <button type="button" class="chat-sticker-btn" id="chatStickerBtn" aria-label="Sticker" title="Sticker">
+        <button type="button" class="chat-sticker-btn" id="chatStickerBtn" aria-label="Sticker">
           <i class="fa-regular fa-face-smile" aria-hidden="true"></i>
         </button>
         <textarea id="chatInput" rows="1" maxlength="2000" placeholder="Message" autocomplete="off" enterkeyhint="send"></textarea>
@@ -288,8 +329,6 @@ async function loadMessages(scrollBottom) {
           <span class="chat-wa-name">${escapeHtml(data.other.nickname || data.other.username)}</span>
           <span class="chat-wa-handle">@${escapeHtml(data.other.username)}</span>`
       }
-      const brand = document.querySelector('.topbar .brand')
-      if (brand) brand.textContent = data.other.nickname || ('@' + data.other.username)
     }
 
     const msgs = data.messages || []
@@ -301,28 +340,22 @@ async function loadMessages(scrollBottom) {
     if (!scrollBottom && newId && newId === lastMsgId) return
     lastMsgId = newId || null
 
-    const nearBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 80
+    const nearBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 100
 
     if (!msgs.length) {
-      inner.innerHTML = `<div class="chat-empty">Say hello 👋</div>`
+      inner.innerHTML = `<div class="chat-empty">Say hello 👋<br><small>Geser pesan ke kanan untuk membalas</small></div>`
     } else {
       inner.innerHTML = msgs.map(bubbleHtml).join('')
       wireBubbleActions(inner)
     }
 
     if (scrollBottom || nearBottom) {
-      requestAnimationFrame(() => {
-        box.scrollTop = box.scrollHeight
-      })
+      requestAnimationFrame(() => { box.scrollTop = box.scrollHeight })
     }
   } catch (e) {
     toast(e.message)
   }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  renderChat()
-})
-window.addEventListener('beforeunload', () => {
-  if (chatPoll) clearInterval(chatPoll)
-})
+document.addEventListener('DOMContentLoaded', () => { renderChat() })
+window.addEventListener('beforeunload', () => { if (chatPoll) clearInterval(chatPoll) })
