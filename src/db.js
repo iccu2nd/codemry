@@ -629,16 +629,19 @@ export const Messages = {
             .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0))
             .slice(-limit)
     },
-    async send(from, to, text) {
+    async send(from, to, { text = '', stickerUrl = null } = {}) {
+        const cleanText = String(text || '').trim().slice(0, 2000)
+        const sticker = stickerUrl ? String(stickerUrl).trim().slice(0, 500) : null
+        if (!cleanText && !sticker) throw new Error('Empty message')
         const entry = {
             id: crypto.randomUUID(),
             from,
             to,
-            text: String(text || '').trim().slice(0, 2000),
+            text: cleanText || '',
+            stickerUrl: sticker || null,
             createdAt: Date.now(),
             read: false
         }
-        if (!entry.text) throw new Error('Empty message')
         await update('messages.json', d => {
             const next = [...d, entry]
             return next.length > 5000 ? next.slice(-5000) : next

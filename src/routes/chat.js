@@ -3,6 +3,22 @@ import { Users, Messages, Blocks, Notifications, avatarUrl } from '../db.js'
 
 const router = Router()
 
+function isValidStickerUrl(url) {
+  if (typeof url !== 'string' || !url) return false
+  try {
+    const u = new URL(url)
+    return u.protocol === 'https:' && /(^|\.)(tenor|giphy)\.com$/.test(u.hostname)
+  } catch {
+    return false
+  }
+}
+
+function previewText(m) {
+  if (m?.stickerUrl && !m?.text) return 'Sticker'
+  if (m?.stickerUrl && m?.text) return m.text
+  return m?.text || ''
+}
+
 router.get('/conversations', async (req, res) => {
   if (!req.username) return res.status(401).json({ error: 'Please sign in' })
   try {
@@ -15,7 +31,7 @@ router.get('/conversations', async (req, res) => {
         otherUsername: u?.username || m.otherUsername,
         otherNickname: u?.nickname || u?.username || m.otherUsername,
         otherAvatar: u ? avatarUrl(u) : null,
-        lastText: m.text,
+        lastText: previewText(m),
         lastAt: m.createdAt,
         unread: !m.read && String(m.to || '').toLowerCase() === req.username.toLowerCase()
       }
@@ -42,7 +58,7 @@ router.get('/with/:username', async (req, res) => {
     return res.status(403).json({ error: 'Cannot message this user' })
   }
   try {
-    const messages = await Messages.between(req.username, other.username, 150)
+    const messages = await Messages.between(req.username, other.username, 200)
     await Messages.markRead(req.username, other.username)
     res.json({
       other: { username: other.username, nickname: other.nickname || other.username, avatar: avatarUrl(other) },
@@ -65,12 +81,17 @@ router.post('/with/:username', async (req, res) => {
   }
   try {
     const text = String(req.body?.text || '').trim()
-    const msg = await Messages.send(req.username, other.username, text)
+    let stickerUrl = req.body?.stickerUrl ? String(req.body.stickerUrl).trim() : null
+    if (stickerUrl && !isValidStickerUrl(stickerUrl)) {
+      return res.status(400).json({ error: 'Invalid sticker' })
+    }
+    if (!text && !stickerUrl) return res.status(400).json({ error: 'Empty message' })
+    const msg = await Messages.send(req.username, other.username, { text, stickerUrl })
     Notifications.create({
       username: other.username,
       fromUsername: req.username,
       type: 'message',
-      text: text.slice(0, 120)
+      text: text ? text.slice(0, 120) : 'Sticker'
     }).catch(() => {})
     res.json(msg)
   } catch (e) {

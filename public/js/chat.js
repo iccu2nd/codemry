@@ -1,17 +1,17 @@
 let chatOther = null
 let chatPoll = null
 let lastMsgId = null
+let chatOtherMeta = null
 
 async function ensureAuth() {
-  if (typeof refreshAuth === 'function') {
-    await refreshAuth()
-  }
+  if (typeof refreshAuth === 'function') await refreshAuth()
   return me
 }
 
 async function renderChat() {
   const app = document.getElementById('chatApp')
   if (!app) return
+  document.body.classList.remove('chat-thread-mode')
   app.innerHTML = `<div class="card"><div class="muted" style="text-align:center;padding:24px">Loading…</div></div>`
   await ensureAuth()
   if (!me) {
@@ -28,6 +28,8 @@ async function renderChat() {
 
 async function renderInbox() {
   const app = document.getElementById('chatApp')
+  const brand = document.querySelector('.topbar .brand')
+  if (brand) brand.textContent = 'Messages'
   app.innerHTML = `<div class="card"><div class="section-label">Messages</div><div id="chatInbox">${typeof skelBlock === 'function' ? skelBlock(80, 16) : 'Loading…'}</div></div>`
   try {
     const list = await api('/chat/conversations')
@@ -55,46 +57,106 @@ async function renderInbox() {
   }
 }
 
+function bubbleHtml(m) {
+  const mine = me && m.from === me.username
+  const sticker = m.stickerUrl
+    ? `<img class="chat-sticker" src="${escapeHtml(m.stickerUrl)}" alt="sticker" loading="lazy">`
+    : ''
+  const text = m.text
+    ? `<div class="chat-bubble-text">${escapeHtml(m.text)}</div>`
+    : ''
+  return `<div class="chat-bubble ${mine ? 'mine' : 'theirs'} ${sticker && !m.text ? 'is-sticker' : ''}">
+    ${sticker}${text}
+    <div class="chat-bubble-time">${timeAgo(m.createdAt)}</div>
+  </div>`
+}
+
 async function openThread(username) {
   const app = document.getElementById('chatApp')
   chatOther = username
+  document.body.classList.add('chat-thread-mode')
+
+  const brand = document.querySelector('.topbar .brand')
+  if (brand) brand.textContent = '@' + username
+
   app.innerHTML = `
-    <div class="card chat-thread-card">
-      <div class="chat-thread-head">
+    <div class="chat-wa" id="chatWa">
+      <div class="chat-wa-head">
         <a href="/chat" class="chat-back" aria-label="Back">←</a>
-        <a href="${profileUrl(username)}" class="chat-thread-user">@${escapeHtml(username)}</a>
+        <a href="${profileUrl(username)}" class="chat-wa-user" id="chatWaUser">
+          <span class="chat-wa-name">@${escapeHtml(username)}</span>
+        </a>
       </div>
-      <div class="chat-messages" id="chatMessages"><div class="muted" style="text-align:center;padding:16px">Loading…</div></div>
+      <div class="chat-messages" id="chatMessages">
+        <div class="chat-messages-inner" id="chatMessagesInner">
+          <div class="muted" style="text-align:center;padding:16px">Loading…</div>
+        </div>
+      </div>
       <form class="chat-compose" id="chatForm">
-        <input id="chatInput" type="text" maxlength="2000" placeholder="Write a message…" autocomplete="off" enterkeyhint="send">
-        <button type="submit" class="btn btn-primary btn-sm" id="chatSend">Send</button>
+        <button type="button" class="chat-sticker-btn" id="chatStickerBtn" aria-label="Sticker" title="Sticker">
+          <i class="fa-regular fa-face-smile" aria-hidden="true"></i>
+        </button>
+        <textarea id="chatInput" rows="1" maxlength="2000" placeholder="Message" autocomplete="off" enterkeyhint="send"></textarea>
+        <button type="submit" class="chat-send-btn" id="chatSend" aria-label="Send">
+          <i class="fa-solid fa-paper-plane" aria-hidden="true"></i>
+        </button>
       </form>
     </div>`
 
-  await loadMessages(true)
+  const input = document.getElementById('chatInput')
+  if (input && typeof autoGrowTextarea === 'function') {
+    autoGrowTextarea(input)
+    input.addEventListener('input', () => autoGrowTextarea(input))
+  }
+  // Enter send (Shift+Enter newline)
+  input?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      document.getElementById('chatForm')?.requestSubmit()
+    }
+  })
+
+  document.getElementById('chatStickerBtn').onclick = async () => {
+    if (typeof openStickerPicker !== 'function') {
+      toast('Sticker picker unavailable')
+      return
+    }
+    const url = await openStickerPicker()
+    if (!url) return
+    await sendChatPayload({ stickerUrl: url })
+  }
 
   document.getElementById('chatForm').onsubmit = async (e) => {
     e.preventDefault()
-    const input = document.getElementById('chatInput')
-    const text = (input.value || '').trim()
+    const text = (document.getElementById('chatInput')?.value || '').trim()
     if (!text) return
-    const btn = document.getElementById('chatSend')
-    await withBtnLoading(btn, async () => {
-      try {
-        await api('/chat/with/' + encodeURIComponent(username), {
-          method: 'POST',
-          body: JSON.stringify({ text })
-        })
-        input.value = ''
-        await loadMessages(true)
-      } catch (err) {
-        toast(err.message)
-      }
-    })
+    await sendChatPayload({ text })
   }
 
+  await loadMessages(true)
   if (chatPoll) clearInterval(chatPoll)
   chatPoll = setInterval(() => loadMessages(false), 3000)
+}
+
+async function sendChatPayload(payload) {
+  if (!chatOther) return
+  const btn = document.getElementById('chatSend')
+  const input = document.getElementById('chatInput')
+  await withBtnLoading(btn, async () => {
+    try {
+      await api('/chat/with/' + encodeURIComponent(chatOther), {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      })
+      if (payload.text && input) {
+        input.value = ''
+        if (typeof autoGrowTextarea === 'function') autoGrowTextarea(input)
+      }
+      await loadMessages(true)
+    } catch (err) {
+      toast(err.message)
+    }
+  })
 }
 
 async function loadMessages(scrollBottom) {
@@ -102,21 +164,41 @@ async function loadMessages(scrollBottom) {
   try {
     const data = await api('/chat/with/' + encodeURIComponent(chatOther))
     const box = document.getElementById('chatMessages')
-    if (!box) return
+    const inner = document.getElementById('chatMessagesInner')
+    if (!box || !inner) return
+
+    if (data.other) {
+      chatOtherMeta = data.other
+      const userEl = document.getElementById('chatWaUser')
+      if (userEl) {
+        userEl.innerHTML = `
+          ${avatarHtml(data.other.avatar, data.other.nickname || data.other.username, 'avatar-circle-xs')}
+          <span class="chat-wa-name">${escapeHtml(data.other.nickname || data.other.username)}</span>
+          <span class="chat-wa-handle">@${escapeHtml(data.other.username)}</span>`
+      }
+      const brand = document.querySelector('.topbar .brand')
+      if (brand) brand.textContent = data.other.nickname || ('@' + data.other.username)
+    }
+
     const msgs = data.messages || []
     const last = msgs[msgs.length - 1]
     const newId = last?.id
     if (!scrollBottom && newId && newId === lastMsgId) return
     lastMsgId = newId || null
+
+    const nearBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 80
+
     if (!msgs.length) {
-      box.innerHTML = `<div class="muted" style="text-align:center;padding:20px">Say hello 👋</div>`
-      return
+      inner.innerHTML = `<div class="chat-empty">Say hello 👋</div>`
+    } else {
+      inner.innerHTML = msgs.map(bubbleHtml).join('')
     }
-    box.innerHTML = msgs.map(m => {
-      const mine = me && m.from === me.username
-      return `<div class="chat-bubble ${mine ? 'mine' : 'theirs'}"><div class="chat-bubble-text">${escapeHtml(m.text)}</div><div class="chat-bubble-time">${timeAgo(m.createdAt)}</div></div>`
-    }).join('')
-    if (scrollBottom) box.scrollTop = box.scrollHeight
+
+    if (scrollBottom || nearBottom) {
+      requestAnimationFrame(() => {
+        box.scrollTop = box.scrollHeight
+      })
+    }
   } catch (e) {
     toast(e.message)
   }
