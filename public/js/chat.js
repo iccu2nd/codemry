@@ -100,9 +100,11 @@ function bubbleHtml(m) {
     : ''
   const ticks = mine ? chatTicksSvg(!!m.read) : ''
   const quote = m.replyTo ? replyQuoteHtml(m.replyTo) : ''
+  // inline size locks: survive stale CSS cache (iMessage-style shrink-wrap)
+  const sizeLock = 'height:auto!important;min-height:0!important;max-height:none!important;width:auto!important;max-width:min(78vw,320px)!important;display:inline-table!important;writing-mode:horizontal-tb!important;'
   return `<div class="chat-row ${mine ? 'is-mine' : 'is-theirs'}" data-msg-id="${escapeHtml(m.id)}">
     <div class="chat-swipe-hint" aria-hidden="true"><i class="fa-solid fa-reply"></i></div>
-    <div class="chat-bubble ${mine ? 'mine' : 'theirs'}${sticker && !m.text ? ' is-sticker' : ''}">
+    <div class="chat-bubble ${mine ? 'mine' : 'theirs'}${sticker && !m.text ? ' is-sticker' : ''}" style="${sizeLock}">
       ${quote}
       ${sticker}${text}
       <div class="chat-bubble-meta">
