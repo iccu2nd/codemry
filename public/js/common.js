@@ -55,7 +55,7 @@ const I18N = {
   phoneNumber: 'Phone number',
   continuePayment: 'Continue',
   scanQris: 'Scan this QRIS with your banking / e-wallet app',
-  copyQris: 'Copy QRIS code',
+  downloadQris: 'Download QRIS',
   copyAccount: 'Copy account number',
   openPayment: 'Open payment page',
   completeOnProvider: 'Complete payment in the provider app, then come back here.',

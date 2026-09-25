@@ -156,6 +156,33 @@ export function listMethods() {
   }))
 }
 
+export function listTransactions({ status, limit = 50 } = {}) {
+  const seen = new Set()
+  const list = []
+  for (const [k, v] of mem) {
+    if (k.startsWith('ord:') || k.startsWith('inv:')) continue
+    if (!v?.id || seen.has(v.id)) continue
+    seen.add(v.id)
+    if (status && v.status !== status) continue
+    list.push({
+      id: v.id,
+      username: v.username,
+      amount: v.amount,
+      total_amount: v.total_amount,
+      fee: v.fee,
+      status: v.status,
+      method: v.payment_info?.method || v.payment_info?.label || null,
+      supporter: v.supporter || null,
+      message: v.message || null,
+      created_at: v.created_at,
+      paid_at: v.paid_at,
+      expired_at: v.expired_at
+    })
+  }
+  list.sort((a, b) => String(b.paid_at || b.created_at || '').localeCompare(String(a.paid_at || a.created_at || '')))
+  return list.slice(0, Math.min(200, Math.max(1, Number(limit) || 50)))
+}
+
 export function getTransaction(id) {
   const trx = mem.get(id) || mem.get('ord:' + id) || mem.get('inv:' + id)
   if (!trx) return null

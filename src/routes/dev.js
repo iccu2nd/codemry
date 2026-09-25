@@ -1,3 +1,4 @@
+import { listTransactions } from '../sociabuzz.js'
 import { Router } from 'express'
 import bcrypt from 'bcryptjs'
 import { Users, Follows, Snippets, Views, Reports, REPORT_REASON_LABELS, avatarUrl, ensureNickname, ensureBadges, setBadge, BADGE_TYPES, isDeveloperUsername, isModeratorUser, deleteUserAccount, Settings } from '../db.js'
@@ -182,6 +183,23 @@ router.post('/settings/info-banner', requireDeveloper, async (req, res) => {
         res.json(settings)
     } catch (e) {
         res.status(500).json({ error: e.response?.data?.message || e.message })
+    }
+})
+
+router.get('/donations', requireDeveloper, async (req, res) => {
+    try {
+        const status = req.query.status || 'paid'
+        const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 50))
+        const rows = listTransactions({ status: status === 'all' ? undefined : status, limit })
+        const paid = listTransactions({ status: 'paid', limit: 200 })
+        const totalPaid = paid.reduce((sum, r) => sum + (Number(r.total_amount || r.amount) || 0), 0)
+        res.json({
+            totalPaidCount: paid.length,
+            totalPaidAmount: totalPaid,
+            items: rows
+        })
+    } catch (e) {
+        res.status(500).json({ error: e.message })
     }
 })
 

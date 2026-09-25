@@ -36,6 +36,7 @@ async function renderAdminPanel() {
     adminTab = isDev ? 'overview' : 'reports'
   }
   if (adminTab === 'users' && !isDev) adminTab = 'reports'
+  if (adminTab === 'donations' && !isDev) adminTab = 'reports'
   if (adminTab === 'overview' && !isDev) adminTab = 'reports'
 
   app.innerHTML = `
@@ -52,6 +53,7 @@ async function renderAdminPanel() {
         <button type="button" class="admin-tab ${adminTab === 'reports' ? 'active' : ''}" data-tab="reports" role="tab">
           Reports <span class="admin-tab-badge" id="adminPendingBadge" style="display:none">0</span>
         </button>
+        ${isDev ? `<button type="button" class="admin-tab ${adminTab === 'donations' ? 'active' : ''}" data-tab="donations" role="tab">Donations</button>` : ''}
         ${isDev ? `<button type="button" class="admin-tab ${adminTab === 'users' ? 'active' : ''}" data-tab="users" role="tab">Users</button>` : ''}
       </div>
 
@@ -96,6 +98,10 @@ function renderAdminTab() {
             <span class="admin-quick-label">Manage users</span>
             <span class="admin-quick-hint">Badges, roles, accounts</span>
           </button>
+          <button type="button" class="admin-quick-btn" data-goto="donations">
+            <span class="admin-quick-label">Donations</span>
+            <span class="admin-quick-hint">Sociabuzz paid transactions</span>
+          </button>
         </div>
       </div>
       <div class="admin-card">
@@ -121,6 +127,24 @@ function renderAdminTab() {
         document.querySelector(`.admin-tab[data-tab="${tab}"]`)?.click()
       }
     })
+    return
+  }
+
+  if (adminTab === 'donations' && isDev) {
+    el.innerHTML = `
+      <div class="admin-card">
+        <div class="admin-card-title">Sociabuzz donations</div>
+        <p class="admin-hint">Transaksi donasi yang berhasil (status paid) lewat Sociabuzz di profil user.</p>
+        <div class="dev-stats-grid" id="dnAdminStats">
+          ${skelBlock(70, 16)}${skelBlock(70, 16)}
+        </div>
+      </div>
+      <div class="admin-card">
+        <div class="admin-card-title">Successful transactions</div>
+        <div id="dnAdminList">${skelBlock(100, 80)}</div>
+      </div>
+    `
+    loadAdminDonations()
     return
   }
 
@@ -499,3 +523,56 @@ function openUserManageModal(u) {
 }
 
 refreshAuth().then(renderAdminPanel)
+
+
+async function loadAdminDonations() {
+  const statsEl = document.getElementById('dnAdminStats')
+  const listEl = document.getElementById('dnAdminList')
+  try {
+    const data = await api('/dev/donations?status=paid&limit=50')
+    if (statsEl) {
+      statsEl.innerHTML = `
+        <div class="dev-stat"><b>${data.totalPaidCount || 0}</b><span>Paid</span></div>
+        <div class="dev-stat"><b>Rp ${Number(data.totalPaidAmount || 0).toLocaleString('id-ID')}</b><span>Total amount</span></div>
+      `
+    }
+    const items = data.items || []
+    if (!listEl) return
+    if (!items.length) {
+      listEl.innerHTML = `<div class="admin-empty">Belum ada donasi sukses.</div>`
+      return
+    }
+    listEl.innerHTML = `
+      <div class="dn-admin-table-wrap">
+        <table class="dn-admin-table">
+          <thead>
+            <tr>
+              <th>When</th>
+              <th>Sociabuzz</th>
+              <th>From</th>
+              <th>Method</th>
+              <th>Amount</th>
+              <th>Message</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${items.map(r => {
+              const when = r.paid_at || r.created_at
+              const whenStr = when ? new Date(when).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' }) : '—'
+              return `<tr>
+                <td>${escapeHtml(whenStr)}</td>
+                <td><code>@${escapeHtml(r.username || '')}</code></td>
+                <td>${escapeHtml(r.supporter || '—')}</td>
+                <td>${escapeHtml(r.method || '—')}</td>
+                <td><b>Rp ${Number(r.total_amount || r.amount || 0).toLocaleString('id-ID')}</b></td>
+                <td class="dn-admin-msg">${escapeHtml(r.message || '')}</td>
+              </tr>`
+            }).join('')}
+          </tbody>
+        </table>
+      </div>`
+  } catch (e) {
+    if (listEl) listEl.innerHTML = `<div class="admin-empty">${escapeHtml(e.message || 'Failed to load')}</div>`
+    if (statsEl) statsEl.innerHTML = ''
+  }
+}

@@ -305,14 +305,15 @@ function renderDonatePayStep(trx, closeFn) {
 
   let main = ''
   if (qr) {
-    // QR as text instruction + copy; image via external QR API optional
-    const qrImg = 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=' + encodeURIComponent(qr)
+    const qrImg = 'https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=' + encodeURIComponent(qr)
     main = `
       <div class="dn-qr-wrap">
-        <img class="dn-qr" src="${qrImg}" alt="QRIS" width="220" height="220">
+        <img class="dn-qr" id="dnQrImg" src="${qrImg}" alt="QRIS" width="240" height="240">
       </div>
       <p class="dn-hint">${t('scanQris')}</p>
-      <button type="button" class="btn btn-white btn-block" id="dnCopyQr">${t('copyQris')}</button>`
+      <button type="button" class="btn btn-primary btn-block" id="dnDownloadQr">
+        <i class="fa-solid fa-download" aria-hidden="true"></i> ${t('downloadQris')}
+      </button>`
   } else if (account) {
     main = `
       <div class="dn-account-box">
@@ -334,13 +335,35 @@ function renderDonatePayStep(trx, closeFn) {
       <div class="dn-pay-meta">${escapeHtml(info.label || info.method || '')} · ${trx.status}</div>
     </div>
     ${main}
-    <div class="dn-status" id="dnStatus">${t('waitingPayment')}</div>
-    <button type="button" class="btn btn-white btn-block" id="dnCheckBtn">${t('checkStatus')}</button>
-    <button type="button" class="btn btn-block" id="dnDoneBtn" style="margin-top:8px">${t('close')}</button>
+    <div class="dn-wait" id="dnStatus">
+      <span class="dn-wait-spin" aria-hidden="true"></span>
+      <span class="dn-wait-text">${t('waitingPayment')}</span>
+    </div>
+    <div class="dn-pay-actions">
+      <button type="button" class="btn btn-white" id="dnCheckBtn">${t('checkStatus')}</button>
+      <button type="button" class="btn btn-primary" id="dnDoneBtn">${t('close')}</button>
+    </div>
   `
 
-  document.getElementById('dnCopyQr')?.addEventListener('click', () => {
-    navigator.clipboard.writeText(qr).then(() => toast('QRIS disalin')).catch(() => {})
+  document.getElementById('dnDownloadQr')?.addEventListener('click', async () => {
+    const img = document.getElementById('dnQrImg')
+    const url = img?.src || ''
+    if (!url) return
+    try {
+      const res = await fetch(url)
+      const blob = await res.blob()
+      const a = document.createElement('a')
+      a.href = URL.createObjectURL(blob)
+      a.download = 'qris-' + (trx.id || 'donate') + '.png'
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      setTimeout(() => URL.revokeObjectURL(a.href), 2000)
+      toast('QRIS downloaded')
+    } catch {
+      // fallback open
+      window.open(url, '_blank')
+    }
   })
   document.getElementById('dnCopyAcc')?.addEventListener('click', () => {
     navigator.clipboard.writeText(account).then(() => toast('Nomor rekening disalin')).catch(() => {})
@@ -352,19 +375,28 @@ function renderDonatePayStep(trx, closeFn) {
       const st = await api('/donate/trx/' + encodeURIComponent(trx.id))
       const el = document.getElementById('dnStatus')
       if (!el) return
+      const msg = (k, fb) => (typeof t === 'function' ? t(k) : fb)
+      const textEl = el.querySelector('.dn-wait-text') || el
       if (st.status === 'paid') {
-        el.textContent = window.t ? window.t('donateSuccess') : 'Thank you! Payment received.'
+        el.classList.remove('is-error')
         el.classList.add('is-success')
+        const spin = el.querySelector('.dn-wait-spin')
+        if (spin) spin.style.display = 'none'
+        textEl.textContent = msg('donateSuccess', 'Thank you! Payment received.')
         if (window.__dnPoll) { clearInterval(window.__dnPoll); window.__dnPoll = null }
-        toast(window.t ? window.t('donateSuccess') : 'Payment received')
+        toast(msg('donateSuccess', 'Payment received'))
       } else if (st.status === 'expired' || st.status === 'failed') {
-        el.textContent = st.status === 'expired'
-          ? (window.t ? window.t('donateExpired') : 'Expired')
-          : (window.t ? window.t('donateFailed') : 'Failed')
+        el.classList.remove('is-success')
         el.classList.add('is-error')
+        const spin = el.querySelector('.dn-wait-spin')
+        if (spin) spin.style.display = 'none'
+        textEl.textContent = st.status === 'expired'
+          ? msg('donateExpired', 'Expired')
+          : msg('donateFailed', 'Failed')
         if (window.__dnPoll) { clearInterval(window.__dnPoll); window.__dnPoll = null }
       } else {
-        el.textContent = window.t ? window.t('waitingPayment') : 'Waiting for payment…'
+        el.classList.remove('is-success', 'is-error')
+        textEl.textContent = msg('waitingPayment', 'Waiting for payment…')
       }
     } catch {}
   }
@@ -634,10 +666,10 @@ async function renderProfile() {
                <button class="btn btn-white" id="editProfileBtn">${t('editProfile')}</button>
                <button class="btn btn-white" id="signOutBtn">${t('signOut')}</button>
              </div>
-             ${p.sociabuzz ? `<button type="button" class="btn btn-donate btn-block" id="donateBtn" style="margin-top:10px"><i class="fa-solid fa-heart" aria-hidden="true"></i> ${t('donate')}</button>` : ''}`
+             ${p.sociabuzz ? `<button type="button" class="btn btn-donate btn-block" id="donateBtn"><i class="fa-solid fa-heart" aria-hidden="true"></i><span>${t('donate')}</span></button>` : ''}`
           : `<div class="profile-actions-stack">
                <button class="btn ${p.isFollowing ? 'btn-white' : 'btn-primary'} btn-block" id="followBtn">${p.isFollowing ? t('following') : t('follow')}</button>
-               ${p.sociabuzz ? `<button type="button" class="btn btn-donate btn-block" id="donateBtn"><i class="fa-solid fa-heart" aria-hidden="true"></i> ${t('donate')}</button>` : ''}
+               ${p.sociabuzz ? `<button type="button" class="btn btn-donate btn-block" id="donateBtn"><i class="fa-solid fa-heart" aria-hidden="true"></i><span>${t('donate')}</span></button>` : ''}
              </div>`}
       </div>
       <div class="section-label">${t('sharedCode')}</div>
