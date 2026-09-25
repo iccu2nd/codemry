@@ -57,17 +57,29 @@ async function renderInbox() {
   }
 }
 
+function chatTicksSvg(read) {
+  // double check — biru kalau sudah dibaca lawan chat
+  if (read) {
+    return `<span class="chat-ticks is-read" title="Read" aria-label="Read"><svg viewBox="0 0 16 11" fill="none" aria-hidden="true"><path d="M11.1 1.1 5.4 7.3 2.9 4.8 1.8 5.9l3.6 3.6 6.8-7.3z" fill="currentColor"/><path d="M14.2 1.1 8.5 7.3 7.6 6.4 6.5 7.5l2 2 6.8-7.3z" fill="currentColor"/></svg></span>`
+  }
+  return `<span class="chat-ticks is-sent" title="Sent" aria-label="Sent"><svg viewBox="0 0 16 11" fill="none" aria-hidden="true"><path d="M11.1 1.1 5.4 7.3 2.9 4.8 1.8 5.9l3.6 3.6 6.8-7.3z" fill="currentColor"/><path d="M14.2 1.1 8.5 7.3 7.6 6.4 6.5 7.5l2 2 6.8-7.3z" fill="currentColor"/></svg></span>`
+}
+
 function bubbleHtml(m) {
-  const mine = me && m.from === me.username
+  const mine = !!(me && m.from === me.username)
   const sticker = m.stickerUrl
     ? `<img class="chat-sticker" src="${escapeHtml(m.stickerUrl)}" alt="sticker" loading="lazy">`
     : ''
   const text = m.text
     ? `<div class="chat-bubble-text">${escapeHtml(m.text)}</div>`
     : ''
-  return `<div class="chat-bubble ${mine ? 'mine' : 'theirs'} ${sticker && !m.text ? 'is-sticker' : ''}">
+  const ticks = mine ? chatTicksSvg(!!m.read) : ''
+  return `<div class="chat-bubble ${mine ? 'mine' : 'theirs'}${sticker && !m.text ? ' is-sticker' : ''}">
     ${sticker}${text}
-    <div class="chat-bubble-time">${timeAgo(m.createdAt)}</div>
+    <div class="chat-bubble-meta">
+      <span class="chat-bubble-time">${timeAgo(m.createdAt)}</span>
+      ${ticks}
+    </div>
   </div>`
 }
 
