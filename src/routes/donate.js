@@ -1,11 +1,12 @@
 import { Router } from 'express'
-import { Users } from '../db.js'
+import { Users, Notifications } from '../db.js'
 import {
   createPayment,
   getTransaction,
   checkStatus,
   listMethods,
-  normalizeSociabuzzUsername
+  normalizeSociabuzzUsername,
+  markNotified
 } from '../sociabuzz.js'
 
 const router = Router()
@@ -19,6 +20,37 @@ function throttle(ip, limit = 8, windowMs = 60000) {
   arr.push(now)
   hits.set(ip, arr)
   return true
+}
+
+function formatRp(n) {
+  return 'Rp ' + Number(n || 0).toLocaleString('id-ID')
+}
+
+async function notifyDonationIfNeeded(trx) {
+  if (!trx || trx.status !== 'paid') return
+  if (trx.notified) return
+  const owner = trx.ownerUsername
+  if (!owner) {
+    markNotified(trx.id)
+    return
+  }
+  // jangan notif ke diri sendiri kalau fromUsername = owner
+  const from = trx.fromUsername || null
+  try {
+    await Notifications.create({
+      username: owner,
+      fromUsername: from || 'donatur',
+      type: 'donate',
+      text: `${trx.supporter || 'Someone'} donated ${formatRp(trx.total_amount || trx.amount)}${trx.message ? ': ' + String(trx.message).slice(0, 80) : ''}`,
+      amount: trx.total_amount || trx.amount,
+      supporter: trx.supporter || null,
+      message: trx.message || null,
+      trxId: trx.id
+    })
+  } catch (e) {
+    console.error('[donate] notify failed', e.message)
+  }
+  markNotified(trx.id)
 }
 
 router.get('/methods', (_req, res) => {
@@ -39,6 +71,8 @@ router.post('/:username', async (req, res) => {
     const { amount, method, name, message, phone, email } = req.body || {}
     const trx = await createPayment(amount, {
       username: sb,
+      ownerUsername: user.username,
+      fromUsername: req.username || null,
       method: method || 'qris',
       name: name || (req.username ? req.username : 'Donatur'),
       message: message || '',
@@ -56,6 +90,10 @@ router.get('/trx/:id', async (req, res) => {
   try {
     const trx = await checkStatus(req.params.id)
     if (!trx) return res.status(404).json({ error: 'Transaksi tidak ditemukan' })
+    // Saat status jadi paid, kirim notifikasi ke pemilik profil
+    if (trx.status === 'paid' && !trx.notified) {
+      await notifyDonationIfNeeded(trx)
+    }
     res.json(trx)
   } catch (e) {
     res.status(500).json({ error: e.message })

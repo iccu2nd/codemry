@@ -2178,6 +2178,7 @@ html:not(.light) .comment-form-locked a { color: var(--accent-light); }
 .notif-icon-follow { background: var(--accent-light); }
 .notif-icon-fork { background: #64748b; }
 .notif-icon-upload { background: #4f46e5; }
+.notif-icon-donate { background: #e11d48; }
 .notif-body { flex: 1; min-width: 0; }
 .notif-text { font-size: 14px; line-height: 1.45; color: var(--text-secondary); }
 .notif-text b { color: var(--text); }

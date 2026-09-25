@@ -167,6 +167,7 @@ export function listTransactions({ status, limit = 50 } = {}) {
     list.push({
       id: v.id,
       username: v.username,
+      ownerUsername: v.ownerUsername || null,
       amount: v.amount,
       total_amount: v.total_amount,
       fee: v.fee,
@@ -176,7 +177,8 @@ export function listTransactions({ status, limit = 50 } = {}) {
       message: v.message || null,
       created_at: v.created_at,
       paid_at: v.paid_at,
-      expired_at: v.expired_at
+      expired_at: v.expired_at,
+      notified: !!v.notified
     })
   }
   list.sort((a, b) => String(b.paid_at || b.created_at || '').localeCompare(String(a.paid_at || a.created_at || '')))
@@ -197,7 +199,9 @@ export async function createPayment(amount, opts = {}) {
     method = 'qris',
     email,
     phone,
-    username
+    username,
+    ownerUsername = null,
+    fromUsername = null
   } = opts
 
   const sbUser = normalizeSociabuzzUsername(username)
@@ -379,6 +383,8 @@ export async function createPayment(amount, opts = {}) {
   const trx = {
     id,
     username: sbUser,
+    ownerUsername: ownerUsername || null,
+    fromUsername: fromUsername || null,
     order_id: token,
     payment_url: paymentUrl,
     payment_info: paymentInfo,
@@ -390,10 +396,20 @@ export async function createPayment(amount, opts = {}) {
     expired_at: expired,
     paid_at: null,
     supporter: name || null,
-    message: message || null
+    message: message || null,
+    notified: false
   }
   saveTrx(trx)
   return getTransaction(id)
+}
+
+export function markNotified(id) {
+  const trx = mem.get(id) || getTransaction(id)
+  if (!trx) return false
+  const full = mem.get(trx.id) || trx
+  full.notified = true
+  saveTrx(full)
+  return true
 }
 
 export async function checkStatus(trxIdOrInv) {
