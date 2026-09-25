@@ -111,9 +111,9 @@ async function renderNotifications() {
   if (brand) brand.textContent = (typeof t === 'function' && t('inbox')) || 'Inbox'
 
   try {
-    if (window.authReady) await window.authReady
+    if (typeof refreshAuth === 'function') await refreshAuth()
     if (!me) {
-      container.innerHTML = `<div class="card">${emptyStateHtml({ title: 'Sign in', sub: 'See messages and activity in your inbox.' })}</div>`
+      container.innerHTML = `<div class="card">${emptyStateHtml({ title: 'Sign in', sub: 'See messages and activity in your inbox.' })}<a class="btn btn-primary btn-block" href="/auth" style="margin-top:14px">Sign in</a></div>`
       return
     }
 
