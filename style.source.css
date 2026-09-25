@@ -3924,12 +3924,23 @@ html.light .toast {
 .cd-more-wrap {
   position: relative;
   flex: 0 0 auto;
+  z-index: 50;
+}
+.cd-more-wrap.is-open {
+  z-index: 70;
 }
 .cd-more-btn {
   width: 44px !important;
   min-width: 44px;
+  min-height: 44px !important;
   padding: 0 !important;
   flex: none !important;
+  position: relative;
+  z-index: 2;
+  pointer-events: auto !important;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 .cd-more-btn[aria-expanded="true"] {
   background: var(--bg-muted) !important;
@@ -3941,15 +3952,17 @@ html.light .toast {
   display: none;
   position: fixed;
   inset: 0;
-  z-index: 39;
+  z-index: 65;
   background: rgba(0, 0, 0, 0.28);
+  pointer-events: auto;
+  touch-action: manipulation;
 }
 .cd-more-backdrop.is-open { display: block; }
 .cd-more-menu {
   position: absolute;
   right: 0;
   top: calc(100% + 8px);
-  z-index: 40;
+  z-index: 71;
   min-width: 220px;
   max-width: min(280px, calc(100vw - 24px));
   background: var(--bg-card);

@@ -237,7 +237,6 @@ function openEditProfileScreen(p, username) {
           <input class="ep-input" id="websiteInput" type="text" inputmode="url" value="${escapeHtml(p.website || '')}" maxlength="300" placeholder="${t('websitePlaceholder')}">
         </div>
       </div>
-      <div class="ep-hint">${usernameCooldownHint(p.usernameChangedAt)}</div>
 
       <div class="ep-section-label">${t('basicInfo')}</div>
       <div class="ep-group">

@@ -259,49 +259,85 @@ function renderUnlockedDetail(app, shortId, s) {
 
     const moreBtn = document.getElementById('cdMoreBtn')
     const moreMenu = document.getElementById('cdMoreMenu')
+    const moreWrap = moreBtn ? moreBtn.closest('.cd-more-wrap') : null
     const pageSignal = window.__codePageAbort ? window.__codePageAbort.signal : undefined
     if (moreBtn && moreMenu) {
-      let moreBackdrop = document.getElementById('cdMoreBackdrop')
-      if (!moreBackdrop) {
-        moreBackdrop = document.createElement('div')
-        moreBackdrop.id = 'cdMoreBackdrop'
-        moreBackdrop.className = 'cd-more-backdrop'
-        document.body.appendChild(moreBackdrop)
-      }
-      // Pastikan backdrop tertutup saat re-render
-      moreBackdrop.classList.remove('is-open')
+      // Bersihkan backdrop lama yang bisa nyangkut dan memblokir klik
+      document.querySelectorAll('#cdMoreBackdrop, .cd-more-backdrop').forEach(el => el.remove())
+      const moreBackdrop = document.createElement('div')
+      moreBackdrop.id = 'cdMoreBackdrop'
+      moreBackdrop.className = 'cd-more-backdrop'
+      moreBackdrop.setAttribute('aria-hidden', 'true')
+      document.body.appendChild(moreBackdrop)
+
       let closeTimer = null
+      let isOpen = false
+
       const openMoreMenu = () => {
+        if (isOpen) return
+        isOpen = true
         clearTimeout(closeTimer)
+        moreMenu.hidden = false
         moreMenu.removeAttribute('hidden')
         moreBtn.setAttribute('aria-expanded', 'true')
+        if (moreWrap) moreWrap.classList.add('is-open')
         moreBackdrop.classList.add('is-open')
-        requestAnimationFrame(() => requestAnimationFrame(() => moreMenu.classList.add('is-open')))
+        // paksa reflow lalu animasi
+        void moreMenu.offsetWidth
+        moreMenu.classList.add('is-open')
       }
       const closeMoreMenu = () => {
+        if (!isOpen && !moreMenu.classList.contains('is-open')) return
+        isOpen = false
         moreMenu.classList.remove('is-open')
         moreBtn.setAttribute('aria-expanded', 'false')
+        if (moreWrap) moreWrap.classList.remove('is-open')
         moreBackdrop.classList.remove('is-open')
         closeTimer = setTimeout(() => {
-          if (!moreMenu.classList.contains('is-open')) moreMenu.setAttribute('hidden', '')
+          if (!isOpen) {
+            moreMenu.hidden = true
+            moreMenu.setAttribute('hidden', '')
+          }
         }, 160)
       }
       window.__closeCdMoreMenu = closeMoreMenu
 
-      moreBtn.onclick = (e) => {
-        e.stopPropagation()
-        if (moreMenu.classList.contains('is-open')) closeMoreMenu()
+      const toggleMore = (e) => {
+        if (e) {
+          e.preventDefault()
+          e.stopPropagation()
+        }
+        if (isOpen || moreMenu.classList.contains('is-open')) closeMoreMenu()
         else openMoreMenu()
       }
-      moreBackdrop.onclick = () => closeMoreMenu()
-      document.addEventListener('click', (e) => {
-        if (!moreMenu.classList.contains('is-open')) return
-        if (moreMenu.contains(e.target) || moreBtn.contains(e.target)) return
+
+      // pointerdown + click agar mobile & desktop sama-sama responsif
+      moreBtn.style.pointerEvents = 'auto'
+      moreBtn.style.position = 'relative'
+      moreBtn.style.zIndex = '60'
+      moreBtn.addEventListener('pointerdown', (e) => {
+        // cegah document listener menutup sebelum toggle
+        e.stopPropagation()
+      }, { signal: pageSignal })
+      moreBtn.addEventListener('click', toggleMore, { signal: pageSignal })
+
+      moreBackdrop.addEventListener('click', (e) => {
+        e.preventDefault()
+        e.stopPropagation()
         closeMoreMenu()
       }, { signal: pageSignal })
-      document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && moreMenu.classList.contains('is-open')) closeMoreMenu()
+
+      document.addEventListener('pointerdown', (e) => {
+        if (!isOpen) return
+        const t = e.target
+        if (moreMenu.contains(t) || moreBtn.contains(t)) return
+        closeMoreMenu()
       }, { signal: pageSignal })
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && isOpen) closeMoreMenu()
+      }, { signal: pageSignal })
+
       moreMenu.querySelectorAll('.cd-more-item').forEach(item => {
         item.addEventListener('click', () => {
           setTimeout(() => closeMoreMenu(), 0)
