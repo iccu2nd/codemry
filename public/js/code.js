@@ -262,7 +262,7 @@ function renderUnlockedDetail(app, shortId, s) {
     const moreWrap = moreBtn ? moreBtn.closest('.cd-more-wrap') : null
     const pageSignal = window.__codePageAbort ? window.__codePageAbort.signal : undefined
     if (moreBtn && moreMenu) {
-      // Bersihkan backdrop lama yang bisa nyangkut dan memblokir klik
+      // Hapus backdrop sisa yang bisa blokir klik
       document.querySelectorAll('#cdMoreBackdrop, .cd-more-backdrop').forEach(el => el.remove())
       const moreBackdrop = document.createElement('div')
       moreBackdrop.id = 'cdMoreBackdrop'
@@ -270,67 +270,50 @@ function renderUnlockedDetail(app, shortId, s) {
       moreBackdrop.setAttribute('aria-hidden', 'true')
       document.body.appendChild(moreBackdrop)
 
-      let closeTimer = null
       let isOpen = false
+      let ignoreCloseUntil = 0
 
       const openMoreMenu = () => {
-        if (isOpen) return
         isOpen = true
-        clearTimeout(closeTimer)
+        // Abaikan klik/pointer yang sama yang membuka menu (biar gak langsung tutup)
+        ignoreCloseUntil = Date.now() + 400
         moreMenu.hidden = false
         moreMenu.removeAttribute('hidden')
+        moreMenu.classList.add('is-open')
         moreBtn.setAttribute('aria-expanded', 'true')
         if (moreWrap) moreWrap.classList.add('is-open')
         moreBackdrop.classList.add('is-open')
-        // paksa reflow lalu animasi
-        void moreMenu.offsetWidth
-        moreMenu.classList.add('is-open')
       }
       const closeMoreMenu = () => {
-        if (!isOpen && !moreMenu.classList.contains('is-open')) return
+        if (!isOpen) return
         isOpen = false
         moreMenu.classList.remove('is-open')
+        moreMenu.hidden = true
+        moreMenu.setAttribute('hidden', '')
         moreBtn.setAttribute('aria-expanded', 'false')
         if (moreWrap) moreWrap.classList.remove('is-open')
         moreBackdrop.classList.remove('is-open')
-        closeTimer = setTimeout(() => {
-          if (!isOpen) {
-            moreMenu.hidden = true
-            moreMenu.setAttribute('hidden', '')
-          }
-        }, 160)
       }
       window.__closeCdMoreMenu = closeMoreMenu
 
-      const toggleMore = (e) => {
-        if (e) {
-          e.preventDefault()
-          e.stopPropagation()
-        }
-        if (isOpen || moreMenu.classList.contains('is-open')) closeMoreMenu()
-        else openMoreMenu()
-      }
-
-      // pointerdown + click agar mobile & desktop sama-sama responsif
-      moreBtn.style.pointerEvents = 'auto'
-      moreBtn.style.position = 'relative'
-      moreBtn.style.zIndex = '60'
-      moreBtn.addEventListener('pointerdown', (e) => {
-        // cegah document listener menutup sebelum toggle
+      moreBtn.addEventListener('click', (e) => {
+        e.preventDefault()
         e.stopPropagation()
+        if (isOpen) closeMoreMenu()
+        else openMoreMenu()
       }, { signal: pageSignal })
-      moreBtn.addEventListener('click', toggleMore, { signal: pageSignal })
 
       moreBackdrop.addEventListener('click', (e) => {
         e.preventDefault()
         e.stopPropagation()
+        if (Date.now() < ignoreCloseUntil) return
         closeMoreMenu()
       }, { signal: pageSignal })
 
-      document.addEventListener('pointerdown', (e) => {
+      document.addEventListener('click', (e) => {
         if (!isOpen) return
-        const t = e.target
-        if (moreMenu.contains(t) || moreBtn.contains(t)) return
+        if (Date.now() < ignoreCloseUntil) return
+        if (moreMenu.contains(e.target) || moreBtn.contains(e.target)) return
         closeMoreMenu()
       }, { signal: pageSignal })
 
@@ -338,11 +321,12 @@ function renderUnlockedDetail(app, shortId, s) {
         if (e.key === 'Escape' && isOpen) closeMoreMenu()
       }, { signal: pageSignal })
 
-      moreMenu.querySelectorAll('.cd-more-item').forEach(item => {
-        item.addEventListener('click', () => {
-          setTimeout(() => closeMoreMenu(), 0)
-        }, { signal: pageSignal })
-      })
+      moreMenu.addEventListener('click', (e) => {
+        const item = e.target.closest('.cd-more-item')
+        if (!item || item.dataset.action === 'delete-code' || item.id === 'delBtn') return
+        // tutup setelah aksi biasa (bukan delete yang buka dialog)
+        setTimeout(() => closeMoreMenu(), 10)
+      }, { signal: pageSignal })
     }
 
     document.getElementById('shareBtn').onclick = () => { navigator.clipboard.writeText(location.href); toast('Link copied!') }

@@ -3961,7 +3961,7 @@ html.light .toast {
 .cd-more-menu {
   position: absolute;
   right: 0;
-  top: calc(100% + 8px);
+  top: calc(100% + 6px);
   z-index: 71;
   min-width: 220px;
   max-width: min(280px, calc(100vw - 24px));
@@ -3970,19 +3970,13 @@ html.light .toast {
   border-radius: 14px;
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.22);
   padding: 6px;
-  display: flex;
+  display: none;
   flex-direction: column;
   gap: 2px;
-  opacity: 0;
-  transform: translateY(-6px) scale(0.98);
-  transform-origin: top right;
-  pointer-events: none;
-  transition: opacity .14s ease, transform .16s cubic-bezier(.2, .9, .3, 1.15);
+  pointer-events: auto;
 }
 .cd-more-menu.is-open {
-  opacity: 1;
-  transform: translateY(0) scale(1);
-  pointer-events: auto;
+  display: flex;
 }
 .cd-more-menu[hidden] { display: none !important; }
 .cd-more-divider {
